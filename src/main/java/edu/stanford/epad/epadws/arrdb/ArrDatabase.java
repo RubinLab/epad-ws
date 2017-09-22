@@ -102,162 +102,125 @@
  * of non-limiting example, you will not contribute any code obtained by you under the GNU General Public License or other 
  * so-called "reciprocal" license.)
  *******************************************************************************/
-package edu.stanford.epad.epadws.processing.pipeline.watcher;
+package edu.stanford.epad.epadws.arrdb;
 
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.BlockingQueue;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.text.DecimalFormat;
+import java.util.concurrent.atomic.AtomicReference;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.dtos.SeriesProcessingStatus;
-import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
-import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
-import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
-import edu.stanford.epad.epadws.epaddb.EpadDatabase;
+import edu.stanford.epad.epadws.epaddb.ConnectionPool;
+import edu.stanford.epad.epadws.epaddb.DatabaseState;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
-import edu.stanford.epad.epadws.handlers.core.SeriesReference;
-import edu.stanford.epad.epadws.models.Subject;
-import edu.stanford.epad.epadws.processing.model.SeriesProcessingDescription;
-import edu.stanford.epad.epadws.processing.pipeline.task.DSOMaskPNGGeneratorTask;
-import edu.stanford.epad.epadws.processing.pipeline.task.SingleFrameDICOMPngGeneratorTask;
-import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
-import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
-import edu.stanford.epad.epadws.queries.EpadOperations;
-import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
-import edu.stanford.epad.epadws.service.EpadProjectOperations;
-import edu.stanford.epad.epadws.service.RemotePACService;
-import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
-/**
- * Watch for new studies that appear in ePAD's DCM4CHEE MySQL database with the 'study_status' field set to zero, which
- * indicates that they are a new series. Add them to ePAD's series watcher queues to be subsequently processed by
- * watchers (currently {@link DICOMSeriesWatcher} and {@link XNATSeriesWatcher}).
- */
-public class Dcm4CheeDatabaseWatcher implements Runnable
+public class ArrDatabase
 {
-	private final EPADLogger logger = EPADLogger.getInstance();
+	private static EPADLogger log = EPADLogger.getInstance();
 
-	private final int SleepTimeInMilliseconds = 5000;
+	private static final ArrDatabase ourInstance = new ArrDatabase();
 
-	private final BlockingQueue<SeriesProcessingDescription> dcm4CheeSeriesWatcherQueue;
-	private final BlockingQueue<SeriesProcessingDescription> xnatSeriesWatcherQueue;
+	private ConnectionPool connectionPool;
+	private ArrDatabaseOperations arrDatabaseOperations;
+
+	private final AtomicReference<DatabaseState> databaseState = new AtomicReference<DatabaseState>(DatabaseState.INIT);
+
+	private long startupTime = -1;
+
+	public static String dbversion;
 	
-	private static final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();	
-	
-
-	public Dcm4CheeDatabaseWatcher(BlockingQueue<SeriesProcessingDescription> dicomSeriesWatcherQueue,
-			BlockingQueue<SeriesProcessingDescription> xnatSeriesWatcherQueue)
+	public static ArrDatabase getInstance()
 	{
-		logger.info("Starting ePAD's DCM4CHEE database watcher");
-		this.dcm4CheeSeriesWatcherQueue = dicomSeriesWatcherQueue;
-		this.xnatSeriesWatcherQueue = xnatSeriesWatcherQueue;
+		return ourInstance;
 	}
 
-	
-	
-	@Override
-	public void run()
+	private ArrDatabase()
 	{
-		Thread.currentThread().setPriority(Thread.MIN_PRIORITY); // Let interactive thread run sooner
-		ShutdownSignal signal = ShutdownSignal.getInstance();
-		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
-		EpadOperations epadQueries = DefaultEpadOperations.getInstance();
-		int run = 0;
-		while (!signal.hasShutdown()) {
-			try {
-				List<DCM4CHEESeries> dcm4CheeSeriesList = epadQueries.getNewDcm4CheeSeries();
+		initConnectionPool();
+	}
+	
+	public ArrDatabaseOperations getArrDatabaseOperations()
+	{
+		return arrDatabaseOperations;
+	}
 
-				for (DCM4CHEESeries dcm4CheeSeries : dcm4CheeSeriesList) {
-					String seriesUID = dcm4CheeSeries.seriesUID;
-					String studyUID = dcm4CheeDatabaseOperations.getStudyUIDForSeries(seriesUID);
-					String patientName = dcm4CheeSeries.patientName;
-					String patientID = epadQueries.getUniquePatientID(dcm4CheeSeries.patientID,dcm4CheeSeries.patientName);
-					String dicomPatientID=dcm4CheeSeries.patientID;
-					if (dicomPatientID == null || dicomPatientID.trim().length() == 0 
-							|| dicomPatientID.equalsIgnoreCase("ANON") 
-							|| dicomPatientID.equalsIgnoreCase("Unknown") 
-							|| dicomPatientID.contains("%") 
-							|| dicomPatientID.equalsIgnoreCase("Anonymous"))
-					{
-						String message = "Invalid patientID:'" + dicomPatientID + "' , Rejecting series "+seriesUID+" from dcm4chee ";
-						if (dicomPatientID != null)
-							message = "Invalid non-unique patient ID " + dicomPatientID + " in DICOM file";
-						if (dicomPatientID != null && dicomPatientID.contains("%"))
-						{
-							message = "An invalid character in patient ID " + dicomPatientID;
-						}
-						EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();	
-
-						databaseOperations.insertEpadEvent(
-								EPADConfig.xnatUploadProjectUser, 
-								message, 
-								seriesUID, "", "Invalid PatientID:" + dicomPatientID, patientName, studyUID, EPADConfig.xnatUploadProjectID, "Error in dcm4chee push");					
-						projectOperations.createEventLog(EPADConfig.xnatUploadProjectUser, EPADConfig.xnatUploadProjectID, dicomPatientID, studyUID, seriesUID, null, null, "", "PROCESS SERIES FROM DCM4CHEE", message, true);
-						continue;
-					}
-
-					
-					String seriesDesc = dcm4CheeSeries.seriesDescription;
-					int numInstances = dcm4CheeSeries.imagesInSeries;
-					SeriesProcessingDescription dicomSeriesDescription = new SeriesProcessingDescription(numInstances,
-							seriesUID, studyUID, patientName, patientID, dcm4CheeSeries.patientID);
-					epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.IN_PIPELINE);
-					submitSeriesForPngGeneration(dicomSeriesDescription); // Submit this series to generate all the PNG files.
-					submitSeriesForXNATGeneration(dicomSeriesDescription); // Submit this series to generate XNAT information.
-
-					logger.info("New DICOM series " + seriesUID + " (" + patientName + ", " + seriesDesc
-							+ ") found in DCM4CHEE with " + numInstances + " image(s)");
-				}
-				if (run%1 == 0) // every 5 secs
-					RemotePACService.checkTransfers();
-				// Every tenth time check deleted dcm4che series
-				if (run >= 10)
-				{
-					run = 0;
-					Set<String> deletedSeriesUIDs = epadQueries.getDeletedDcm4CheeSeries();
-					for (String seriesUID: deletedSeriesUIDs)
-					{
-						try
-						{
-							logger.info("Series + " + seriesUID + " no longer in DCM4CHE, deleting from epad database");
-							 epadDatabaseOperations.deleteSeries(seriesUID);
-							// TODO: Delete generated PNGs also???
-						} catch (Exception x) {
-							logger.warning("Error deleting series from database");
-						}
-					}
-				}
-				else
-				{
-					run++;
-				}
-				
-				int singleInProcess = SingleFrameDICOMPngGeneratorTask.imagesBeingProcessed.size();
-				int dsoInProcess = DSOMaskPNGGeneratorTask.seriesBeingProcessed.size();
-				if ((singleInProcess+dsoInProcess) > 0)
-				{
-					// Let the current processing finish for heaven's sake
-					Thread.sleep(60000*dsoInProcess + 2000*singleInProcess);
-				}
-				
-				Thread.sleep(SleepTimeInMilliseconds);
-			} catch (Exception e) {
-				logger.warning("Dcm4CheeDatabaseWatcher error", e);
-			}
+	public void startup()
+	{
+		try {
+			databaseState.set(DatabaseState.STARTING);
+			long time = System.currentTimeMillis();
+			startupTime = System.currentTimeMillis() - time;
+			databaseState.set(DatabaseState.READY);
+			log.info("Arrdb took " + startupTime + " ms to start.");
+		} catch (Exception e) {
+			log.severe("Failed to start-up database", e);
+			databaseState.set(DatabaseState.ERROR);
 		}
-		logger.info("Exiting ePAD's DCM4CHEE database watcher");
 	}
 
-	private void submitSeriesForPngGeneration(SeriesProcessingDescription dicomSeriesDescription)
+	public long getStartupTime()
 	{
-		dcm4CheeSeriesWatcherQueue.offer(dicomSeriesDescription);
+		return startupTime;
 	}
 
-	private void submitSeriesForXNATGeneration(SeriesProcessingDescription dicomSeriesDescription)
+	public void shutdown()
 	{
-		xnatSeriesWatcherQueue.offer(dicomSeriesDescription);
+		databaseState.set(DatabaseState.SHUTDOWN);
+		long time = System.currentTimeMillis();
+		log.info("Shutting down database.");
+
+		closeConnectionPool();
+		log.info("The database took " + (System.currentTimeMillis() - time) + " ms, to shutdown.");
 	}
+
+	public ArrDatabaseOperations getEPADDatabaseOperations()
+	{
+		return arrDatabaseOperations;
+	}
+
+	public int getConnectionPoolAvailCount()
+	{
+		return connectionPool.availableConnectionCount();
+	}
+
+	public int getConnectionPoolUsedCount()
+	{
+		return connectionPool.usedConnectionCount();
+	}
+
+	private void initConnectionPool()
+	{
+		try {
+			log.info("Creating connection pool.");
+			createConnectionPool();
+			arrDatabaseOperations = new DefaultArrDatabaseOperations(connectionPool);
+		} catch (Exception e) {
+			log.severe("Failed to create connection pool", e);
+			databaseState.set(DatabaseState.ERROR);
+		}
+	}
+
+	private void createConnectionPool() throws SQLException
+	{
+		String username = EPADConfig.arrDatabaseUsername;
+		String password = EPADConfig.arrDatabasePassword;
+		String arrDatabaseURL = EPADConfig.arrDatabaseURL;
+
+		log.info("MySql using connection string for arr database: " + arrDatabaseURL);
+
+		connectionPool = new ConnectionPool(arrDatabaseURL, username, password);
+	}
+
+	private void closeConnectionPool()
+	{
+		connectionPool.dispose();
+	}
+	
+	
 }

@@ -853,8 +853,6 @@ public class AimMigrator {
 	}
 	
 
-	
-
 	/**************** math functions ********************/
 
 	/**

@@ -282,7 +282,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 				for (int i = 1; i < nCols + 1; i++) {
 					String colName = metaData.getColumnName(i);
 					String value = rs.getString(i);
-					if (colName.toLowerCase().contains("study_datetime") || colName.toLowerCase().contains("pps_start")) {
+					if (colName.toLowerCase().contains("study_datetime") || colName.toLowerCase().contains("pps_start") || colName.toLowerCase().contains("series_datetime") ) {
 						Timestamp ts = rs.getTimestamp(i);
 						if (ts != null)
 							value = new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date(ts.getTime()));
@@ -771,7 +771,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		String updatedTime = resultMap.get("updated_time");
 		String createdTime = resultMap.get("created_time");
 		String classUID = resultMap.get("sop_cuid");
-		String inst_attrs = resultMap.get("inst_attrs_ch").replaceAll("\"", "").replaceAll("[^\\w.()-*#]", " ").replaceAll("\\s+", " ").replaceAll("\\n", "").replaceAll("\\r", "").replace(System.getProperty("line.separator"), "").replaceAll("R.DS", "RDS").replaceAll("S.DS", "SDS").replaceAll("  ", " ").replace("\\", "\\\\").trim();
+		String inst_attrs = resultMap.get("inst_attrs_ch").replaceAll("\"", "").replaceAll("[^\\w.()*#^-]", " ").replaceAll("\\s+", " ").replaceAll("\\n", "").replaceAll("\\r", "").replace(System.getProperty("line.separator"), "").replaceAll("R.DS", "RDS").replaceAll("S.DS", "SDS").replaceAll("  ", " ").replace("\\", "\\\\").trim();
 		
 		//ml if no rescale slope and intercept use the old version
 		DCM4CHEEImageDescription did=new DCM4CHEEImageDescription(studyUID, seriesUID, imageUID, instanceNumber, sliceLocation, contentTime,
