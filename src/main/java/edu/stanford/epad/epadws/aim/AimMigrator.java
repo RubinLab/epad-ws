@@ -155,6 +155,7 @@ import edu.stanford.hakan.aim4api.base.TwoDimensionSpatialCoordinate;
 import edu.stanford.hakan.aim4api.base.TwoDimensionSpatialCoordinateCollection;
 import edu.stanford.hakan.aim4api.base.Enumerations.ScaleType;
 import edu.stanford.hakan.aim4api.compability.aimv3.Modality;
+import edu.stanford.hakan.aim4api.project.epad.Aim;
 import edu.stanford.hakan.aim4api.project.epad.Enumerations.ShapeType;
 import edu.stanford.hakan.aim4api.questions.Question;
 import edu.stanford.hakan.aim4api.questions.QuestionCollection;
@@ -909,7 +910,7 @@ public class AimMigrator {
 		ExtendedCalculationResult calculationResult=new ExtendedCalculationResult();
 
 		calculationResult.setType(Enumerations.CalculationResultIdentifier.Scalar);
-		calculationResult.setUnitOfMeasure(new ST(units));
+		calculationResult.setUnitOfMeasure(new ST(Aim.getUCUMUnit(units)));
 		if (units.equals(""))
 			calculationResult.setDataType(new CD("99EPADD2","String","99EPAD"));
 		else
