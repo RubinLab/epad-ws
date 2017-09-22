@@ -1,0 +1,5 @@
+UPDATE `lexicon` SET CODE_VALUE='G-A185', SCHEMA_DESIGNATOR='SRT', SCHEMA_VERSION=null where CODE_MEANING='longaxis';
+UPDATE `lexicon` SET CODE_VALUE='G-A186', SCHEMA_DESIGNATOR='SRT', SCHEMA_VERSION=null where CODE_MEANING='shortaxis';
+
+UPDATE dbversion SET version = '2.8';
+commit;
