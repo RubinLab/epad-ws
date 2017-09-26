@@ -138,6 +138,7 @@ import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.epaddb.DefaultEpadDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
+import edu.stanford.epad.epadws.models.EventLog;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
@@ -332,27 +333,14 @@ public class UserProjectService {
 					//ml prevent null username 
 					if (xnatUserName == null)
 						xnatUserName = EPADConfig.xnatUploadProjectUser;
-					//ml sessionid param set to null for not triggering the plugin (it was xnatSessionID) 
-					numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, null, xnatUserName, patientID, studyUID, seriesUID, !zip);
+					
+					numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName, patientID, studyUID, seriesUID, !zip);
 					if (numberOfDICOMFiles != 0)
 					{
 						projectOperations.createEventLog(xnatUserName, xnatProjectLabel, null, null, null, null, null, dicomUploadDirectory.getName(), "UPLOAD DICOMS", "Number of Dicoms: " +numberOfDICOMFiles, false);
 						log.info("Found " + numberOfDICOMFiles + " DICOM file(s) in directory uploaded by " + xnatUserName + " for project " + xnatProjectLabel);
 					}
-					else
-					{
-						//permenant log
-						projectOperations.createEventLog(xnatUserName, xnatProjectLabel, null, null, null, null, null, dicomUploadDirectory.getName(), "No DICOMs in upload", "No Dicom Files in Upload Directory", true);
-						//temporary session log
-						EpadDatabaseOperations epadDatabaseOperations=EpadDatabase.getInstance().getEPADDatabaseOperations();
-						epadDatabaseOperations.insertEpadEvent(xnatSessionID,
-								EventMessageCodes.UPLOAD_TYPE_ERROR, 
-								"", "", "", "", "", "", 
-								"",
-								xnatProjectLabel,"","","", true);
-						log.warning("No DICOM files found in upload directory!");
-						return null;
-					}
+					
 				} else {
 					log.warning("Missing XNAT project name and/or session ID in properties file" + propertiesFilePath);
 				}
@@ -411,6 +399,7 @@ public class UserProjectService {
 		Collection<File> files = listDICOMFiles(dicomUploadDirectory);
 		log.info("Number of files found:" + files.size());
 		int nondicoms = 0;
+		int validFiles = 0;
 		long i = 0;
 		for (File dicomFile : files) {
 			try {
@@ -429,7 +418,8 @@ public class UserProjectService {
 								File tmpAim=new File(tmpAimName);
 								EPADFileUtils.write(tmpAim, xml);
 								log.info("tmp aim path:"+ tmpAim.getAbsolutePath());
-								if (AIMUtil.saveAIMAnnotation(tmpAim, projectID, 0, sessionID, username, false,true))
+								//ml sessionid param set to null for not triggering the plugin (sessionID is xnatSessionID from upload) 
+								if (AIMUtil.saveAIMAnnotation(tmpAim, projectID, 0, null, username, false,true))
 									log.warning("Error processing aim file:" + dicomFile.getName());
 							}
 							
@@ -438,22 +428,28 @@ public class UserProjectService {
 						}
 						dicomFile.delete();
 						nondicoms++;
+						validFiles++;
 						continue;
 					}
 					if (dicomFile.getName().endsWith(".xml"))
 					{
 						try {
-							if (AIMUtil.saveAIMAnnotation(dicomFile, projectID, 0, sessionID, username, true))
+							//ml sessionid param set to null for not triggering the plugin (sessionID is xnatSessionID from upload) 
+							if (AIMUtil.saveAIMAnnotation(dicomFile, projectID, 0, null, username, true))
 								log.warning("Error processing aim file:" + dicomFile.getName());
 						} catch (Exception x) {
 							log.warning("Error uploading aim file:" + dicomFile.getName() + ":" + x.getMessage());
 						}
 						dicomFile.delete();
 						nondicoms++;
+						validFiles++;
 						continue;
 					}
 					else if ((allFiles || dicomFile.getName().endsWith(".nii")))
 					{
+						if (dicomFile.getName().endsWith(".nii")) {
+							validFiles++;
+						}
 						try {
 							DefaultEpadOperations.getInstance().createFile(username, projectID, subjectID, studyUID, seriesUID, dicomFile, null, null, sessionID);
 						} catch (Exception x) {
@@ -474,8 +470,10 @@ public class UserProjectService {
 				}
 				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, projectID, dicomUploadDirectory.getName(), "Files processed: " + i, null, null);
 				log.debug("Adding to project:" + dicomFile.getName());
-				if (createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username))
+				if (createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username)){
 					numberOfDICOMFiles++;
+					validFiles++;
+				}
 			} catch (Throwable x) {
 				log.warning("Error processing dicom:" + dicomFile.getName(), x);
 				databaseOperations.insertEpadEvent(
@@ -488,6 +486,19 @@ public class UserProjectService {
 			projectOperations.createEventLog(username, projectID, null, null, null, null, null, "UPLOAD FILES", "Number of files: " +nondicoms);
 		log.info("Number of dicom files in upload:" + numberOfDICOMFiles);
 		log.info("Number of non-dicom files in upload:" + nondicoms);
+		if (validFiles==0) {
+			//permenant log
+			projectOperations.createEventLog(username, projectID, null, null, null, null, null, dicomUploadDirectory.getName(), "No DICOMs or AIMs in upload", "No Dicom or Aim Files in Upload Directory", true);
+			//temporary session log
+			EpadDatabaseOperations epadDatabaseOperations=EpadDatabase.getInstance().getEPADDatabaseOperations();
+			epadDatabaseOperations.insertEpadEvent(sessionID,
+					EventMessageCodes.UPLOAD_TYPE_ERROR, 
+					"", "", "", "", "", "", 
+					"",
+					projectID,"","","", true);
+			log.warning("No valid files (DICOM or Aim) found in upload directory!");
+			
+		}
 		return numberOfDICOMFiles;
 	}
 	
@@ -604,8 +615,31 @@ public class UserProjectService {
 			if (dicomPatientName == null) dicomPatientName = "";
 			dicomPatientName = dicomPatientName.toUpperCase(); // DCM4CHEE stores the patient name as upper case
 			
-			
-
+			Study study=projectOperations.getStudy(studyUID);
+			if (study!=null){
+				//the study was already in epad. give info on which project
+				List<Project> projects=projectOperations.getProjectsForStudy(studyUID);
+				if (!projects.isEmpty()) {
+				StringBuilder projectsStrBldr=new StringBuilder();
+				for (Project p:projects){
+					projectsStrBldr.append(p.getName());
+					projectsStrBldr.append(",");
+				}
+				projectsStrBldr.deleteCharAt(projectsStrBldr.length()-1);
+				List<EventLog> lastEvent= projectOperations.getUseEventLogs(username, 1, 1);
+				//if the last log wasn't the same. Try and avoid giving the same message for every image in series
+				if (!projectsStrBldr.toString().equals(projectID) && !lastEvent.isEmpty() && !(lastEvent.get(0).getStudyUID()!=null && lastEvent.get(0).getStudyUID().equals(studyUID) && lastEvent.get(0).getFunction()!=null && lastEvent.get(0).getFunction().equals(EventMessageCodes.STUDY_ALREADY_IN_EPAD))){
+					//permanent log
+					projectOperations.createEventLog(username,projectID, dicomPatientID, studyUID, null, null, null, null, EventMessageCodes.STUDY_ALREADY_IN_EPAD, "In project(s):"+projectsStrBldr.toString(), true);
+					//temporary session log
+					databaseOperations.insertEpadEvent(sessionID,
+								EventMessageCodes.STUDY_ALREADY_IN_EPAD + ". See log for details", 
+								"", "", dicomPatientID, dicomPatientName, 
+								"","","",
+								projectID,"",studyUID,"", true);
+					}
+				}
+			}
 			addSubjectAndStudyToProject(dicomPatientID, dicomPatientName, studyUID, studyDate, projectID, sessionID, username, studyDesc, displayPatientID);
 
 			if ("SEG".equals(modality))
