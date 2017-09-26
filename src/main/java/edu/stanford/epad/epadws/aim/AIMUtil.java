@@ -847,9 +847,19 @@ public class AIMUtil
                 if (imageAnnotationColl == null)
                 	log.warning("Unable to save aim:" + EPADFileUtils.readFileAsString(aimFile));
             }
+            
             if (imageAnnotationColl != null) {
             	Aim4 aim = new Aim4(imageAnnotationColl);
-				
+            	//let's check if the subject is in epad and give notification. do not block
+            	String patientID = aim.getPatientID();
+            	final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+            	Subject subject = projectOperations.getSubject(patientID);
+				if (subject == null) {
+					log.warning("The patient does not exist in epad. ");
+					//permanent log
+					projectOperations.createEventLog(username, projectID, patientID, null, null, null, null, aimFile.getName(), EventMessageCodes.NO_PATIENT, "Patient "+ patientID+ " don't exist", true);
+				}
+            	
             	SegmentationEntityCollection sec = imageAnnotationColl.getImageAnnotations().get(0).getSegmentationEntityCollection();
 				if (sec != null)
 					log.debug("Aim: " + imageAnnotationColl.getUniqueIdentifier().getRoot() + " SEC size:" + sec.getSegmentationEntityList().size());
@@ -899,7 +909,6 @@ public class AIMUtil
 					
 				}
 				EPADAIM ea = epadDatabaseOperations.getAIM(imageAnnotationColl.getUniqueIdentifier().getRoot());
-				String patientID = aim.getPatientID();
 				String originalPatientID = aim.getOriginalPatientID();
 				log.info("pat "+ imageAnnotationColl.getPerson().getId());
 				log.info("pat id "+ imageAnnotationColl.getPerson().getId().getValue()+ " aimpatid "+ patientID + "  aimorig "+ originalPatientID);
