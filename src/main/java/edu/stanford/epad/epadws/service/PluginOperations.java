@@ -314,13 +314,15 @@ public class PluginOperations {
 	
 	public List<Plugin> getPluginsForProject(String projectId) throws Exception {
 		Project project=projectOperations.getProject(projectId);
-		if (project==null)
-			throw new Exception("Project with id="+projectId+ " not found!");
+		List<Plugin> plugins = new ArrayList<Plugin>();
+		if (project==null){
+			log.warning("Project with id="+projectId+ " not found!");
+			return plugins;
+		}
 		List objects = new ProjectToPlugin().getObjects(" project_id = " + project.getId() + " and enabled=1 ");
 		List<ProjectToPlugin> projectPlugins = new ArrayList<ProjectToPlugin>();
 		
 		projectPlugins.addAll(objects);
-		List<Plugin> plugins = new ArrayList<Plugin>();
 		for (ProjectToPlugin projectPlugin:projectPlugins) {
 			Plugin plugin= new Plugin();
 			plugin = (Plugin) plugin.getObject("id = " + projectPlugin.getPluginId() );
