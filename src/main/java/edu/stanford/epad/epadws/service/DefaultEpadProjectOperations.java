@@ -1318,7 +1318,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		for (ProjectToUser ptou: ptous)
 		{
 			Project project = (Project)new Project(ptou.getProjectId()).retrieve();
-			user.getProjectToRole().put(project.getProjectId(), ptou.getRole());
+			if (project!=null && ptou!=null)
+				user.getProjectToRole().put(project.getProjectId(), ptou.getRole());
 		}
 		return user;
 	}
@@ -2415,11 +2416,13 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public List<String> getDisabledTemplateCodes(String projectID) throws Exception {
 		Project project = getProject(projectID);
-		if (project == null)
-			throw new Exception("Project not found");
+		List<String> templateCodes = new ArrayList<String>();
+		if (project == null){
+			log.warning("Project not found");
+			return templateCodes;
+		}
 		
 		List<ProjectToTemplate> dts = new ProjectToTemplate().getObjects("project_id = " + project.getId() + " and enabled=false");
-		List<String> templateCodes = new ArrayList<String>();
 		for (ProjectToTemplate dt: dts) {
 			Template t=(Template) getDBObject(Template.class, dt.getTemplateId());
 			if (t == null)
