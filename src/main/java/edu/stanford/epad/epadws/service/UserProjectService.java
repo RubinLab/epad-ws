@@ -633,8 +633,6 @@ public class UserProjectService {
 					List<EventLog> lastEvent= projectOperations.getUseEventLogs(username, 1, 1);
 					//if the last log wasn't the same. Try and avoid giving the same message for every image in series
 					//don't give notification if it is the same project only
-					log.info("replaced "+projectsIDStrBldr.toString().replace(EPADConfig.xnatUploadProjectID,"").replace(",",""));
-					log.info("project "+projectID);
 					if (!projectsIDStrBldr.toString().equals(projectID) && !projectsIDStrBldr.toString().replace(EPADConfig.xnatUploadProjectID,"").replace(",","").equals(projectID) && !lastEvent.isEmpty() && !(lastEvent.get(0).getStudyUID()!=null && lastEvent.get(0).getStudyUID().equals(studyUID) && lastEvent.get(0).getFunction()!=null && lastEvent.get(0).getFunction().equals(EventMessageCodes.STUDY_ALREADY_IN_EPAD))){
 						//permanent log
 						projectOperations.createEventLog(username,projectID, dicomPatientID, studyUID, null, null, null, null, EventMessageCodes.STUDY_ALREADY_IN_EPAD, "In project(s):"+projectsNameStrBldr.toString(), true);
