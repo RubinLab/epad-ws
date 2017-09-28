@@ -620,23 +620,30 @@ public class UserProjectService {
 				//the study was already in epad. give info on which project
 				List<Project> projects=projectOperations.getProjectsForStudy(studyUID);
 				if (!projects.isEmpty()) {
-				StringBuilder projectsStrBldr=new StringBuilder();
-				for (Project p:projects){
-					projectsStrBldr.append(p.getName());
-					projectsStrBldr.append(",");
-				}
-				projectsStrBldr.deleteCharAt(projectsStrBldr.length()-1);
-				List<EventLog> lastEvent= projectOperations.getUseEventLogs(username, 1, 1);
-				//if the last log wasn't the same. Try and avoid giving the same message for every image in series
-				if (!projectsStrBldr.toString().equals(projectID) && !lastEvent.isEmpty() && !(lastEvent.get(0).getStudyUID()!=null && lastEvent.get(0).getStudyUID().equals(studyUID) && lastEvent.get(0).getFunction()!=null && lastEvent.get(0).getFunction().equals(EventMessageCodes.STUDY_ALREADY_IN_EPAD))){
-					//permanent log
-					projectOperations.createEventLog(username,projectID, dicomPatientID, studyUID, null, null, null, null, EventMessageCodes.STUDY_ALREADY_IN_EPAD, "In project(s):"+projectsStrBldr.toString(), true);
-					//temporary session log
-					databaseOperations.insertEpadEvent(sessionID,
-								EventMessageCodes.STUDY_ALREADY_IN_EPAD + ". See log for details", 
-								"", "", dicomPatientID, dicomPatientName, 
-								"","","",
-								projectID,"",studyUID,"", true);
+					StringBuilder projectsNameStrBldr=new StringBuilder();
+					StringBuilder projectsIDStrBldr=new StringBuilder();
+					for (Project p:projects){
+						projectsIDStrBldr.append(p.getProjectId());
+						projectsIDStrBldr.append(",");
+						projectsNameStrBldr.append(p.getName());
+						projectsNameStrBldr.append(",");
+					}
+					projectsIDStrBldr.deleteCharAt(projectsIDStrBldr.length()-1);
+					projectsNameStrBldr.deleteCharAt(projectsNameStrBldr.length()-1);
+					List<EventLog> lastEvent= projectOperations.getUseEventLogs(username, 1, 1);
+					//if the last log wasn't the same. Try and avoid giving the same message for every image in series
+					//don't give notification if it is the same project only
+					log.info("replaced "+projectsIDStrBldr.toString().replace(EPADConfig.xnatUploadProjectID,"").replace(",",""));
+					log.info("project "+projectID);
+					if (!projectsIDStrBldr.toString().equals(projectID) && !projectsIDStrBldr.toString().replace(EPADConfig.xnatUploadProjectID,"").replace(",","").equals(projectID) && !lastEvent.isEmpty() && !(lastEvent.get(0).getStudyUID()!=null && lastEvent.get(0).getStudyUID().equals(studyUID) && lastEvent.get(0).getFunction()!=null && lastEvent.get(0).getFunction().equals(EventMessageCodes.STUDY_ALREADY_IN_EPAD))){
+						//permanent log
+						projectOperations.createEventLog(username,projectID, dicomPatientID, studyUID, null, null, null, null, EventMessageCodes.STUDY_ALREADY_IN_EPAD, "In project(s):"+projectsNameStrBldr.toString(), true);
+						//temporary session log
+						databaseOperations.insertEpadEvent(sessionID,
+									EventMessageCodes.STUDY_ALREADY_IN_EPAD + ". See log for details", 
+									"", "", dicomPatientID, dicomPatientName, 
+									"","","",
+									projectID,"",studyUID,"", true);
 					}
 				}
 			}
