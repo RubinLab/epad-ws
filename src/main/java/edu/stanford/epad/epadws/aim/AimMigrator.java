@@ -256,6 +256,7 @@ public class AimMigrator {
 		String sopClassUID="na",studyDate="na",studyTime="na", pName="na",pId="na",pBirthDate="na",pSex="na", studyUID="na", sourceSeriesUID="na";
 		String accessionNumber="";
 		String imageUID=mintJson.optString("imageInstanceUid");
+		String modality="na";
 		if (imageUID!=null && !imageUID.equals("")) {
 			log.info("Retrieved image uid is "+imageUID);
 
@@ -289,6 +290,8 @@ public class AimMigrator {
 						studyUID=tag.value;
 					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.SeriesInstanceUIDCode)) 
 						sourceSeriesUID=tag.value;
+					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.ModalityCode)) 
+						modality=tag.value;
 				}
 			}
 
@@ -327,6 +330,8 @@ public class AimMigrator {
 
 				studyUID=((JSONObject)mintJson.get("imageStudy")).getString("instanceUid");
 				sourceSeriesUID=((JSONObject)((JSONObject)mintJson.get("imageStudy")).get("imageSeries")).optString("instanceUid", "na");
+				modality=((JSONObject)((JSONObject)mintJson.get("imageStudy")).get("imageSeries")).optString("modality", "na");
+
 			}
 		}
 		JSONObject pf=mintJson.optJSONObject("PlanarFigure");
@@ -377,7 +382,7 @@ public class AimMigrator {
 			imageUID="na"; //to keep all the same
 		log.info("the values retrieved are "+ sopClassUID+" "+studyDate+" "+studyTime+" "+pName+" "+pId+" "+pBirthDate+" "+pSex+" "+studyUID+" "+sourceSeriesUID+" ");
 		ImageAnnotationCollection iac = createImageAnnotationColectionFromProperties(username, pName, pId, pBirthDate, pSex);
-		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=createImageAnnotationFromProperties(username, templateCode, lesionName, comment, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID, accessionNumber);
+		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=createImageAnnotationFromProperties(username, templateCode, lesionName, comment, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID, accessionNumber, modality);
 		
 		//see if you can find trial info and store as freetext
 		String trial=mintJson.optString("trial");
@@ -398,7 +403,7 @@ public class AimMigrator {
 		//create the entities using information from pf
 		if (pf!=null)
 			ia=addMarkupAndCalculationFromPF(ia,pf);
-
+		
 		String location = ((JSONObject)mintJson.get("lesion")).optString("location");
 		if (location!=null && !location.equals(""))
 			ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Location",location));
@@ -409,7 +414,7 @@ public class AimMigrator {
 			qualityCode=new CD("RID39225","Nonevaluable","Radlex",""); // is not evaluable
 		else 
 			qualityCode=new CD("S86","Evaluable","RECIST-AMS",""); //is evaluable
-
+		
 		String status=((JSONObject)mintJson.get("lesion")).optString("status");
 		String enhancement=((JSONObject)mintJson.get("lesion")).optString("enhancement");
 		ia.addImagingObservationEntity(getImagingObservationEntityFromPF("Lesion Quality",qualityCode,"Timepoint",((JSONObject)mintJson.get("lesion")).getInt("timepoint"), "Type",((JSONObject)mintJson.get("lesion")).getString("type"),"Lesion Status", status, "Lesion Enhancement",enhancement));
@@ -422,14 +427,24 @@ public class AimMigrator {
 			log.info("new parent code is "+ parent.getCode());
 
 		}
-
+		
 		iac.addImageAnnotation(ia);
-
+		
 		//add the rest of the calculations
 		ArrayList<String[]> features=getMeasurementsFromPF(mintJson);
 		if (features!=null)
 			iac=PluginAIMUtil.addFeatures(iac, features , 1,parent, true) ; 
-
+		//TODO change addfeatures so it doesn't mess up modality
+		log.info("setting the modality again as we loose it in addfeatures");
+		Modality mod=Modality.getInstance();
+		CD modCD=null;
+		if (modality!=null && mod.get(modality)!=null )
+			modCD=mod.get(modality);
+		else if ((mod.get(sopClassUID))!=null)
+			modCD=mod.get(sopClassUID);
+		else 
+			modCD=mod.getDefaultModality();
+		((DicomImageReferenceEntity)iac.getImageAnnotation().getImageReferenceEntityCollection().get(0)).getImageStudy().getImageSeries().setModality(modCD);
 		//this should be called after addfeatures as addfeatures tries to init v3.CalculationData and fails as it is not double
 		addSummaryCalcsFromPF(mintJson, parent, iac.getImageAnnotation());
 		log.info("annotation is: "+iac.toStringXML());
@@ -528,7 +543,11 @@ public class AimMigrator {
 		return createImageAnnotationFromProperties(username, templateCode, lesionName, comment, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID, "");
 	}
 	public static edu.stanford.hakan.aim4api.base.ImageAnnotation createImageAnnotationFromProperties(String username, String templateCode, String lesionName, String comment, String imageUID,String sopClassUID,String studyDate, String studyTime,String studyUID, String sourceSeriesUID, String accessionNumber) throws Exception {
-		log.info("creating image annotation for template:"+ templateCode +" lesion:" +lesionName+ " comment:" +comment+" imageuid:"+ imageUID) ;
+		return createImageAnnotationFromProperties(username, templateCode, lesionName, comment, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID, accessionNumber,"");
+
+	}	
+	public static edu.stanford.hakan.aim4api.base.ImageAnnotation createImageAnnotationFromProperties(String username, String templateCode, String lesionName, String comment, String imageUID,String sopClassUID,String studyDate, String studyTime,String studyUID, String sourceSeriesUID, String accessionNumber, String modality) throws Exception {
+		log.info("creating image annotation for template:"+ templateCode +" lesion:" +lesionName+ " comment:" +comment+" imageuid:"+ imageUID +" modality:"+ modality) ;
 		EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
 
 		//set the date to current date
@@ -572,12 +591,15 @@ public class AimMigrator {
 		imageCol.addImage(image);
 		series.setImageCollection(imageCol);
 		Modality mod=Modality.getInstance();
-		//if the modality cannot be retrieved put default
-		if ((mod.get(sopClassUID))!=null)
+		if (modality!=null && mod.get(modality)!=null )
+			series.setModality(mod.get(modality));
+		else if ((mod.get(sopClassUID))!=null)
 			series.setModality(mod.get(sopClassUID));
-		else
+		else 
 			series.setModality(mod.getDefaultModality());
+		
 		study.setImageSeries(series);
+		log.info("stm "+ study.getImageSeries().getModality().getCode());
 		study.setStartDate(studyDate);
 		study.setStartTime(studyTime);
 		if (accessionNumber!=null && !accessionNumber.equals("")) {
