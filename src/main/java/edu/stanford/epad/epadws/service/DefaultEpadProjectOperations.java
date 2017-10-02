@@ -713,7 +713,12 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (!requestor.isAdmin() && !loggedInUser.equals(user.getCreator()))
 			throw new Exception("No permissions to delete user");
 		try {
+			//delete everything bound to the user
+			new ProjectToSubjectToStudyToUserToFlaggedImage().deleteObjects(" username ='" + user.getUsername()+ "'");
+			new ProjectToSubjectToUser().deleteObjects(" user_id =" + user.getId());
 			new ProjectToSubjectToStudyToSeriesToUserStatus().deleteObjects(" user_id =" + user.getId());
+			new ProjectToUser().deleteObjects(" user_id =" + user.getId());
+			
 			//check if there are worklists assigned to this user and delete
 			try {
 				EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
@@ -732,7 +737,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			userCache.remove(user.getUsername());
 		} catch (Exception x) {
 			if (x.getMessage() != null && x.getMessage().contains("constraint")) {
-				throw new Exception("Error deleting user, this user is still a member of projects or worklists");
+				throw new Exception("Error deleting user, this user is still a member of projects or worklists." +x.getMessage() );
 			} else
 				throw x;
 		}
