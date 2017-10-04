@@ -523,6 +523,7 @@ public class AIMUtil
 			String name = aimName;
 			if (name == null || name.trim().length() == 0) name = description;
 			if (name == null || name.trim().length() == 0) name = "segmentation";
+			
 			ImageAnnotation imageAnnotation = new ImageAnnotation(0, "", dsoDate.substring(0,4) + "-" + dsoDate.substring(4,6) + "-" + dsoDate.substring(6,8) + "T00:00:00", name, "SEG",
 					"SEG Only", "", "", "");
 
@@ -549,13 +550,14 @@ public class AIMUtil
 			// TODO Not general. See if we can generate AIM on GUI upload of DSO with correct user.
 			setImageAnnotationUser(imageAnnotation, username);
 
+			ImageAnnotationCollection aimv4=imageAnnotation.toAimV4();
 			if (generateCalcs){
 				//open the referenced images and calculate the aggregations
 				Double[] calcs=DSOUtil.generateCalcs(referencedSeriesUID,referencedImageUID,dsoFile);
 				//add calculations to aim
 				if (calcs!=null){
 					log.info("Retrieved calculations are: min="+calcs[0]+ " max="+calcs[1]+ " mean="+calcs[2]+" stddev="+calcs[3]);
-					Aim aim=new Aim(imageAnnotation);
+					Aim4 aim=new Aim4(aimv4);
 					String units="pixels";
 					if (aim.getModality().equals("PT")) {
 						units="SUV";
@@ -564,17 +566,20 @@ public class AIMUtil
 						units="HU";
 						
 					}
-					aim.addMinCalculation(calcs[0], null, units);
-					aim.addMaxCalculation(calcs[1], null, units);
-					aim.addMeanCalculation(calcs[2], null, units);
-					aim.addStdDevCalculation(calcs[3], null, units);
-					imageAnnotation=aim;
+					aim.addCalculationEntity(Aim4.addMinCalculation(calcs[0], null, units));
+					aim.addCalculationEntity(Aim4.addMaxCalculation(calcs[1], null, units));
+					aim.addCalculationEntity(Aim4.addMeanCalculation(calcs[2], null, units));
+					aim.addCalculationEntity(Aim4.addStdDevCalculation(calcs[3], null, units));
+					aimv4=aim;
+//					imageAnnotation=aim;
 				}
 				
 			}
-			
+			//why do I have to set it again?
+			aimv4.setDateTime(dsoDate);
+			log.info("setting date as "+dsoDate);
 			log.info("Saving AIM file for DSO " + imageUID + " in series " + seriesUID + " with ID "
-					+ imageAnnotation.getUniqueIdentifier());
+					+ aimv4.getUniqueIdentifier());
 			try {
 				boolean missingproject = false;
 				if (projectID == null || projectID.trim().length() == 0)
@@ -582,7 +587,8 @@ public class AIMUtil
 					missingproject = true;
 					projectID = EPADConfig.xnatUploadProjectID;
 				}
-				ImageAnnotationCollection aim4 = saveImageAnnotationToServer(imageAnnotation, projectID);
+				//don't know dso start number!!!
+				ImageAnnotationCollection aim4 = saveImageAnnotationToServer(aimv4, projectID, 0, null, false);
 				if (aim4 != null)
 				{
 					ImageReference imageReference = new ImageReference(projectID, patientID, referencedStudyUID, referencedSeriesUID, referencedImageUID[0]);
