@@ -268,8 +268,8 @@ public class AimReporter {
 					//look through calculation entities
 					if (ia.getCalculationEntityCollection()!=null){
 						for (CalculationEntity cal: ia.getCalculationEntityCollection().getCalculationEntityList()){
-							
-							if (values.containsKey(cal.getDescription().getValue().toLowerCase())) { //key exists put the value
+							// if it is a very old annotation and the line length is saved as LineLength handle that
+							if (values.containsKey(cal.getDescription().getValue().toLowerCase()) || (values.containsKey("length")&&cal.getDescription().getValue().toLowerCase().equals("linelength")) ) { //key exists put the value
 								try {
 									String value=((ExtendedCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getCalculationDataCollection().get(0).getValue().getValue();
 //									log.info("value is "+value + "|");
@@ -279,7 +279,10 @@ public class AimReporter {
 									if (units.equalsIgnoreCase("mm")){
 										value=String.valueOf(Double.parseDouble(value)/10);
 									}
-									values.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
+									if ((values.containsKey("length")&&cal.getDescription().getValue().toLowerCase().equals("linelength")))
+										values.put("length", formJsonObj(value,"RID39123"));
+									else
+										values.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
 								}catch(Exception e) {
 									log.warning("The value for "+cal.getDescription().getValue() + " couldn't be retrieved ", e);
 								}
