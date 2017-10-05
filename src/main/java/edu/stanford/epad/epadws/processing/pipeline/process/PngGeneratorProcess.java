@@ -133,7 +133,11 @@ public class PngGeneratorProcess implements Runnable
 	public PngGeneratorProcess(BlockingQueue<GeneratorTask> taskQueue)
 	{
 		this.pngTaskQueue = taskQueue;
-		pngExecs = Executors.newFixedThreadPool(20);
+		int numOfThreads=20;
+		if (Runtime.getRuntime().availableProcessors()>1)
+			numOfThreads=Runtime.getRuntime().availableProcessors()-1;
+		logger.info("setting number of threads for png exec to "+numOfThreads);
+		pngExecs = Executors.newFixedThreadPool(numOfThreads);
 		tagExec = Executors.newFixedThreadPool(20);
 		logger.info("Starting the PNG generator process");
 	}

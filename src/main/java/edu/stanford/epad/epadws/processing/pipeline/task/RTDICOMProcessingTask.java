@@ -114,6 +114,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.servlet.http.HttpServletResponse;
+
 import dicomrt.DicomRTSegExtractor;
 
 import com.jmatio.io.MatFileReader;
@@ -273,7 +275,11 @@ public class RTDICOMProcessingTask implements GeneratorTask
 				            //log.info("Downloading ReferencedSOPInstanceUID:" + referencedImageUID);
 				            File dicomFile = new File(seriesDir, referencedImageUID + ".dcm");
 							projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Downloading referenced image: " + j++, null, null);
-				            DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, referencedImageUID, dicomFile);
+				            while (HttpServletResponse.SC_OK!=DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, referencedImageUID, dicomFile)){
+				            	//wait if you cannot find the file
+				            	log.warning("Image file not in dcm4che yet. Waiting 3 seconds before trying again. ");
+				            	Thread.sleep(3000);
+				            }
 				            dicomFilePaths.add(dicomFile.getAbsolutePath());
 				        }
 			       }
