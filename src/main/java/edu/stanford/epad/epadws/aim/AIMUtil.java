@@ -184,6 +184,7 @@ import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.Subject;
+import edu.stanford.epad.epadws.models.Template;
 import edu.stanford.epad.epadws.plugins.PluginConfig;
 import edu.stanford.epad.epadws.processing.pipeline.task.PluginStartTask;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
@@ -194,7 +195,6 @@ import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.SessionService;
 import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.hakan.aim4api.base.AimException;
-import edu.stanford.hakan.aim4api.base.Algorithm;
 import edu.stanford.hakan.aim4api.base.CD;
 import edu.stanford.hakan.aim4api.base.CalculationEntity;
 import edu.stanford.hakan.aim4api.base.DicomImageReferenceEntity;
@@ -431,33 +431,38 @@ public class AIMUtil
 	 * {@link PluginAIMUtil#generateAIMFileForDSO} is very similar.
 	 * 
 	 */
-	public static ImageAnnotation generateAIMFileForDSO(File dsoFile) throws Exception
+	public static Aim4 generateAIMFileForDSO(File dsoFile) throws Exception
 	{
 		return generateAIMFileForDSO(dsoFile, "shared", null);
 	}
 	
-	public static ImageAnnotation generateAIMFileForDSO(File dsoFile, String username, String projectID) throws Exception
+	public static Aim4 generateAIMFileForDSO(File dsoFile, String username, String projectID) throws Exception
 	{
 		return generateAIMFileForDSO(dsoFile, username, projectID, null);
 	}
 	
 	
-	public static ImageAnnotation generateAIMFileForDSO(File dsoFile, String username, String projectID, String aimName) throws Exception
+	public static Aim4 generateAIMFileForDSO(File dsoFile, String username, String projectID, String aimName) throws Exception
 	{
 		return generateAIMFileForDSO(dsoFile, username, projectID, aimName, false);
 	}
-	public static ImageAnnotation generateAIMFileForDSO(File dsoFile, String username, String projectID, String aimName, boolean generateCalcs) throws Exception
+	public static Aim4 generateAIMFileForDSO(File dsoFile, String username, String projectID, String aimName, boolean generateCalcs) throws Exception
 	{
 		log.info("Creating DSO AIM for user " + username + " in project " + projectID + " file:" + dsoFile.getAbsolutePath());
 		AttributeList dsoDICOMAttributes = PixelMedUtils.readDICOMAttributeList(dsoFile);
 		String patientID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.PatientID);
 		String patientName = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.PatientName);
 		String patientBirthDay = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.PatientBirthDate);
-		if (patientBirthDay.trim().length() != 8) patientBirthDay = "19650212";
+		//just date or date with time. and put 19000101000000 so we understand it is default
+		if (patientBirthDay.trim().length() != 8 && patientBirthDay.trim().length() != 14) patientBirthDay = "19000101000000";
 		String patientSex = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.PatientSex);
 		if (patientSex.trim().length() != 1) patientSex = "F";
 		String dsoDate = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesDate);
-		if (dsoDate.trim().length() != 8) dsoDate = "20001017";
+		if (dsoDate.trim().length() != 8 && dsoDate.trim().length() != 14) dsoDate = "19000101000000";
+		String dsoTime = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesTime);
+		//append time to date
+		if (dsoTime.replace(":", "").trim().length()>=6)
+			dsoDate+=dsoTime.replace(":", "").trim().substring(0, 6);
 		String sopClassUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SOPClassUID);
 		String studyUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.StudyInstanceUID);
 		log.info("DSO:" + dsoFile.getAbsolutePath() + " PatientID:" + patientID + " studyUID:" + studyUID + " projectID:" + projectID);
@@ -466,6 +471,10 @@ public class AIMUtil
 		String description = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesDescription);
 		// TODO: This call to get Referenced Image does not work ???
 		String[] referencedImageUID = Attribute.getStringValues(dsoDICOMAttributes, TagFromName.ReferencedSOPInstanceUID);
+		String accessionNumber = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.AccessionNumber);
+		String studyDate = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.StudyDate);
+		String studyTime = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.StudyTime);
+		
 		String[] segNums = SequenceAttribute.getArrayOfSingleStringValueOrEmptyStringOfNamedAttributeWithinSequenceItems(dsoDICOMAttributes, TagFromName.SegmentSequence, TagFromName.SegmentNumber);
 		if (segNums == null) segNums = new String[1];
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
@@ -524,40 +533,31 @@ public class AIMUtil
 			if (name == null || name.trim().length() == 0) name = description;
 			if (name == null || name.trim().length() == 0) name = "segmentation";
 			
-			ImageAnnotation imageAnnotation = new ImageAnnotation(0, "", dsoDate.substring(0,4) + "-" + dsoDate.substring(4,6) + "-" + dsoDate.substring(6,8) + "T00:00:00", name, "SEG",
-					"SEG Only", "", "", "");
+			EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+			edu.stanford.epad.epadws.models.User user=projectOperations.getUser(username);
+			
+			//get the seg template
+			Template t=projectOperations.getTemplate("SEG");
+			CD template=null;
+			if (t!=null){
+				//TODO it puts different values in the aim file than standard use. What does the gui put????
+				template=new CD(t.getTemplateCode(),t.getTemplateName(),t.getCodingSchemeDesignator(),t.getCodingSchemeVersion());
+			}
+			Aim4 aim=new Aim4(username, user.getFullName(), patientName, patientID, patientBirthDay, patientSex, template, name, "", referencedImageUID[0], id.classUID, studyDate, studyTime, referencedStudyUID, referencedSeriesUID, accessionNumber, null, dsoDate);
+			
+			DicomSegmentationEntity dc = new DicomSegmentationEntity();
+			dc.setReferencedSopInstanceUid(new II(referencedImageUID[0]));
+			dc.setSegmentNumber(1);
+			dc.setSopClassUid(new II(sopClassUID));
+			dc.setSopInstanceUid(new II(imageUID));
+			aim.setSegmentationEntity(dc);
 
-			SegmentationCollection sc = new SegmentationCollection();
-			sc.AddSegmentation(new Segmentation(0, imageUID, sopClassUID, referencedImageUID[0], 1));
-			imageAnnotation.setSegmentationCollection(sc);
-			//ml adding sop class to createdicomimage references below
-			DICOMImageReference originalDICOMImageReference = PluginAIMUtil.createDICOMImageReferenceV3Compability(referencedStudyUID,
-					referencedSeriesUID, referencedImageUID[0], id.classUID);
-			imageAnnotation.addImageReference(originalDICOMImageReference);
-			//ml 2. image reference removed
-//			DICOMImageReference dsoDICOMImageReference = PluginAIMUtil.createDICOMImageReferenceV3Compability(studyUID, seriesUID,
-//					imageUID, sopClassUID);
-//			imageAnnotation.addImageReference(dsoDICOMImageReference);
-
-			Person person = new Person();
-			person.setSex(patientSex.trim());
-			if (patientBirthDay.trim().length() == 8)
-				person.setBirthDate(patientBirthDay.substring(0,4) + "-" + patientBirthDay.substring(4,6) + "-" + patientBirthDay.substring(6,8) + "T00:00:00"); // TODO
-			person.setId(patientID);
-			person.setName(patientName);
-			person.setCagridId(0);
-			imageAnnotation.addPerson(person);
-			// TODO Not general. See if we can generate AIM on GUI upload of DSO with correct user.
-			setImageAnnotationUser(imageAnnotation, username);
-
-			ImageAnnotationCollection aimv4=imageAnnotation.toAimV4();
 			if (generateCalcs){
 				//open the referenced images and calculate the aggregations
 				Double[] calcs=DSOUtil.generateCalcs(referencedSeriesUID,referencedImageUID,dsoFile);
 				//add calculations to aim
 				if (calcs!=null){
 					log.info("Retrieved calculations are: min="+calcs[0]+ " max="+calcs[1]+ " mean="+calcs[2]+" stddev="+calcs[3]);
-					Aim4 aim=new Aim4(aimv4);
 					String units="pixels";
 					if (aim.getModality().equals("PT")) {
 						units="SUV";
@@ -570,16 +570,12 @@ public class AIMUtil
 					aim.addCalculationEntity(Aim4.addMaxCalculation(calcs[1], null, units));
 					aim.addCalculationEntity(Aim4.addMeanCalculation(calcs[2], null, units));
 					aim.addCalculationEntity(Aim4.addStdDevCalculation(calcs[3], null, units));
-					aimv4=aim;
-//					imageAnnotation=aim;
 				}
 				
 			}
-			//why do I have to set it again?
-			aimv4.setDateTime(dsoDate);
-			log.info("setting date as "+dsoDate);
+			
 			log.info("Saving AIM file for DSO " + imageUID + " in series " + seriesUID + " with ID "
-					+ aimv4.getUniqueIdentifier());
+					+ aim.getUniqueIdentifier() + " date "+ dsoDate);
 			try {
 				boolean missingproject = false;
 				if (projectID == null || projectID.trim().length() == 0)
@@ -588,29 +584,28 @@ public class AIMUtil
 					projectID = EPADConfig.xnatUploadProjectID;
 				}
 				//don't know dso start number!!!
-				ImageAnnotationCollection aim4 = saveImageAnnotationToServer(aimv4, projectID, 0, null, false);
+				ImageAnnotationCollection aim4 = saveImageAnnotationToServer(aim, projectID, 0, null, false);
 				if (aim4 != null)
 				{
 					ImageReference imageReference = new ImageReference(projectID, patientID, referencedStudyUID, referencedSeriesUID, referencedImageUID[0]);
 					EpadDatabaseOperations dbOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-					EPADAIM aim = dbOperations.getAIM(imageAnnotation.getUniqueIdentifier());
-					if (aim != null)
+					EPADAIM eaim = dbOperations.getAIM(aim.getUniqueIdentifier().getRoot());
+					if (eaim != null)
 					{
 						if (!username.equals("shared"))
-							dbOperations.updateAIM(aim.aimID, projectID, username);
+							dbOperations.updateAIM(eaim.aimID, projectID, username);
 					}
 					else
 					{
-						aim = dbOperations.addDSOAIM(username, imageReference, seriesUID, imageAnnotation.getUniqueIdentifier(),
+						eaim = dbOperations.addDSOAIM(username, imageReference, seriesUID, aim.getUniqueIdentifier().getRoot(),
 								edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(aim4), name);
-						if ((aim.color == null || aim.color.trim().length() == 0) && segNums.length > 1)
+						if ((eaim.color == null || eaim.color.trim().length() == 0) && segNums.length > 1)
 						{
-							dbOperations.updateAIMColor(aim.aimID, ","); // Indicate multiple colors needed
+							dbOperations.updateAIMColor(eaim.aimID, ","); // Indicate multiple colors needed
 						}
 					}
 					if (missingproject)
 					{
-						EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 						Project proj = projectOperations.getFirstProjectForStudy(studyUID);
 						if (proj != null && !proj.getProjectId().equals(EPADConfig.xnatUploadProjectID))
 						{
@@ -618,7 +613,7 @@ public class AIMUtil
 						}
 					}
 				}
-				return imageAnnotation;
+				return aim;
 			} catch (AimException e) {
 				log.warning("Exception saving AIM file for DSO image " + imageUID + " in series " + seriesUID, e);
 			}
@@ -656,6 +651,7 @@ public class AIMUtil
 		List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(studyUID, referencedSeriesUID);
 		String name = imageUID;
 		if (name == null || name.trim().length() == 0) name = "segmentation";
+		
 		ImageAnnotation imageAnnotation = new ImageAnnotation(0, "", dsoDate.substring(0,4) + "-" + dsoDate.substring(4,6) + "-" + dsoDate.substring(6,8) + "T00:00:00", name, "SEG",
 				"SEG Only", "", "", "");
 
@@ -672,9 +668,7 @@ public class AIMUtil
 		Person person = new Person();
 		if (subject.getGender() != null)
 			person.setSex(subject.getGender().trim());
-		Date dob = subject.getDob();
 		String patientBirthDay = "";
-		if (dob != null) patientBirthDay = new SimpleDateFormat("yyyyMMdd").format(dob);
 		if (patientBirthDay.trim().length() == 8)
 			person.setBirthDate(patientBirthDay.substring(0,4) + "-" + patientBirthDay.substring(4,6) + "-" + patientBirthDay.substring(6,8) + "T00:00:00"); // TODO
 		person.setId(subjectID);
@@ -2810,13 +2804,14 @@ public class AIMUtil
 		// Add calculationResult to calculation
 		cal.addCalculationResult(calculationResult);
 
-		Algorithm alg=new Algorithm();
-		alg.setName(new ST(desc));
-		alg.setVersion(new ST(VERSION));
-		ArrayList<CD> types=new ArrayList<>();
-		types.add(new CD("RID12780","Calculation","RadLex","3.2"));
-		alg.setType(types);
-		cal.setAlgorithm(alg);
+		//removing algorithm from standard calculations
+//		Algorithm alg=new Algorithm();
+//		alg.setName(new ST(desc));
+//		alg.setVersion(new ST(VERSION));
+//		ArrayList<CD> types=new ArrayList<>();
+//		types.add(new CD("RID12780","Calculation","RadLex","3.2"));
+//		alg.setType(types);
+//		cal.setAlgorithm(alg);
 
 		return cal;
 

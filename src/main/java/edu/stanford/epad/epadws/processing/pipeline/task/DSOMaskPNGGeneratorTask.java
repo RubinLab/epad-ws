@@ -250,7 +250,7 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 					}
 				}
 				//we should make the calculations 
-				ImageAnnotation ia = AIMUtil.generateAIMFileForDSO(dsoFile, username, projectID, null, true);
+				AIMUtil.generateAIMFileForDSO(dsoFile, username, projectID, null, true);
 				//requery
 				aims=EpadDatabase.getInstance().getEPADDatabaseOperations().getAIMsByDSOSeries(seriesUID);
 			}
