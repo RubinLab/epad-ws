@@ -433,11 +433,19 @@ public class DSOUtil
 			int frameMaskFilesIndex = 0;
 			for (Integer frameNumber : dsoEditRequest.editedFrameNumbers) {
 				if (dicomFilePaths.size()==1  && frameNumber > dicomFilePaths.size()) {
+					//if it is multiframe we should send all the frames, but we also need to fix the dependency to dicomFilePaths as it is will fail
+//					if (PixelMedUtils.isMultiframedDicom(dicomFilePaths.get(0))) {
+//						log.info("Creating multiframe frame: " + frameNumber + " in new DSO");
+//						// For some reason the original DSO Masks are in reverse order
+//						int editMaskFileIndex = dicomFilePaths.size() - frameNumber -1;
+//						dsoTIFFMaskFiles.set(editMaskFileIndex, tiffMaskFiles.get(frameMaskFilesIndex++));
+//					}else 
+					{
 					//just one mask, but frame number is larger
 					log.info("Creating frame: " + frameNumber + " in new DSO");
 					int editMaskFileIndex = 0;
 					dsoTIFFMaskFiles.set(editMaskFileIndex, tiffMaskFiles.get(frameMaskFilesIndex++));
-					
+					}
 				}
 				else if (frameNumber >= 0 && frameNumber < dicomFilePaths.size()) {
 					log.info("Creating frame: " + frameNumber + " in new DSO");
