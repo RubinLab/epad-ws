@@ -854,7 +854,8 @@ public class DSOUtil
 			pixelMap.calc();
 			
 			log.info("min="+pixelMap.getMin() +" max="+pixelMap.getMax()+ " mean=" +pixelMap.getMean()+ " stddev="+ pixelMap.getStdDev());
-			
+			//done with the temp folder delete it
+			EPADFileUtils.deleteDirectoryAndContents(tmpFolder);
 			return new Double[]{pixelMap.getMin() ,pixelMap.getMax(),pixelMap.getMean(),pixelMap.getStdDev()};
 		} catch (IOException e) {
 			log.warning("Cannot read file ",e);
