@@ -546,6 +546,7 @@ public class AIMUtil
 			Aim4 aim=new Aim4(username, user.getFullName(), patientName, patientID, patientBirthDay, patientSex, template, name, "", referencedImageUID[0], id.classUID, studyDate, studyTime, referencedStudyUID, referencedSeriesUID, accessionNumber, null, dsoDate);
 			
 			DicomSegmentationEntity dc = new DicomSegmentationEntity();
+			dc.setUniqueIdentifier();
 			dc.setReferencedSopInstanceUid(new II(referencedImageUID[0]));
 			dc.setSegmentNumber(1);
 			dc.setSopClassUid(new II(sopClassUID));
@@ -566,10 +567,19 @@ public class AIMUtil
 						units="HU";
 						
 					}
-					aim.addCalculationEntity(Aim4.addMinCalculation(calcs[0], null, units));
-					aim.addCalculationEntity(Aim4.addMaxCalculation(calcs[1], null, units));
-					aim.addCalculationEntity(Aim4.addMeanCalculation(calcs[2], null, units));
-					aim.addCalculationEntity(Aim4.addStdDevCalculation(calcs[3], null, units));
+					CalculationEntity minCalc=Aim4.addMinCalculation(calcs[0], null, units);
+					aim.addCalculationEntity(minCalc);
+					CalculationEntity maxCalc=Aim4.addMaxCalculation(calcs[1], null, units);
+					aim.addCalculationEntity(maxCalc);
+					CalculationEntity meanCalc=Aim4.addMeanCalculation(calcs[2], null, units);
+					aim.addCalculationEntity(meanCalc);
+					CalculationEntity stddevCalc=Aim4.addStdDevCalculation(calcs[3], null, units);
+					aim.addCalculationEntity(stddevCalc);
+					
+					aim.getImageAnnotation().addImageAnnotationStatement(Aim4.createCalcRefSegStatement(minCalc,dc));
+					aim.getImageAnnotation().addImageAnnotationStatement(Aim4.createCalcRefSegStatement(maxCalc,dc));
+					aim.getImageAnnotation().addImageAnnotationStatement(Aim4.createCalcRefSegStatement(meanCalc,dc));
+					aim.getImageAnnotation().addImageAnnotationStatement(Aim4.createCalcRefSegStatement(stddevCalc,dc));
 				}
 				
 			}
