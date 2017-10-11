@@ -567,19 +567,11 @@ public class AIMUtil
 						units="HU";
 						
 					}
-					CalculationEntity minCalc=Aim4.addMinCalculation(calcs[0], null, units);
-					aim.addCalculationEntity(minCalc);
-					CalculationEntity maxCalc=Aim4.addMaxCalculation(calcs[1], null, units);
-					aim.addCalculationEntity(maxCalc);
-					CalculationEntity meanCalc=Aim4.addMeanCalculation(calcs[2], null, units);
-					aim.addCalculationEntity(meanCalc);
-					CalculationEntity stddevCalc=Aim4.addStdDevCalculation(calcs[3], null, units);
-					aim.addCalculationEntity(stddevCalc);
+					aim.addCalculationEntityWithRef(Aim4.addMinCalculation(calcs[0], null, units),dc);
+					aim.addCalculationEntityWithRef(Aim4.addMaxCalculation(calcs[1], null, units),dc);
+					aim.addCalculationEntityWithRef(Aim4.addMeanCalculation(calcs[2], null, units),dc);
+					aim.addCalculationEntityWithRef(Aim4.addStdDevCalculation(calcs[3], null, units),dc);
 					
-					aim.getImageAnnotation().addImageAnnotationStatement(Aim4.createCalcRefSegStatement(minCalc,dc));
-					aim.getImageAnnotation().addImageAnnotationStatement(Aim4.createCalcRefSegStatement(maxCalc,dc));
-					aim.getImageAnnotation().addImageAnnotationStatement(Aim4.createCalcRefSegStatement(meanCalc,dc));
-					aim.getImageAnnotation().addImageAnnotationStatement(Aim4.createCalcRefSegStatement(stddevCalc,dc));
 				}
 				
 			}
