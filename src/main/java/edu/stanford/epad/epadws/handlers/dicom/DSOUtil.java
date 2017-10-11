@@ -795,7 +795,10 @@ public class DSOUtil
 	}
 	public static Double[] generateCalcs(String referencedSeriesUID,String[] referencedImageUIDs,File dsoFile, File tmpFolder){
 		
-		
+		if (!tmpFolder.exists() && !tmpFolder.mkdirs()){
+			log.warning("Cannot create tmp folder. Cannot calculate aggregations.");
+			return null;
+		}
 		//download the referenced images
 		try {
 			
@@ -854,7 +857,8 @@ public class DSOUtil
 			pixelMap.calc();
 			
 			log.info("min="+pixelMap.getMin() +" max="+pixelMap.getMax()+ " mean=" +pixelMap.getMean()+ " stddev="+ pixelMap.getStdDev());
-			
+			//done with the temp folder delete it
+			EPADFileUtils.deleteDirectoryAndContents(tmpFolder);
 			return new Double[]{pixelMap.getMin() ,pixelMap.getMax(),pixelMap.getMean(),pixelMap.getStdDev()};
 		} catch (IOException e) {
 			log.warning("Cannot read file ",e);
@@ -943,18 +947,23 @@ public class DSOUtil
 		double[] rawPixels=getPixelValuesAsArray(sImg, frameNum);
 		double[] transformedPixels=rawPixels.clone();
 		
-		log.info("modality transform "+sImg.getModalityTransform().toString());
 		SUVTransform suvTransform=sImg.getSUVTransform();
 		if (suvTransform != null) {
 			log.info("found suv transform ");
 			com.pixelmed.dicom.SUVTransform.SingleSUVTransform t = suvTransform.getSingleSUVTransform(frameNum);
 			if (t.isValidSUVbw()) {
+				log.info("valid suv transform ");
 				for(int i=0;i< rawPixels.length; i++) {
 					transformedPixels[i]=t.getSUVbwValue(rawPixels[i]);
 				}
+				//calculated suv return
+				return transformedPixels;
 			}
+			//not successful on suv continue to modality
 				
 		}
+		//couldn't find a valid suv transform check modality
+		log.info("modality transform "+sImg.getModalityTransform().toString());
 		ModalityTransform modalityTransform=sImg.getModalityTransform();
 		double useSlope=1.0;
 		double useIntercept=0.0; 
