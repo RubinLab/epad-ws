@@ -847,7 +847,7 @@ public class DSOUtil
 						} else {
 							pixelMap.put(val, f + 1);
 						}
-						log.info("j="+j+" val ="+val);
+//						log.info("j="+j+" val ="+val);
 					}
 					
 				}
