@@ -283,9 +283,13 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 					String colName = metaData.getColumnName(i);
 					String value = rs.getString(i);
 					if (colName.toLowerCase().contains("study_datetime") || colName.toLowerCase().contains("pps_start") || colName.toLowerCase().contains("series_datetime") ) {
-						Timestamp ts = rs.getTimestamp(i);
-						if (ts != null)
-							value = new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date(ts.getTime()));
+						try{
+							Timestamp ts = rs.getTimestamp(i);
+							if (ts != null)
+								value = new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date(ts.getTime()));
+						}catch(Exception e){
+							log.warning("Couldn't get timestamp from value "+ rs.getString(i) + " putting as a string");
+						}
 					}
 					rowMap.put(colName, value);
 				}
