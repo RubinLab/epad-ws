@@ -288,7 +288,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 							if (ts != null)
 								value = new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date(ts.getTime()));
 						}catch(Exception e){
-							log.warning("Coulnd't get timestamp from value "+ i + " putting as a string");
+							log.warning("Coulnd't get timestamp from value "+ rs.getString(i) + " putting as a string");
 						}
 					}
 					rowMap.put(colName, value);
