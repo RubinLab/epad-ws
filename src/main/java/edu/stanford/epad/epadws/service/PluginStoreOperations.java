@@ -30,7 +30,7 @@ public class PluginStoreOperations {//cav
 	private EPADPluginList instancePluginList = new EPADPluginList() ;
 	private FTPFile[] arrayftpFiles;
 	private String tomcatPath = EPADConfig.tomcatLocation+"/webapps/";
-	private String baseFilePath = "/home/epad/DicomProxy/resources/pluginStore/";
+	private String baseFilePath = System.getProperty("user.home")+"/DicomProxy/resources/pluginStore/";
 	private String folderPluginStore = "/pluginStore/";
 	private String Server="http://"+EPADConfig.dicomServerIP+":8080/epad/resources"+folderPluginStore;
 	private String serverIp = "171.65.102.212";
