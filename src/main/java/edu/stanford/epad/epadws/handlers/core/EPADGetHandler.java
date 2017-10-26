@@ -215,7 +215,7 @@ public class EPADGetHandler
 	static Map<String, String> lastRequest = new HashMap<String, String>();
 	protected static int handleGet(HttpServletRequest httpRequest, HttpServletResponse httpResponse, PrintWriter responseStream, String username, String sessionID)
 	{
-		
+		Thread.currentThread().setName("GET-"+httpRequest.getPathInfo());
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		PluginOperations pluginOperations= PluginOperations.getInstance();
 		String pathInfo = httpRequest.getPathInfo();

@@ -484,7 +484,10 @@ public class Main
 		log.info("Starting support threads....");
 
 		try {
-			QueueAndWatcherManager.getInstance().buildAndStart();
+//			QueueAndWatcherManager.getInstance().buildAndStart();
+			QueueAndWatcherManager qm=QueueAndWatcherManager.getInstance();
+			Thread t = new Thread(qm);
+	        t.start();
 			String version = new EPadWebServerVersion().getVersion();
 			String db_version = version;
 			if (db_version.indexOf(".") != db_version.lastIndexOf("."))

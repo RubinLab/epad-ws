@@ -111,18 +111,12 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletResponse;
 
 import dicomrt.DicomRTSegExtractor;
 
-import com.jmatio.io.MatFileReader;
-import com.jmatio.types.MLChar;
-import com.jmatio.types.MLDouble;
-import com.jmatio.types.MLStructure;
-import com.jmatio.types.MLUInt8;
 import com.mathworks.toolbox.javabuilder.MWCharArray;
 import com.mathworks.toolbox.javabuilder.MWException;
 import com.pixelmed.dicom.Attribute;
@@ -133,18 +127,14 @@ import com.pixelmed.dicom.TagFromName;
 
 import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
-import edu.stanford.epad.common.pixelmed.TIFFMasksToDSOConverter;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.dtos.internal.DICOMElement;
 import edu.stanford.epad.dtos.internal.DICOMElementList;
-import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
-import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.models.Project;
@@ -152,7 +142,6 @@ import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.UserProjectService;
-import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
 
 public class RTDICOMProcessingTask implements GeneratorTask
 {
@@ -176,11 +165,22 @@ public class RTDICOMProcessingTask implements GeneratorTask
 		this.dicomFile = dicomFile;
 		this.outFilePath = outFilePath;
 	}
+	
+	public RTDICOMProcessingTask(String studyUID, String seriesUID, String imageUID, File dicomFile)
+	{
+		this.studyUID = studyUID;
+		this.seriesUID = seriesUID;
+		this.imageUID = imageUID;
+		this.dicomFile = dicomFile;
+		this.outFilePath = null;
+	}
 
 	@Override
 	public void run()
 	{
 		Thread.currentThread().setPriority(Thread.MIN_PRIORITY); // Let interactive thread run sooner
+		Thread.currentThread().setName("RT-"+this.imageUID);
+		
 		if (seriesBeingProcessed.contains(seriesUID))
 		{
 			log.info("RT series  " + seriesUID + " already being processed");
@@ -316,9 +316,9 @@ public class RTDICOMProcessingTask implements GeneratorTask
 			} catch (Exception x) {
 				log.warning("Error reading results", x);
 			}
-			log.info("Creating entry in epad_files:" + outFilePath + " imageUID:" + imageUID);
-			Map<String, String>  epadFilesRow = Dcm4CheeDatabaseUtils.createEPadFilesRowData(outFilePath, 0, imageUID);			
-			epadDatabaseOperations.updateEpadFileRow(epadFilesRow.get("file_path"), PNGFileProcessingStatus.DONE, 0, "");
+//			log.info("Creating entry in epad_files:" + outFilePath + " imageUID:" + imageUID);
+//			Map<String, String>  epadFilesRow = Dcm4CheeDatabaseUtils.createEPadFilesRowData(outFilePath, 0, imageUID);			
+//			epadDatabaseOperations.updateEpadFileRow(epadFilesRow.get("file_path"), PNGFileProcessingStatus.DONE, 0, "");
 			
 //			EPADFileUtils.deleteDirectoryAndContents(inputDir);
 //			EPADFileUtils.deleteDirectoryAndContents(outputDir);
@@ -329,7 +329,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 		} finally {
 			log.info("DICOM RT for series " + seriesUID + " completed");
 			seriesBeingProcessed.remove(seriesUID);
-			if (segExtractor != null) {
+			if (seriesBeingProcessed.isEmpty() && segExtractor != null) {
 				segExtractor.dispose();
 				segExtractor = null;
 			}
@@ -373,7 +373,9 @@ public class RTDICOMProcessingTask implements GeneratorTask
 	@Override
 	public String getTagFilePath()
 	{
-		return outFilePath.replaceAll("\\.mat", ".tag");
+		log.warning("No tag file for dicomrt. shouldn't be asked");
+		return null;
+//		return outFilePath.replaceAll("\\.mat", ".tag");
 	}
 
 	@Override

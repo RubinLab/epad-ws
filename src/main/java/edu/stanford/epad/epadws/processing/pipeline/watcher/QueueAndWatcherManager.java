@@ -124,14 +124,16 @@ import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.processing.model.SeriesProcessingDescription;
+import edu.stanford.epad.epadws.processing.pipeline.process.DicomRTGeneratorProcess;
 import edu.stanford.epad.epadws.processing.pipeline.process.PngGeneratorProcess;
 import edu.stanford.epad.epadws.processing.pipeline.task.DSOMaskPNGGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.GeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.MultiFramePNGGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.RTDICOMProcessingTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.SingleFrameDICOMPngGeneratorTask;
+import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 
-public class QueueAndWatcherManager
+public class QueueAndWatcherManager implements Runnable
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
@@ -140,6 +142,8 @@ public class QueueAndWatcherManager
 	public static final BlockingQueue<SeriesProcessingDescription> xnatSeriesWatcherQueue = new ArrayBlockingQueue<SeriesProcessingDescription>(
 			2000);
 	public static final BlockingQueue<GeneratorTask> pngGeneratorTaskQueue = new ArrayBlockingQueue<GeneratorTask>(2000);
+	
+	public static final BlockingQueue<GeneratorTask> dicomRTGeneratorTaskQueue = new ArrayBlockingQueue<GeneratorTask>(2000);
 	// private static final BlockingQueue<DicomHeadersTask> dicomHeadersTaskQueue = new
 	// ArrayBlockingQueue<DicomHeadersTask>(2000);
 
@@ -147,6 +151,7 @@ public class QueueAndWatcherManager
 	private final ExecutorService dicomSeriesWatcherExec = Executors.newSingleThreadExecutor();
 	private final ExecutorService xnatSeriesWatcherExec = Executors.newSingleThreadExecutor();
 	private final ExecutorService pngGeneratorProcessExec = Executors.newSingleThreadExecutor();
+	private final ExecutorService dicomRTGeneratorProcessExec = Executors.newSingleThreadExecutor();
 	private final ExecutorService epadUploadDirWatcherExec = Executors.newSingleThreadExecutor();
 	private final ExecutorService epadSessionWatcherExec = Executors.newSingleThreadExecutor();
 
@@ -154,6 +159,7 @@ public class QueueAndWatcherManager
 	private final DICOMSeriesWatcher dicomSeriesWatcher;
 	private final XNATSeriesWatcher xnatSeriesWatcher;
 	private final PngGeneratorProcess pngGeneratorProcess;
+	private final DicomRTGeneratorProcess dicomRTGeneratorProcess;
 	private final EPADUploadDirWatcher epadUploadDirWatcher;
 	private final EPADSessionWatcher epadSessionWatcher;
 
@@ -166,6 +172,31 @@ public class QueueAndWatcherManager
 		return ourInstance;
 	}
 
+	@Override
+	public void run()
+	{
+		try {
+			Thread.currentThread().setPriority(Thread.MIN_PRIORITY); // Let interactive thread run sooner
+			ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
+			Thread.currentThread().setName("QueueAndWatcherManager");
+			if (shutdownSignal.hasShutdown())
+			{
+				log.info("Warning: EPADUploadDirWatcher shutdown signal received.");
+				return;
+			}
+			buildAndStart();
+			
+		} catch (Error e) {
+			log.severe("Warning: QueueAndWatcherManager thread error", e);
+		} catch (Throwable e) {
+			log.severe("Warning: QueueAndWatcherManager thread error", e);
+		} finally {
+			log.info("Warning: QueueAndWatcherManager thread done.");
+		}
+		log.info("Warning: QueueAndWatcherManager shutting down.");
+	}
+	
+	
 	private QueueAndWatcherManager()
 	{
 		log.info("Starting QueueAndWatcherManager...");
@@ -173,6 +204,7 @@ public class QueueAndWatcherManager
 		dicomSeriesWatcher = new DICOMSeriesWatcher(dicomSeriesWatcherQueue, pngGeneratorTaskQueue);
 		xnatSeriesWatcher = new XNATSeriesWatcher(xnatSeriesWatcherQueue);
 		pngGeneratorProcess = new PngGeneratorProcess(pngGeneratorTaskQueue);
+		dicomRTGeneratorProcess = new DicomRTGeneratorProcess(dicomRTGeneratorTaskQueue);
 		epadUploadDirWatcher = new EPADUploadDirWatcher();
 		epadSessionWatcher = new EPADSessionWatcher();
 		dcm4cheeRootDir = EPADConfig.dcm4cheeDirRoot;
@@ -186,6 +218,7 @@ public class QueueAndWatcherManager
 		dicomSeriesWatcherExec.execute(dicomSeriesWatcher);
 		xnatSeriesWatcherExec.execute(xnatSeriesWatcher);
 		pngGeneratorProcessExec.execute(pngGeneratorProcess);
+		dicomRTGeneratorProcessExec.execute(dicomRTGeneratorProcess);
 		epadUploadDirWatcherExec.execute(epadUploadDirWatcher);
 		epadSessionWatcherExec.execute(epadSessionWatcher);
 	}
@@ -197,6 +230,7 @@ public class QueueAndWatcherManager
 		dicomSeriesWatcherExec.shutdown();
 		xnatSeriesWatcherExec.shutdown();
 		pngGeneratorProcessExec.shutdown();
+		dicomRTGeneratorProcessExec.shutdown();
 		epadUploadDirWatcherExec.shutdown();
 	}
 
@@ -351,13 +385,13 @@ public class QueueAndWatcherManager
 	private void extractRTDicomInfo(DICOMFileDescription dicomFileDescription, File dicomFile)
 	{
 		log.info("DICOM RT found for series " + dicomFileDescription.seriesUID + " dicomFile:" + dicomFile.getAbsolutePath());
-		String rtFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription).replace(".png", ".mat");
-		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-		insertEpadFile(epadDatabaseOperations, rtFilePath, 0, dicomFileDescription.imageUID);
+//		String rtFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription).replace(".png", ".mat");
+//		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+//		insertEpadFile(epadDatabaseOperations, rtFilePath, 0, dicomFileDescription.imageUID);
 		RTDICOMProcessingTask rtTask = new RTDICOMProcessingTask(dicomFileDescription.studyUID, dicomFileDescription.seriesUID, dicomFileDescription.imageUID,
-				dicomFile, rtFilePath);
+				dicomFile);
 
-		pngGeneratorTaskQueue.offer(rtTask);
+		dicomRTGeneratorTaskQueue.offer(rtTask);
 	}
 
 	private void insertEpadFile(EpadDatabaseOperations epadDatabaseOperations, String outputPNGFilePath, long fileSize,
