@@ -544,38 +544,16 @@ public class UserProjectService {
 			studyDesc=protocol.split("/")[0];
 		}
 		log.info("Uploading dicom, username:" + username + " projectID:" + projectID + " patientName:" + dicomPatientName + " patientID:" + dicomPatientID + " studyUID:" + studyUID + " studyDate:" + studyDate + " seriesUID:" + seriesUID + " modality:" + modality);
-//		if (dicomPatientID == null || dicomPatientID.trim().length() == 0 
-//				|| dicomPatientID.equalsIgnoreCase("ANON") 
-//				|| dicomPatientID.equalsIgnoreCase("Unknown") 
-//				|| dicomPatientID.contains("%") 
-//				|| dicomPatientID.equalsIgnoreCase("Anonymous"))
-//		{
-//			String message = "Invalid patientID:'" + dicomPatientID + "' file:" + dicomFile.getName() + ", Rejecting file";
-//			log.warning(message);
-//			if (dicomPatientID != null)
-//				message = "Invalid non-unique patient ID " + dicomPatientID + " in DICOM file";
-//			if (dicomPatientID != null && dicomPatientID.contains("%"))
-//			{
-//				message = "An invalid character in patient ID " + dicomPatientID;
-//			}
-//			databaseOperations.insertEpadEvent(
-//					username, 
-//					message, 
-//					seriesUID, "", "Invalid PatientID:" + dicomPatientID, dicomPatientName, studyUID, projectID, "Error in Upload");					
-//			dicomFile.delete();
-//			projectOperations.createEventLog(username, projectID, dicomPatientID, studyUID, seriesUID, null, null, dicomFile.getName(), "UPLOAD SERIES", message, true);
-//			return false;
-//		}
-		if (dicomPatientID == null){
+		if (modality.trim().equalsIgnoreCase("RO")){
 			log.info("Trying to write masks from vivoquant roiexport with null patient");
 			DicomReader instance = new DicomReader(dicomFile);
-			String pngFilePath = "/tmp/genpng"+System.currentTimeMillis()+ dicomFile.getName()+ ".png";
+			String pngFilePath = "/tmp/"+dicomFile.getName()+ ".tiff";
 			File outputPNGFile = new File(pngFilePath);
 			OutputStream outputPNGStream = null;
 			EPADFileUtils.createDirsAndFile(outputPNGFile);
 			try {
 				outputPNGStream = new FileOutputStream(outputPNGFile);
-				ImageIO.write(instance.getPackedMask(), "png", outputPNGStream);
+				ImageIO.write(instance.getPackedMask(), "tiff", outputPNGStream);
 				outputPNGStream.close();
 			} catch (Exception x) {
 				// Try second method using pixelmed library
@@ -584,6 +562,29 @@ public class UserProjectService {
 				instance.dcmconvpng3(0, outputPNGFile);
 			}
 		}
+		if (dicomPatientID == null || dicomPatientID.trim().length() == 0 
+				|| dicomPatientID.equalsIgnoreCase("ANON") 
+				|| dicomPatientID.equalsIgnoreCase("Unknown") 
+				|| dicomPatientID.contains("%") 
+				|| dicomPatientID.equalsIgnoreCase("Anonymous"))
+		{
+			String message = "Invalid patientID:'" + dicomPatientID + "' file:" + dicomFile.getName() + ", Rejecting file";
+			log.warning(message);
+			if (dicomPatientID != null)
+				message = "Invalid non-unique patient ID " + dicomPatientID + " in DICOM file";
+			if (dicomPatientID != null && dicomPatientID.contains("%"))
+			{
+				message = "An invalid character in patient ID " + dicomPatientID;
+			}
+			databaseOperations.insertEpadEvent(
+					username, 
+					message, 
+					seriesUID, "", "Invalid PatientID:" + dicomPatientID, dicomPatientName, studyUID, projectID, "Error in Upload");					
+			dicomFile.delete();
+			projectOperations.createEventLog(username, projectID, dicomPatientID, studyUID, seriesUID, null, null, dicomFile.getName(), "UPLOAD SERIES", message, true);
+			return false;
+		}
+		
 		
 		//dicom is accepted after the initial checks
 		//now put the current patient id in display and get the unique patient id
