@@ -168,6 +168,7 @@ public class AimReporter {
 		for (EPADAIM aim:aims.ResultSet.Result) {
 			ImageAnnotationCollection iac=null;
 			Map<String,String> values=new HashMap<>();
+			Map<String,String> allCalcValues=new HashMap<>();
 			for (int i=0;i<columns.length;i++) {
 				values.put(columns[i],"");
 			}
@@ -287,6 +288,26 @@ public class AimReporter {
 									log.warning("The value for "+cal.getDescription().getValue() + " couldn't be retrieved ", e);
 								}
 							}
+							
+							if (values.containsKey("allcalc") ) { //if it is allcalc put all calculations in a nested json
+								try {
+									
+									String value=((ExtendedCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getCalculationDataCollection().get(0).getValue().getValue();
+//									log.info("value is "+value + "|");
+									if (value==null || value.trim().equals("")) value="0";
+									//check the units. if they are mm. convert to cm
+									String units=((ExtendedCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getUnitOfMeasure().getValue().trim();
+									if (units.equalsIgnoreCase("mm")){
+										value=String.valueOf(Double.parseDouble(value)/10);
+									}
+									if (cal.getDescription().getValue().toLowerCase().equals("linelength"))
+										allCalcValues.put("length", formJsonObj(value,"RID39123"));
+									else
+										allCalcValues.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
+								}catch(Exception e) {
+									log.warning("The value for "+cal.getDescription().getValue() + " couldn't be retrieved ", e);
+								}
+							}
 						}
 					}
 					
@@ -317,7 +338,25 @@ public class AimReporter {
 							values.put(columns[i], formJsonObj(""));
 						}
 					}
-					strValues[i]="\""+columns[i]+"\":"+values.get(columns[i]);
+					
+					if (columns[i].equalsIgnoreCase("allcalc") && values.containsKey("allcalc") ) { //if it is allcalc put all calculations in a nested json
+						StringBuilder nestedCols=new StringBuilder("{");
+						for (Map.Entry<String, String> entry : allCalcValues.entrySet())
+						{
+							nestedCols.append("\""+entry.getKey() +"\":"+entry.getValue()+",");
+							
+						}
+						nestedCols.replace(nestedCols.length()-1, nestedCols.length(), "");
+						nestedCols.append("}");
+						
+						strValues[i]="\"allCalc\":"+nestedCols.toString();
+					}else{
+						strValues[i]="\""+columns[i]+"\":"+values.get(columns[i]);
+					}
+						
+					
+					
+					
 					
 				}
 				table[row++]=strValues;
