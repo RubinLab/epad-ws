@@ -118,6 +118,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
+import edu.stanford.epad.dtos.LongitudinalReport;
 import edu.stanford.epad.dtos.RecistReport;
 import edu.stanford.epad.dtos.RecistReportUIDCell;
 import edu.stanford.epad.dtos.WaterfallReport;
@@ -349,7 +350,7 @@ public class AimReporter {
 						nestedCols.replace(nestedCols.length()-1, nestedCols.length(), "");
 						nestedCols.append("}");
 						
-						strValues[i]="\"allCalc\":"+nestedCols.toString();
+						strValues[i]="\"allcalc\":"+nestedCols.toString();
 					}else{
 						strValues[i]="\""+columns[i]+"\":"+values.get(columns[i]);
 					}
@@ -412,6 +413,125 @@ public class AimReporter {
 	        }
 	    }
 	    return result;
+	}
+	
+	
+	/**
+	 * creates a longitudinal report object from the input aims list, using the template as the filter
+	 * @param aims
+	 * @return
+	 */
+	public static LongitudinalReport getLongitudinal(EPADAIMList aims, String template){
+		String table=AimReporter.fillTable(aims,template,new String[]{"Name","StudyDate","StudyUID","SeriesUID","AimUID","AllCalc","Timepoint","Lesion","Modality"});
+		if ((table==null || table.isEmpty())) 
+			return null;
+		JSONArray lesions;
+		try{
+			lesions=new JSONArray(table);
+			log.info("lesions len "+ lesions.length());
+			
+		}catch(Exception e) {
+			log.warning("couldn't parse json for "+table + " " +e.getMessage());
+			return null;
+		}
+		//get targets
+		ArrayList<String> tLesionNames=new ArrayList<>();
+		ArrayList<String> studyDates=new ArrayList<>();
+		Integer[] tTimepoints=null;
+		
+		//first pass fill in the lesion names and study dates (x and y axis of the table)
+		for (int i = 0; i < lesions.length(); i++)
+		{
+			String lesionName = ((JSONObject)((JSONObject)lesions.get(i)).get("name")).getString("value");
+			String studyDate = ((JSONObject)((JSONObject)lesions.get(i)).get("studydate")).getString("value");
+			if (!studyDates.contains(studyDate))
+				studyDates.add(studyDate);
+			if (!tLesionNames.contains(lesionName))
+					tLesionNames.add(lesionName);
+			
+		}
+		//sort lists
+		Collections.sort(tLesionNames);
+		Collections.sort(studyDates);
+		
+		if (!tLesionNames.isEmpty() && !studyDates.isEmpty()){
+			//fill in the table for target lesions
+			if (tTimepoints==null)
+				tTimepoints=new Integer[studyDates.size()];
+			RecistReportUIDCell[][] tUIDs=new RecistReportUIDCell[tLesionNames.size()][studyDates.size()];
+			String [][] tTable=fillLongitudinalTable(tLesionNames, studyDates, lesions,tTimepoints, tUIDs);
+			
+			LongitudinalReport rr= new LongitudinalReport(tLesionNames.toArray(new String[tLesionNames.size()]), studyDates.toArray(new String[studyDates.size()]), tTable, tUIDs);
+			rr.setTimepoints(tTimepoints);
+			return rr;
+			
+		}else {
+			log.info("no target lesion in table " +table );
+		}
+		
+		return null;
+		
+
+	}
+
+	public static String [][] fillLongitudinalTable(ArrayList<String> lesionNames, ArrayList<String> studyDates, JSONArray lesions, Integer[] timepoints, RecistReportUIDCell[][] UIDs){
+		String [][] table=new String[lesionNames.size()][studyDates.size()+1];
+		
+		int baselineIndex=0;
+		//get the values to the table
+		for (int i = 0; i < lesions.length(); i++)
+		{
+			String lesionName = ((JSONObject)((JSONObject)lesions.get(i)).get("name")).getString("value");
+			String studyDate = ((JSONObject)((JSONObject)lesions.get(i)).get("studydate")).getString("value");
+			table[lesionNames.indexOf(lesionName)][0]=lesionName;
+			//get the lesion and get the timepoint. if it is integer put that otherwise calculate using study dates
+			JSONObject tpObj=(JSONObject) ((JSONObject)lesions.get(i)).opt("timepoint");
+			if (tpObj==null)
+				tpObj=(JSONObject) ((JSONObject)lesions.get(i)).opt("lesion");
+			String lesionTimepoint=tpObj.optString("value");
+			int timepoint=0;
+			try{
+				timepoint=Integer.parseInt(lesionTimepoint);
+			}catch(NumberFormatException ne) {
+				log.info("Trying to get timepoint from text "+lesionTimepoint);
+				if (lesionTimepoint.toLowerCase().contains("baseline")) {
+					timepoint=0;
+				}else {
+					timepoint=studyDates.indexOf(studyDate)-baselineIndex;
+				}
+			}
+			if (timepoint==0)
+				baselineIndex=studyDates.indexOf(studyDate);
+			if (timepoints[studyDates.indexOf(studyDate)]!=null && timepoints[studyDates.indexOf(studyDate)]!= timepoint) {
+				//TODO How to handle timepoint changes? I currently override with the latest for now
+				log.info("why is the timepoint "+ timepoint + " different from the already existing "+timepoints[studyDates.indexOf(studyDate)] + " "+studyDate );
+				for (Integer t:timepoints){
+					log.info("timepoint "+ t);
+				}
+				for (String st:studyDates){
+					log.info("studyDates  "+ st);
+				}
+			}
+			timepoints[studyDates.indexOf(studyDate)]=timepoint;
+			JSONObject allcalc=((JSONObject)((JSONObject)lesions.get(i)).optJSONObject("allcalc"));
+			table[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)+1]=allcalc.toString();
+			
+			if (UIDs!=null){
+				String studyUID = ((JSONObject)((JSONObject)lesions.get(i)).get("studyuid")).getString("value");
+				String seriesUID = ((JSONObject)((JSONObject)lesions.get(i)).get("seriesuid")).getString("value");
+				String aimUID=((JSONObject)((JSONObject)lesions.get(i)).get("aimuid")).getString("value");
+				String modality=((JSONObject)((JSONObject)lesions.get(i)).get("modality")).getString("code");
+				if (modality.equals("99EPADM0"))
+					modality=((JSONObject)((JSONObject)lesions.get(i)).get("modality")).getString("value");
+				//put as a UID cell object
+				UIDs[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)]=new RecistReportUIDCell(studyUID, seriesUID, aimUID,timepoint,"target",null,modality);
+				
+			}
+			
+			
+		}
+		
+		return table;
 	}
 	
 	/**

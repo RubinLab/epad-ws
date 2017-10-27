@@ -162,6 +162,7 @@ import edu.stanford.epad.dtos.EPADWorklist;
 import edu.stanford.epad.dtos.EPADWorklistList;
 import edu.stanford.epad.dtos.EPADWorklistStudyList;
 import edu.stanford.epad.dtos.EPADWorklistSubjectList;
+import edu.stanford.epad.dtos.LongitudinalReport;
 import edu.stanford.epad.dtos.RecistReport;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.dtos.RemotePACEntity;
@@ -833,23 +834,39 @@ public class EPADGetHandler
 				long dbtime = System.currentTimeMillis();
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				String report = httpRequest.getParameter("report");
+				String templateCode = httpRequest.getParameter("templatecode");
 				
-				if (report!=null && report.equalsIgnoreCase("RECIST")) {
-					RecistReport recistTable=AimReporter.getRecist(aims);
-					if (recistTable!=null)
-						responseStream.append(recistTable.toJSON());
-					else {
-						log.warning("Couldn't get recist table");
-						//temporary session log
-  						EpadDatabaseOperations epadDatabaseOperations=EpadDatabase.getInstance().getEPADDatabaseOperations();		  						
-  						epadDatabaseOperations.insertEpadEvent(sessionID,
-  								EventMessageCodes.RECIST_FAILED, 
- 								"", "", "", "", "", "", "",
- 								subjectReference.projectID,"","","", true);	
-						responseStream.append("{}");
+				if (report!=null) {
+					if (report.equalsIgnoreCase("RECIST")){
+						RecistReport recistTable=AimReporter.getRecist(aims);
+						if (recistTable!=null)
+							responseStream.append(recistTable.toJSON());
+						else {
+							log.warning("Couldn't get recist table");
+							//temporary session log
+	  						EpadDatabaseOperations epadDatabaseOperations=EpadDatabase.getInstance().getEPADDatabaseOperations();		  						
+	  						epadDatabaseOperations.insertEpadEvent(sessionID,
+	  								EventMessageCodes.RECIST_FAILED, 
+	 								"", "", "", "", "", "", "",
+	 								subjectReference.projectID,"","","", true);	
+							responseStream.append("{}");
+						}
+					}else if (report.equalsIgnoreCase("Longitudinal")){
+						LongitudinalReport lgtdTable=AimReporter.getLongitudinal(aims, templateCode);
+						if (lgtdTable!=null)
+							responseStream.append(lgtdTable.toJSON());
+						else {
+							log.warning("Couldn't get Longitudinal table");
+							//temporary session log
+	  						EpadDatabaseOperations epadDatabaseOperations=EpadDatabase.getInstance().getEPADDatabaseOperations();		  						
+	  						epadDatabaseOperations.insertEpadEvent(sessionID,
+	  								EventMessageCodes.LONGITUDINAL_FAILED, 
+	 								"", "", "", "", "", "", "",
+	 								subjectReference.projectID,"","","", true);	
+							responseStream.append("{}");
+						}
 					}
 				} else if (returnTable) {
-					String templateCode = httpRequest.getParameter("templatecode");
 					String columns = httpRequest.getParameter("columns"); //comma seperated
 					if (columns!=null) {
 						String[] columnsArray=columns.split(",");
