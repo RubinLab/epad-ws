@@ -459,7 +459,7 @@ public class AimReporter {
 			if (tTimepoints==null)
 				tTimepoints=new Integer[studyDates.size()];
 			RecistReportUIDCell[][] tUIDs=new RecistReportUIDCell[tLesionNames.size()][studyDates.size()];
-			String [][] tTable=fillLongitudinalTable(tLesionNames, studyDates, lesions,tTimepoints, tUIDs);
+			Object [][] tTable=fillLongitudinalTable(tLesionNames, studyDates, lesions,tTimepoints, tUIDs);
 			
 			LongitudinalReport rr= new LongitudinalReport(tLesionNames.toArray(new String[tLesionNames.size()]), studyDates.toArray(new String[studyDates.size()]), tTable, tUIDs);
 			rr.setTimepoints(tTimepoints);
@@ -474,8 +474,8 @@ public class AimReporter {
 
 	}
 
-	public static String [][] fillLongitudinalTable(ArrayList<String> lesionNames, ArrayList<String> studyDates, JSONArray lesions, Integer[] timepoints, RecistReportUIDCell[][] UIDs){
-		String [][] table=new String[lesionNames.size()][studyDates.size()+1];
+	public static Object [][] fillLongitudinalTable(ArrayList<String> lesionNames, ArrayList<String> studyDates, JSONArray lesions, Integer[] timepoints, RecistReportUIDCell[][] UIDs){
+		Object [][] table=new Object[lesionNames.size()][studyDates.size()+1];
 		
 		int baselineIndex=0;
 		//get the values to the table
