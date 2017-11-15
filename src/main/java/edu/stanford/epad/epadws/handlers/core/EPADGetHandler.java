@@ -719,9 +719,12 @@ public class EPADGetHandler
 				EPADAIMList aims = null;
 				String report = httpRequest.getParameter("report");
 				String type = httpRequest.getParameter("type");
-				
+				String metric = httpRequest.getParameter("metric"); 
 				if (report!=null && report.equalsIgnoreCase("WATERFALL")) {
-					responseStream.append(AimReporter.getWaterfallProject(projectID, username, sessionID, type).toJSON());
+					if (metric!=null && metric.equalsIgnoreCase("ADLA"))
+						responseStream.append(AimReporter.getWaterfallProject(projectID, username, sessionID, type,"ADLA").toJSON());
+					else 
+						responseStream.append(AimReporter.getWaterfallProject(projectID, username, sessionID, type).toJSON());
 				}else {
 					if (aimSearchType != null)
 						aims = epadOperations.getAIMDescriptions(projectID, aimSearchType, searchValue, username, sessionID, start, count);
