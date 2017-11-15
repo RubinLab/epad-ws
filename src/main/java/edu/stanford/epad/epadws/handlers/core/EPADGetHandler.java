@@ -1528,15 +1528,22 @@ public class EPADGetHandler
 				
 				String report = httpRequest.getParameter("report");
 				String type = httpRequest.getParameter("type");
+				String metric = httpRequest.getParameter("metric"); 
 				if (report!=null && report.equalsIgnoreCase("WATERFALL")) {
 					if (subjectUIDs!=null && subjectUIDs!="")
-						responseStream.append(AimReporter.getWaterfall(subjectUIDs, username, sessionID, type, projectID).toJSON());
+						if (metric!=null && metric.equalsIgnoreCase("ADLA"))
+							responseStream.append(AimReporter.getWaterfall(subjectUIDs, username, sessionID, type, projectID,"ADLA").toJSON());
+						else //default is recist
+							responseStream.append(AimReporter.getWaterfall(subjectUIDs, username, sessionID, type, projectID).toJSON());
 					else {
 						String subj_proj_pairs=httpRequest.getParameter("subj_proj_pairs");
 						if (subj_proj_pairs!=null && subj_proj_pairs!=""){
 							JSONObject subj_proj_pairs_jso = new JSONObject((subj_proj_pairs));
 							JSONArray sub_proj_array = (JSONArray) subj_proj_pairs_jso.get("jsArray");
-							responseStream.append(AimReporter.getWaterfall(sub_proj_array, username, sessionID, type).toJSON());
+							if (metric!=null && metric.equalsIgnoreCase("ADLA"))
+								responseStream.append(AimReporter.getWaterfall(sub_proj_array, username, sessionID, type, "ADLA").toJSON());
+							else //default is recist
+								responseStream.append(AimReporter.getWaterfall(sub_proj_array, username, sessionID, type).toJSON());
 						}
 					}
 				}else{
