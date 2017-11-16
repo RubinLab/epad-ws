@@ -136,7 +136,10 @@ import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
 import edu.stanford.hakan.aim4api.base.ImagingObservationCharacteristic;
 import edu.stanford.hakan.aim4api.base.ImagingObservationEntity;
 import edu.stanford.hakan.aim4api.base.ImagingPhysicalEntity;
+import edu.stanford.hakan.aim4api.base.MarkupEntity;
+import edu.stanford.hakan.aim4api.base.MarkupEntityCollection;
 import edu.stanford.hakan.aim4api.base.Scale;
+import edu.stanford.hakan.aim4api.project.epad.Enumerations.ShapeType;
 import edu.stanford.hakan.aim4api.questions.Question;
 import edu.stanford.hakan.aim4api.usage.AnnotationGetter;
 
@@ -145,6 +148,7 @@ public class AimReporter {
 	private static final String xsdFilePathV4 = EPADConfig.xsdFilePathV4;
 	
 	/**
+	 * Old version. Doesn't filter by shape
 	 * Fills in a table of String values traversing through input aim files looking for the input columns
 	 * the columns can be Name, StudyDate
 	 * or any value stored in a ImagingObservationEntity, ImagingObservationEntityCharacteristic, ImagingPhysicalEntity or CalculationEntity
@@ -156,6 +160,23 @@ public class AimReporter {
 	 * @return a json array in string format. json array contains a json object for each aim with column names as attributes
 	 */
 	public static String fillTable(EPADAIMList aims,String templatecode, String[] columns){
+		return fillTable(aims, templatecode, columns, null);
+	}
+	
+	/**
+	 * Fills in a table of String values traversing through input aim files looking for the input columns
+	 * the columns can be Name, StudyDate
+	 * or any value stored in a ImagingObservationEntity, ImagingObservationEntityCharacteristic, ImagingPhysicalEntity or CalculationEntity
+	 * label is matched to the column in all but calculation (for calculation description)
+	 * value and code (if exists) is returned as a json object 
+	 * filters by a shapes array
+	 * @param aims
+	 * @param templatecode
+	 * @param columns
+	 * @param shapes list of shapes to filter. an input of null will avoid filtering. 
+	 * @return a json array in string format. json array contains a json object for each aim with column names as attributes
+	 */
+	public static String fillTable(EPADAIMList aims,String templatecode, String[] columns, String[] shapes){
 		
 		String [][] table=null;
 		//make sure they are lower case
@@ -188,6 +209,38 @@ public class AimReporter {
 							log.warning("Aim template is "+ia.getListTypeCode().get(0).getCode() + " was looking for "+templatecode);
 							table[row++]=null;
 							continue;
+						}
+					}
+					//put the template in values
+					values.put("template", formJsonObj(ia.getListTypeCode().get(0).getDisplayName().getValue(),ia.getListTypeCode().get(0).getCode()));
+					
+					StringBuilder markupsStr=new StringBuilder();
+					StringBuilder shapesStr=new StringBuilder();
+					for (MarkupEntity me:ia.getMarkupEntityCollection().getMarkupEntityList()){
+						if (markupsStr.length()>0)
+							markupsStr.append(",");
+						markupsStr.append(me.getXsiType());
+					}
+					//check if the shapes should be filter and if the aim matches the filter
+					if (shapes!=null && shapes.length>0){
+						if (!checkForShapes(ia.getMarkupEntityCollection(),shapes)) {
+							for (String s:shapes){
+								shapesStr.append(s);
+								shapesStr.append(" ");
+							}
+							log.warning("Aim shape is "+markupsStr.toString() + " was looking for "+shapesStr.toString());
+							table[row++]=null;
+							continue;
+						}
+					}
+					//put shape in values
+					values.put("shapes", formJsonObj(markupsStr.toString()));
+
+					if (values.containsKey("studydate")) {
+						try{
+							values.put("studydate", formJsonObj(((DicomImageReferenceEntity)ia.getImageReferenceEntityCollection().get(0)).getImageStudy().getStartDate()));
+						}catch(Exception e){
+							log.warning("The value for StudyDate couldn't be retrieved ", e);
 						}
 					}
 					if (values.containsKey("studydate")) {
@@ -401,6 +454,46 @@ public class AimReporter {
 		return tableJson.toString();
 	}
 	
+	/**
+	 * checks if the input markup entity list contains any of the shapes in the shapes list
+	 * @param markupEntityCollection
+	 * @param shapes should be xsitypes but also accepts and handles line, poly, polygon ans ellipse
+	 * @return
+	 */
+	private static boolean checkForShapes(MarkupEntityCollection markupEntityCollection, String[] shapes) {
+		//first normalize the shapes to handle different versions of the shape names
+		for (String s:shapes){
+			switch(s.toLowerCase()){
+				case "line":
+				case "multipoint":
+					s="multipoint";
+					break;
+				case "poly":
+				case "polygon":
+				case "polyline":
+					s="polyline";
+					break;
+				case "spline":
+					break;
+				case "circle":
+					break;
+				case "point":
+					break;
+				case "normal":
+				case "ellipse":
+					s="ellipse";
+					break;
+			}
+		}
+		for (MarkupEntity me:markupEntityCollection.getMarkupEntityList()){
+			for (String s:shapes){
+				if (me.getXsiType().toLowerCase().contains(s.toLowerCase()))
+					return true;
+			}
+		}
+		return false;
+	}
+
 	public static String formJsonObj(String value) {
 		return "{\"value\":\""+value+"\"}";
 	}
@@ -425,8 +518,8 @@ public class AimReporter {
 	 * @param aims
 	 * @return
 	 */
-	public static LongitudinalReport getLongitudinal(EPADAIMList aims, String template){
-		String table=AimReporter.fillTable(aims,template,new String[]{"Name","StudyDate","StudyUID","SeriesUID","AimUID","AllCalc","Timepoint","Lesion","Modality","Location"});
+	public static LongitudinalReport getLongitudinal(EPADAIMList aims, String template, String[] shapes){
+		String table=AimReporter.fillTable(aims,template,new String[]{"Name","StudyDate","StudyUID","SeriesUID","AimUID","AllCalc","Timepoint","Lesion","Modality","Location","Template","Shapes"},shapes);
 		if ((table==null || table.isEmpty())) 
 			return null;
 		JSONArray lesions;
@@ -532,8 +625,18 @@ public class AimReporter {
 				String modality=((JSONObject)((JSONObject)lesions.get(i)).get("modality")).getString("code");
 				if (modality.equals("99EPADM0"))
 					modality=((JSONObject)((JSONObject)lesions.get(i)).get("modality")).getString("value");
+				String templateCode=null;
+				String templateName=null;
+				if (((JSONObject)((JSONObject)lesions.get(i)).opt("template"))!=null){
+					templateCode=((JSONObject)((JSONObject)lesions.get(i)).get("template")).getString("code");
+					templateName=((JSONObject)((JSONObject)lesions.get(i)).get("template")).getString("value");
+				}
+				String shapes=null;
+				if (((JSONObject)((JSONObject)lesions.get(i)).opt("shapes"))!=null){
+					shapes=((JSONObject)((JSONObject)lesions.get(i)).get("shapes")).getString("value");
+				}
 				//put as a UID cell object
-				UIDs[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)]=new RecistReportUIDCell(studyUID, seriesUID, aimUID,timepoint,"target",location,modality);
+				UIDs[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)]=new RecistReportUIDCell(studyUID, seriesUID, aimUID,timepoint,"target",location,modality,templateCode,templateName,shapes);
 				
 			}
 			
@@ -660,7 +763,7 @@ public class AimReporter {
 						if (tTimepoints[k]==tTimepoints[i]+1){
 							//see for all the nontarget lesions
 							for (int j=0;j<ntTable.length;j++){
-								if (ntTable[j][k].toLowerCase().contains("reappeared"))
+								if (ntTable[j][k]!=null && ntTable[j][k].toLowerCase().contains("reappeared"))
 									responseCats[k]="PD";
 							}
 						}else if (tTimepoints[k]>tTimepoints[i]+1){
@@ -1259,7 +1362,7 @@ public class AimReporter {
 			SubjectReference subjectReference=new SubjectReference(projectID, subjectID);
 			EPADAIMList aims = epadOperations.getSubjectAIMDescriptions(subjectReference, username, sessionID);
 			log.info(aims.ResultSet.totalRecords+ " aims found for "+ subjectID);
-			LongitudinalReport lgtdnl=getLongitudinal(aims, template);
+			LongitudinalReport lgtdnl=getLongitudinal(aims, template, null);
 			if (lgtdnl==null) {
 				log.warning("Couldn't retrieve longitudinal report for patient "+ subjectID);
 				continue;
@@ -1351,7 +1454,7 @@ public class AimReporter {
 			SubjectReference subjectReference=new SubjectReference(sub_prj.getString("projectID"), sub_prj.getString("subjectID"));
 			EPADAIMList aims = epadOperations.getSubjectAIMDescriptions(subjectReference, username, sessionID);
 			log.info(aims.ResultSet.totalRecords+ " aims found for "+ sub_prj.getString("subjectID"));
-			LongitudinalReport lgtdnl=getLongitudinal(aims, template);
+			LongitudinalReport lgtdnl=getLongitudinal(aims, template, null);
 			if (lgtdnl==null) {
 				log.warning("Couldn't retrieve longitudinal report for patient "+ sub_prj.getString("subjectID"));
 				continue;

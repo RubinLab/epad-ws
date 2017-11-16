@@ -838,7 +838,7 @@ public class EPADGetHandler
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				String report = httpRequest.getParameter("report");
 				String templateCode = httpRequest.getParameter("templatecode");
-				
+				String[] shapes = (httpRequest.getParameter("shapes")!=null)?httpRequest.getParameter("shapes").split(","):null; //comma separated values
 				if (report!=null) {
 					if (report.equalsIgnoreCase("RECIST")){
 						RecistReport recistTable=AimReporter.getRecist(aims);
@@ -855,7 +855,7 @@ public class EPADGetHandler
 							responseStream.append("{}");
 						}
 					}else if (report.equalsIgnoreCase("Longitudinal")){
-						LongitudinalReport lgtdTable=AimReporter.getLongitudinal(aims, templateCode);
+						LongitudinalReport lgtdTable=AimReporter.getLongitudinal(aims, templateCode,shapes);
 						if (lgtdTable!=null)
 							responseStream.append(lgtdTable.toJSON());
 						else {
