@@ -462,31 +462,35 @@ public class AimReporter {
 	 */
 	private static boolean checkForShapes(MarkupEntityCollection markupEntityCollection, String[] shapes) {
 		//first normalize the shapes to handle different versions of the shape names
+		ArrayList<String> normShapes=new ArrayList<String>();
 		for (String s:shapes){
 			switch(s.toLowerCase()){
 				case "line":
 				case "multipoint":
-					s="multipoint";
+					normShapes.add("multipoint");
 					break;
 				case "poly":
 				case "polygon":
 				case "polyline":
-					s="polyline";
+					normShapes.add("polyline");
 					break;
 				case "spline":
+					normShapes.add("spline");
 					break;
 				case "circle":
+					normShapes.add("circle");
 					break;
 				case "point":
+					normShapes.add("point");
 					break;
 				case "normal":
 				case "ellipse":
-					s="ellipse";
+					normShapes.add("ellipse");
 					break;
 			}
 		}
 		for (MarkupEntity me:markupEntityCollection.getMarkupEntityList()){
-			for (String s:shapes){
+			for (String s:normShapes){
 				if (me.getXsiType().toLowerCase().contains(s.toLowerCase()))
 					return true;
 			}
@@ -518,6 +522,12 @@ public class AimReporter {
 	 * @param aims
 	 * @return
 	 */
+	
+	public static LongitudinalReport getLongitudinal(EPADAIMList aims, String template, String shapesStr){
+		if (shapesStr!=null)
+			return getLongitudinal(aims, template, shapesStr.split(","));
+		return getLongitudinal(aims, template, (String[])null);
+	}
 	public static LongitudinalReport getLongitudinal(EPADAIMList aims, String template, String[] shapes){
 		String table=AimReporter.fillTable(aims,template,new String[]{"Name","StudyDate","StudyUID","SeriesUID","AimUID","AllCalc","Timepoint","Lesion","Modality","Location","Template","Shapes"},shapes);
 		if ((table==null || table.isEmpty())) 
@@ -1345,13 +1355,25 @@ public class AimReporter {
 			return getWaterfall(subjects, username, sessionID, type, projectID);
 		switch(metric){
 			case "ADLA":
-				return getWaterfallWithMetricAndTemplate(subjects, username, sessionID, type, projectID, null, "standard deviation");
+				return getWaterfallWithTemplateMetricAndShapes(subjects, username, sessionID, type, projectID, null, "standard deviation","line");
 			default:
 				return getWaterfall(subjects, username, sessionID, type, projectID);
 		}
 	}
 	
-	public static WaterfallReport getWaterfallWithMetricAndTemplate(ArrayList<String> subjects, String username, String sessionID, String type, String projectID, String template, String metric){
+	/**
+	 * get the waterfall report filtering with template, metric and shapes
+	 * @param subjects
+	 * @param username
+	 * @param sessionID
+	 * @param type BASELINE (default) or MIN
+	 * @param projectID
+	 * @param template
+	 * @param metric ADLA or RECIST (default)
+	 * @param shapes comma seperated list of shapes
+	 * @return
+	 */
+	public static WaterfallReport getWaterfallWithTemplateMetricAndShapes(ArrayList<String> subjects, String username, String sessionID, String type, String projectID, String template, String metric, String shapes){
 			
 		
 		ArrayList<Double> values=new ArrayList<>();
@@ -1362,7 +1384,7 @@ public class AimReporter {
 			SubjectReference subjectReference=new SubjectReference(projectID, subjectID);
 			EPADAIMList aims = epadOperations.getSubjectAIMDescriptions(subjectReference, username, sessionID);
 			log.info(aims.ResultSet.totalRecords+ " aims found for "+ subjectID);
-			LongitudinalReport lgtdnl=getLongitudinal(aims, template, null);
+			LongitudinalReport lgtdnl=getLongitudinal(aims, template, shapes);
 			if (lgtdnl==null) {
 				log.warning("Couldn't retrieve longitudinal report for patient "+ subjectID);
 				continue;
@@ -1437,12 +1459,24 @@ public class AimReporter {
 			return getWaterfall(subj_proj_array, username, sessionID, type);
 		switch(metric){
 			case "ADLA":
-				return getWaterfallWithMetricAndTemplate(subj_proj_array, username, sessionID, type, null, "standard deviation");
+				return getWaterfallWithTemplateMetricAndShapes(subj_proj_array, username, sessionID, type, null, "standard deviation","line");
 			default:
 				return getWaterfall(subj_proj_array, username, sessionID, type);
 		}
 	}
-	public static WaterfallReport getWaterfallWithMetricAndTemplate(JSONArray subj_proj_array, String username, String sessionID, String type, String template, String metric){
+	
+	/**
+	 * get the waterfall report filtering with template, metric and shapes
+	 * @param subj_proj_array
+	 * @param username
+	 * @param sessionID
+	 * @param type BASELINE (default) or MIN
+	 * @param template
+	 * @param metric ADLA or RECIST (default)
+	 * @param shapes comma seperated list of shapes
+	 * @return
+	 */
+	public static WaterfallReport getWaterfallWithTemplateMetricAndShapes(JSONArray subj_proj_array, String username, String sessionID, String type, String template, String metric,String shapes){
 		
 		ArrayList<Double> values=new ArrayList<>();
 		ArrayList<String> projects=new ArrayList<>();
@@ -1454,7 +1488,7 @@ public class AimReporter {
 			SubjectReference subjectReference=new SubjectReference(sub_prj.getString("projectID"), sub_prj.getString("subjectID"));
 			EPADAIMList aims = epadOperations.getSubjectAIMDescriptions(subjectReference, username, sessionID);
 			log.info(aims.ResultSet.totalRecords+ " aims found for "+ sub_prj.getString("subjectID"));
-			LongitudinalReport lgtdnl=getLongitudinal(aims, template, null);
+			LongitudinalReport lgtdnl=getLongitudinal(aims, template, shapes);
 			if (lgtdnl==null) {
 				log.warning("Couldn't retrieve longitudinal report for patient "+ sub_prj.getString("subjectID"));
 				continue;
