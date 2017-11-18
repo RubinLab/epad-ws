@@ -334,6 +334,8 @@ public class RTDICOMProcessingTask implements GeneratorTask
 //			EPADFileUtils.deleteDirectoryAndContents(inputDir);
 //			EPADFileUtils.deleteDirectoryAndContents(outputDir);
 			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Completed Processing", null, new Date());
+			projectOperations.createEventLog(username,null, patientID, studyUID, seriesUID, null, null, null, "Completed Processing DicomRT", TaskStatus.TASK_RT_PROCESS, false);
+			
 		} catch (Exception e) {
 			log.warning("Error processing DICOM RT file for series " + seriesUID, e);
 			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Failed Processing: " + e.getMessage(), null, new Date());
