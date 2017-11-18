@@ -139,7 +139,6 @@ import edu.stanford.hakan.aim4api.base.ImagingPhysicalEntity;
 import edu.stanford.hakan.aim4api.base.MarkupEntity;
 import edu.stanford.hakan.aim4api.base.MarkupEntityCollection;
 import edu.stanford.hakan.aim4api.base.Scale;
-import edu.stanford.hakan.aim4api.project.epad.Enumerations.ShapeType;
 import edu.stanford.hakan.aim4api.questions.Question;
 import edu.stanford.hakan.aim4api.usage.AnnotationGetter;
 
