@@ -191,6 +191,7 @@ public class AimReporter {
 			ImageAnnotationCollection iac=null;
 			Map<String,String> values=new HashMap<>();
 			Map<String,String> allCalcValues=new HashMap<>();
+			boolean hasCalcs=false;
 			for (int i=0;i<columns.length;i++) {
 				values.put(columns[i],"");
 			}
@@ -338,6 +339,7 @@ public class AimReporter {
 										values.put("length", formJsonObj(value,"RID39123"));
 									else
 										values.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
+									hasCalcs=true;
 								}catch(Exception e) {
 									log.warning("The value for "+cal.getDescription().getValue() + " couldn't be retrieved ", e);
 								}
@@ -358,6 +360,7 @@ public class AimReporter {
 										allCalcValues.put("length", formJsonObj(value,"RID39123"));
 									else
 										allCalcValues.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
+									hasCalcs=true;
 								}catch(Exception e) {
 									log.warning("The value for "+cal.getDescription().getValue() + " couldn't be retrieved ", e);
 								}
@@ -417,7 +420,10 @@ public class AimReporter {
 					
 					
 				}
-				table[row++]=strValues;
+				if (hasCalcs)
+					table[row++]=strValues;
+				else //ignore if doesn't have any calcs
+					table[row++]=null;
 				
 				
 			} catch (AimException e) {
