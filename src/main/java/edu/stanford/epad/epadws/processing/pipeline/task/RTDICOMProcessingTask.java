@@ -232,6 +232,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 			AttributeList dicomAttributes = PixelMedUtils.readDICOMAttributeList(dicomFile);
 			String studyUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.StudyInstanceUID);
 			String patientID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.PatientID);
+			String patientName = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.PatientName);
 			String description = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SeriesDescription);
 			// TODO: This call to get Referenced Image does not work ???
 			String[] referencedImageUIDs = Attribute.getStringValues(dicomAttributes, TagFromName.ReferencedSOPInstanceUID);
@@ -275,11 +276,19 @@ public class RTDICOMProcessingTask implements GeneratorTask
 				            //log.info("Downloading ReferencedSOPInstanceUID:" + referencedImageUID);
 				            File dicomFile = new File(seriesDir, referencedImageUID + ".dcm");
 							projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Downloading referenced image: " + j++, null, null);
-				            
-							while (HttpServletResponse.SC_OK!=DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, referencedImageUID, dicomFile)){
-								//wait if you cannot find the file
+				            int i=0;
+				            int response=HttpServletResponse.SC_SEE_OTHER;
+							while (i<40 && (response=DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, referencedImageUID, dicomFile))!=HttpServletResponse.SC_OK){
+								//wait if you cannot find the file (for 2 minutes)
 								log.warning("Image file not in dcm4che yet. Waiting 3 seconds before trying again. ");
 								Thread.sleep(3000);
+								i++;
+							}
+							if (response!=HttpServletResponse.SC_OK){
+								log.warning("Couldn't download images. Giving up "+ seriesUID);
+								projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Failed Processing: Couldn't download source images. Giving up" , null, new Date());
+								projectOperations.createEventLog(username,null, patientID, studyUID, seriesUID, null, null, null, "Failed Processing DicomRT: Couldn't download source images. Giving up", TaskStatus.TASK_RT_PROCESS, true);
+								return;
 							}
 //							DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, referencedImageUID, dicomFile);
 				            dicomFilePaths.add(dicomFile.getAbsolutePath());
