@@ -162,6 +162,7 @@ import edu.stanford.epad.dtos.EPADWorklist;
 import edu.stanford.epad.dtos.EPADWorklistList;
 import edu.stanford.epad.dtos.EPADWorklistStudyList;
 import edu.stanford.epad.dtos.EPADWorklistSubjectList;
+import edu.stanford.epad.dtos.LongitudinalReport;
 import edu.stanford.epad.dtos.RecistReport;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.dtos.RemotePACEntity;
@@ -718,9 +719,12 @@ public class EPADGetHandler
 				EPADAIMList aims = null;
 				String report = httpRequest.getParameter("report");
 				String type = httpRequest.getParameter("type");
-				
+				String metric = httpRequest.getParameter("metric"); 
 				if (report!=null && report.equalsIgnoreCase("WATERFALL")) {
-					responseStream.append(AimReporter.getWaterfallProject(projectID, username, sessionID, type).toJSON());
+					if (metric!=null && metric.equalsIgnoreCase("ADLA"))
+						responseStream.append(AimReporter.getWaterfallProject(projectID, username, sessionID, type,"ADLA").toJSON());
+					else 
+						responseStream.append(AimReporter.getWaterfallProject(projectID, username, sessionID, type).toJSON());
 				}else {
 					if (aimSearchType != null)
 						aims = epadOperations.getAIMDescriptions(projectID, aimSearchType, searchValue, username, sessionID, start, count);
@@ -833,23 +837,39 @@ public class EPADGetHandler
 				long dbtime = System.currentTimeMillis();
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				String report = httpRequest.getParameter("report");
-				
-				if (report!=null && report.equalsIgnoreCase("RECIST")) {
-					RecistReport recistTable=AimReporter.getRecist(aims);
-					if (recistTable!=null)
-						responseStream.append(recistTable.toJSON());
-					else {
-						log.warning("Couldn't get recist table");
-						//temporary session log
-  						EpadDatabaseOperations epadDatabaseOperations=EpadDatabase.getInstance().getEPADDatabaseOperations();		  						
-  						epadDatabaseOperations.insertEpadEvent(sessionID,
-  								EventMessageCodes.RECIST_FAILED, 
- 								"", "", "", "", "", "", "",
- 								subjectReference.projectID,"","","", true);	
-						responseStream.append("{}");
+				String templateCode = httpRequest.getParameter("templatecode");
+				String[] shapes = (httpRequest.getParameter("shapes")!=null)?httpRequest.getParameter("shapes").split(","):null; //comma separated values
+				if (report!=null) {
+					if (report.equalsIgnoreCase("RECIST")){
+						RecistReport recistTable=AimReporter.getRecist(aims);
+						if (recistTable!=null)
+							responseStream.append(recistTable.toJSON());
+						else {
+							log.warning("Couldn't get recist table");
+							//temporary session log
+	  						EpadDatabaseOperations epadDatabaseOperations=EpadDatabase.getInstance().getEPADDatabaseOperations();		  						
+	  						epadDatabaseOperations.insertEpadEvent(sessionID,
+	  								EventMessageCodes.RECIST_FAILED, 
+	 								"", "", "", "", "", "", "",
+	 								subjectReference.projectID,"","","", true);	
+							responseStream.append("{}");
+						}
+					}else if (report.equalsIgnoreCase("Longitudinal")){
+						LongitudinalReport lgtdTable=AimReporter.getLongitudinal(aims, templateCode,shapes);
+						if (lgtdTable!=null)
+							responseStream.append(lgtdTable.toJSON());
+						else {
+							log.warning("Couldn't get Longitudinal table");
+							//temporary session log
+	  						EpadDatabaseOperations epadDatabaseOperations=EpadDatabase.getInstance().getEPADDatabaseOperations();		  						
+	  						epadDatabaseOperations.insertEpadEvent(sessionID,
+	  								EventMessageCodes.LONGITUDINAL_FAILED, 
+	 								"", "", "", "", "", "", "",
+	 								subjectReference.projectID,"","","", true);	
+							responseStream.append("{}");
+						}
 					}
 				} else if (returnTable) {
-					String templateCode = httpRequest.getParameter("templatecode");
 					String columns = httpRequest.getParameter("columns"); //comma seperated
 					if (columns!=null) {
 						String[] columnsArray=columns.split(",");
@@ -1511,15 +1531,22 @@ public class EPADGetHandler
 				
 				String report = httpRequest.getParameter("report");
 				String type = httpRequest.getParameter("type");
+				String metric = httpRequest.getParameter("metric"); 
 				if (report!=null && report.equalsIgnoreCase("WATERFALL")) {
 					if (subjectUIDs!=null && subjectUIDs!="")
-						responseStream.append(AimReporter.getWaterfall(subjectUIDs, username, sessionID, type, projectID).toJSON());
+						if (metric!=null && metric.equalsIgnoreCase("ADLA"))
+							responseStream.append(AimReporter.getWaterfall(subjectUIDs, username, sessionID, type, projectID,"ADLA").toJSON());
+						else //default is recist
+							responseStream.append(AimReporter.getWaterfall(subjectUIDs, username, sessionID, type, projectID).toJSON());
 					else {
 						String subj_proj_pairs=httpRequest.getParameter("subj_proj_pairs");
 						if (subj_proj_pairs!=null && subj_proj_pairs!=""){
 							JSONObject subj_proj_pairs_jso = new JSONObject((subj_proj_pairs));
 							JSONArray sub_proj_array = (JSONArray) subj_proj_pairs_jso.get("jsArray");
-							responseStream.append(AimReporter.getWaterfall(sub_proj_array, username, sessionID, type).toJSON());
+							if (metric!=null && metric.equalsIgnoreCase("ADLA"))
+								responseStream.append(AimReporter.getWaterfall(sub_proj_array, username, sessionID, type, "ADLA").toJSON());
+							else //default is recist
+								responseStream.append(AimReporter.getWaterfall(sub_proj_array, username, sessionID, type).toJSON());
 						}
 					}
 				}else{
