@@ -232,7 +232,6 @@ public class RTDICOMProcessingTask implements GeneratorTask
 			AttributeList dicomAttributes = PixelMedUtils.readDICOMAttributeList(dicomFile);
 			String studyUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.StudyInstanceUID);
 			String patientID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.PatientID);
-			String patientName = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.PatientName);
 			String description = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SeriesDescription);
 			// TODO: This call to get Referenced Image does not work ???
 			String[] referencedImageUIDs = Attribute.getStringValues(dicomAttributes, TagFromName.ReferencedSOPInstanceUID);
@@ -290,7 +289,6 @@ public class RTDICOMProcessingTask implements GeneratorTask
 								projectOperations.createEventLog(username,null, patientID, studyUID, seriesUID, null, null, null, "Failed Processing DicomRT: Couldn't download source images. Giving up", TaskStatus.TASK_RT_PROCESS, true);
 								return;
 							}
-//							DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, referencedImageUID, dicomFile);
 				            dicomFilePaths.add(dicomFile.getAbsolutePath());
 				        }
 			       }
