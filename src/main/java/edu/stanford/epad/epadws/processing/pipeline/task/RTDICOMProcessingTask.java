@@ -114,6 +114,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.servlet.http.HttpServletResponse;
+
 import dicomrt.DicomRTSegExtractor;
 
 import com.jmatio.io.MatFileReader;
@@ -273,7 +275,20 @@ public class RTDICOMProcessingTask implements GeneratorTask
 				            //log.info("Downloading ReferencedSOPInstanceUID:" + referencedImageUID);
 				            File dicomFile = new File(seriesDir, referencedImageUID + ".dcm");
 							projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Downloading referenced image: " + j++, null, null);
-				            DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, referencedImageUID, dicomFile);
+				            int i=0;
+				            int response=HttpServletResponse.SC_SEE_OTHER;
+							while (i<40 && (response=DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, referencedImageUID, dicomFile))!=HttpServletResponse.SC_OK){
+								//wait if you cannot find the file (for 2 minutes)
+								log.warning("Image file not in dcm4che yet. Waiting 3 seconds before trying again. ");
+								Thread.sleep(3000);
+								i++;
+							}
+							if (response!=HttpServletResponse.SC_OK){
+								log.warning("Couldn't download images. Giving up "+ seriesUID);
+								projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Failed Processing: Couldn't download source images. Giving up" , null, new Date());
+								projectOperations.createEventLog(username,null, patientID, studyUID, seriesUID, null, null, null, "Failed Processing DicomRT: Couldn't download source images. Giving up", TaskStatus.TASK_RT_PROCESS, true);
+								return;
+							}
 				            dicomFilePaths.add(dicomFile.getAbsolutePath());
 				        }
 			       }
@@ -310,20 +325,22 @@ public class RTDICOMProcessingTask implements GeneratorTask
 			} catch (Exception x) {
 				log.warning("Error reading results", x);
 			}
-			log.info("Creating entry in epad_files:" + outFilePath + " imageUID:" + imageUID);
-			Map<String, String>  epadFilesRow = Dcm4CheeDatabaseUtils.createEPadFilesRowData(outFilePath, 0, imageUID);			
-			epadDatabaseOperations.updateEpadFileRow(epadFilesRow.get("file_path"), PNGFileProcessingStatus.DONE, 0, "");
+//			log.info("Creating entry in epad_files:" + outFilePath + " imageUID:" + imageUID);
+//			Map<String, String>  epadFilesRow = Dcm4CheeDatabaseUtils.createEPadFilesRowData(outFilePath, 0, imageUID);			
+//			epadDatabaseOperations.updateEpadFileRow(epadFilesRow.get("file_path"), PNGFileProcessingStatus.DONE, 0, "");
 			
 //			EPADFileUtils.deleteDirectoryAndContents(inputDir);
 //			EPADFileUtils.deleteDirectoryAndContents(outputDir);
 			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Completed Processing", null, new Date());
+			projectOperations.createEventLog(username,null, patientID, studyUID, seriesUID, null, null, null, "Completed Processing DicomRT", TaskStatus.TASK_RT_PROCESS, false);
+			
 		} catch (Exception e) {
 			log.warning("Error processing DICOM RT file for series " + seriesUID, e);
 			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Failed Processing: " + e.getMessage(), null, new Date());
 		} finally {
 			log.info("DICOM RT for series " + seriesUID + " completed");
 			seriesBeingProcessed.remove(seriesUID);
-			if (segExtractor != null) {
+			if (seriesBeingProcessed.isEmpty() && segExtractor != null) {
 				segExtractor.dispose();
 				segExtractor = null;
 			}
