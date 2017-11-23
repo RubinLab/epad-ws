@@ -320,6 +320,22 @@ public class AimReporter {
 							}
 						}
 					}
+					//look through questions
+					if (ia.getQuestionCollection()!=null){
+						for (Question q: ia.getQuestionCollection().getListQuestion()){
+							
+							if (values.containsKey(q.getQuestion().toLowerCase())) { //key exists put the value
+								try {
+									String value=q.getAnswer();
+//									
+									values.put(q.getQuestion().toLowerCase(), formJsonObj(value));
+								}catch(Exception e) {
+									log.warning("The value for "+q.getQuestion().toLowerCase() + " couldn't be retrieved ", e);
+								}
+							}
+						}
+					}
+					
 					//look through calculation entities
 					if (ia.getCalculationEntityCollection()!=null){
 						for (CalculationEntity cal: ia.getCalculationEntityCollection().getCalculationEntityList()){
@@ -357,8 +373,23 @@ public class AimReporter {
 									}
 									if (cal.getDescription().getValue().toLowerCase().equals("linelength"))
 										allCalcValues.put("length", formJsonObj(value,"RID39123"));
-									else
-										allCalcValues.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
+									else{
+										//if the label and description are different. it can be shortaxis long axis
+										//get the appropriate according to the organ if present
+										//use longaxis if not
+										String label=cal.getCalculationResultCollection().get(0).getDimensionCollection().get(0).getLabel().getValue().toLowerCase();
+										if (!cal.getDescription().getValue().toLowerCase().equals(label)){
+											if (label.startsWith("shortaxis") && values.containsKey("location")){//if it is shortaxis and the location is present, location should be lymph node, ignore if it isn't 
+												if (new JSONObject(values.get("location")).getString("value").equalsIgnoreCase("lymph node") ){
+													allCalcValues.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
+												}
+											}else {
+												allCalcValues.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
+											}
+										}else {
+											allCalcValues.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
+										}
+									}
 									hasCalcs=true;
 								}catch(Exception e) {
 									log.warning("The value for "+cal.getDescription().getValue() + " couldn't be retrieved ", e);
@@ -367,21 +398,7 @@ public class AimReporter {
 						}
 					}
 					
-					//look through questions
-					if (ia.getQuestionCollection()!=null){
-						for (Question q: ia.getQuestionCollection().getListQuestion()){
-							
-							if (values.containsKey(q.getQuestion().toLowerCase())) { //key exists put the value
-								try {
-									String value=q.getAnswer();
-//									
-									values.put(q.getQuestion().toLowerCase(), formJsonObj(value));
-								}catch(Exception e) {
-									log.warning("The value for "+q.getQuestion().toLowerCase() + " couldn't be retrieved ", e);
-								}
-							}
-						}
-					}
+					
 				}
 				String[] strValues=new String[columns.length];
 				for (int i=0;i<columns.length;i++) {
