@@ -446,7 +446,8 @@ public class AimMigrator {
 			modCD=mod.getDefaultModality();
 		((DicomImageReferenceEntity)iac.getImageAnnotation().getImageReferenceEntityCollection().get(0)).getImageStudy().getImageSeries().setModality(modCD);
 		//this should be called after addfeatures as addfeatures tries to init v3.CalculationData and fails as it is not double
-		addSummaryCalcsFromPF(mintJson, parent, iac.getImageAnnotation());
+		//ignoring string values for dicomsr support, they have redundant info in mint calculations anyway
+//		addSummaryCalcsFromPF(mintJson, parent, iac.getImageAnnotation());
 		log.info("annotation is: "+iac.toStringXML());
 		return iac.toStringXML();
 
