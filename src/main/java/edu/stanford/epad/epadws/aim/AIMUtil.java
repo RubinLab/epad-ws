@@ -453,11 +453,19 @@ public class AIMUtil
 		String patientID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.PatientID);
 		String patientName = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.PatientName);
 		String patientBirthDay = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.PatientBirthDate);
-		if (patientBirthDay.trim().length() != 8) patientBirthDay = "19650212";
+		if (patientBirthDay.trim().length() != 8) patientBirthDay = "19000101";
 		String patientSex = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.PatientSex);
 		if (patientSex.trim().length() != 1) patientSex = "F";
 		String dsoDate = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesDate);
-		if (dsoDate.trim().length() != 8) dsoDate = "20001017";
+		if (dsoDate.trim().length() != 8) dsoDate = "19000101";
+		String dsoTime = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesTime);
+		if (dsoTime.trim().length() > 6) dsoTime = dsoTime.substring(0, 6);
+		else if (dsoTime.trim().length() != 6) dsoTime = "000000";
+		String studyDate = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.StudyDate);
+		if (studyDate.trim().length() != 8) studyDate = "19000101";
+		String studyTime = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.StudyTime);
+		if (studyTime.trim().length() > 6) studyTime=studyTime.substring(0,6);
+		else if (studyTime.trim().length() != 6) studyTime = "000000";
 		String sopClassUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SOPClassUID);
 		String studyUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.StudyInstanceUID);
 		log.info("DSO:" + dsoFile.getAbsolutePath() + " PatientID:" + patientID + " studyUID:" + studyUID + " projectID:" + projectID);
@@ -523,7 +531,7 @@ public class AIMUtil
 			String name = aimName;
 			if (name == null || name.trim().length() == 0) name = description;
 			if (name == null || name.trim().length() == 0) name = "segmentation";
-			ImageAnnotation imageAnnotation = new ImageAnnotation(0, "", dsoDate.substring(0,4) + "-" + dsoDate.substring(4,6) + "-" + dsoDate.substring(6,8) + "T00:00:00", name, "SEG",
+			ImageAnnotation imageAnnotation = new ImageAnnotation(0, "", dsoDate+dsoTime, name, "SEG",
 					"SEG Only", "", "", "");
 
 			SegmentationCollection sc = new SegmentationCollection();
@@ -531,7 +539,7 @@ public class AIMUtil
 			imageAnnotation.setSegmentationCollection(sc);
 			//ml adding sop class to createdicomimage references below
 			DICOMImageReference originalDICOMImageReference = PluginAIMUtil.createDICOMImageReferenceV3Compability(referencedStudyUID,
-					referencedSeriesUID, referencedImageUID[0], id.classUID);
+					referencedSeriesUID, referencedImageUID[0], id.classUID, studyDate, studyTime);
 			imageAnnotation.addImageReference(originalDICOMImageReference);
 			//ml 2. image reference removed
 //			DICOMImageReference dsoDICOMImageReference = PluginAIMUtil.createDICOMImageReferenceV3Compability(studyUID, seriesUID,
