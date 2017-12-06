@@ -138,6 +138,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
+import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.dtos.internal.DICOMElement;
 import edu.stanford.epad.dtos.internal.DICOMElementList;
@@ -287,6 +288,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 								log.warning("Couldn't download images. Giving up "+ seriesUID);
 								projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Failed Processing: Couldn't download source images. Giving up" , null, new Date());
 								projectOperations.createEventLog(username,null, patientID, studyUID, seriesUID, null, null, null, "Failed Processing DicomRT: Couldn't download source images. Giving up", TaskStatus.TASK_RT_PROCESS, true);
+								epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
 								return;
 							}
 				            dicomFilePaths.add(dicomFile.getAbsolutePath());
@@ -337,6 +339,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 		} catch (Exception e) {
 			log.warning("Error processing DICOM RT file for series " + seriesUID, e);
 			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Failed Processing: " + e.getMessage(), null, new Date());
+			epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
 		} finally {
 			log.info("DICOM RT for series " + seriesUID + " completed");
 			seriesBeingProcessed.remove(seriesUID);
