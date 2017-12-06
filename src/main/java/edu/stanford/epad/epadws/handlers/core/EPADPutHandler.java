@@ -109,12 +109,15 @@ import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
+import java.util.Set;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
@@ -128,6 +131,7 @@ import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4cheeServer;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
+import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 
 import edu.stanford.epad.epadws.models.EpadFile;
@@ -137,6 +141,8 @@ import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.models.WorkList;
 import edu.stanford.epad.epadws.models.WorkListToStudy;
+import edu.stanford.epad.epadws.processing.pipeline.task.RTDICOMProcessingTask;
+import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
@@ -299,13 +305,25 @@ public class EPADPutHandler
 				String referencedSeries = httpRequest.getParameter("referencedSeries");
 				//get the annotation, it can be empty, or done(or 3) at this point
 				String annotationStatus = httpRequest.getParameter("annotationStatus");
-				
+
+				String triggerProcess = httpRequest.getParameter("triggerProcess");
 				if (referencedSeries == null)
 					referencedSeries = httpRequest.getParameter("referencedSeriesUID");
 				String defaultTags = httpRequest.getParameter("defaultTags");
 				EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
 				if (series!=null) { //updating
-					
+					if (triggerProcess!=null && triggerProcess.equalsIgnoreCase("dicomrt") && "RTSTRUCT".equals(modality)){
+						log.info("Triggering DICOM RT extraction for series " + seriesReference.seriesUID);
+						//get the images in the dicomrt series. should be just one
+						Set<DICOMFileDescription> dicomFiles= epadOperations.getDICOMFilesInSeries(series.seriesUID, null);
+						if (dicomFiles.size()>1){
+							log.warning("DicomRT series has two imaegs. Ignoring the second and using the first!");
+						}
+						if (dicomFiles.size()>=1){
+							DICOMFileDescription rtImageDesc=dicomFiles.iterator().next();
+							QueueAndWatcherManager.extractRTDicomInfo(rtImageDesc, referencedSeries);
+						}
+					}
 					if (defaultTags != null) {
 						epadOperations.updateSeriesTags(username, seriesReference, defaultTags, sessionID);
 					}
