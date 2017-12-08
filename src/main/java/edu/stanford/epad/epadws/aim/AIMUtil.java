@@ -550,8 +550,15 @@ public class AIMUtil
 			person.setSex(patientSex.trim());
 			if (patientBirthDay.trim().length() == 8)
 				person.setBirthDate(patientBirthDay.substring(0,4) + "-" + patientBirthDay.substring(4,6) + "-" + patientBirthDay.substring(6,8) + "T00:00:00"); // TODO
-			person.setId(patientID);
+			EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+			String uniquePatientID=epadOperations.getUniquePatientID(patientID, patientName);
+			
+			person.setId(uniquePatientID);
 			person.setName(patientName);
+			if (!uniquePatientID.equalsIgnoreCase(patientID)){
+				person.setOriginalId(patientID);
+				patientID=uniquePatientID;
+			}
 			person.setCagridId(0);
 			imageAnnotation.addPerson(person);
 			// TODO Not general. See if we can generate AIM on GUI upload of DSO with correct user.
