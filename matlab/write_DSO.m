@@ -143,8 +143,11 @@ end
 info= refSlice;
 
 info_mask.FileMetaInformationVersion = [0;1];
-
-info_mask.StudyDescription=info.StudyDescription;
+if isfield(info,'StudyDescription')
+    info_mask.StudyDescription=info.StudyDescription;
+else 
+    info_mask.StudyDescription='';
+end
 if isfield(info,'ImageOrientationPatient')==true
     info_mask.SharedFunctionalGroupsSequence.Item_1.PlaneOrientationSequence.Item_1.ImageOrientationPatient=info.ImageOrientationPatient;
     info_mask.SharedFunctionalGroupsSequence.Item_1.PixelMeasuresSequence.Item_1.SliceThickness=info.SliceThickness;
