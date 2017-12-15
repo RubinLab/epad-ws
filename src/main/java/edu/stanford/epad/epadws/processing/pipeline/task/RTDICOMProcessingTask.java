@@ -427,7 +427,8 @@ public class RTDICOMProcessingTask implements GeneratorTask
 	@Override
 	public String getTagFilePath()
 	{
-		return outFilePath.replaceAll("\\.mat", ".tag");
+//		return outFilePath.replaceAll("\\.mat", ".tag");
+		return null;
 	}
 
 	@Override
