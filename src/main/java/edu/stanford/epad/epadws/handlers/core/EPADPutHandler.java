@@ -312,7 +312,7 @@ public class EPADPutHandler
 				String defaultTags = httpRequest.getParameter("defaultTags");
 				EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
 				if (series!=null) { //updating
-					if (triggerProcess!=null && triggerProcess.equalsIgnoreCase("dicomrt") && "RTSTRUCT".equals(modality)){
+					if (triggerProcess!=null && triggerProcess.equalsIgnoreCase("dicomrt") && "RTSTRUCT".equals(series.examType)){
 						log.info("Triggering DICOM RT extraction for series " + seriesReference.seriesUID);
 						//get the images in the dicomrt series. should be just one
 						Set<DICOMFileDescription> dicomFiles= epadOperations.getDICOMFilesInSeries(series.seriesUID, null);
