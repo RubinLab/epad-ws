@@ -330,6 +330,7 @@ public class EPADPutHandler
 					if (annotationStatus != null) {
 						projectOperations.updateAnnotationStatus(username, seriesReference, annotationStatus, sessionID);
 					}
+					statusCode = HttpServletResponse.SC_ACCEPTED;
 				}
 				else {
 					// Create non-dicom series
