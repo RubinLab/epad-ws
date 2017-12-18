@@ -551,8 +551,16 @@ public class AIMUtil
 			dc.setSegmentNumber(1);
 			dc.setSopClassUid(new II(sopClassUID));
 			dc.setSopInstanceUid(new II(imageUID));
+			dc.setSeriesInstanceUid(new II(seriesUID));
+			dc.setStudyInstanceUid(new II(studyUID));
 			aim.setSegmentationEntity(dc);
-
+			
+			//let aimapi to generate a uid
+			aim.setTrackingUniqueIdentifier(null);
+			aim.setAimStudyInstanceUid(null);
+			aim.setAimSeriesInstanceUid(null);
+			aim.setAimAccessionNumber(new ST("1111"));
+			
 			if (generateCalcs){
 				//open the referenced images and calculate the aggregations
 				Double[] calcs=DSOUtil.generateCalcs(referencedSeriesUID,referencedImageUID,dsoFile);
