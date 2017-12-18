@@ -2504,7 +2504,8 @@ public class AIMUtil
 		"AimXPath.xml",
 		"AIMTemplate_v2rvStanford.xsd",
 		"AIM_v4_rv44_XML.xsd",
-		"ISO_datatypes_Narrative.xsd"
+		"ISO_datatypes_Narrative.xsd",
+		"AIM_v4.1_rv2_XML.xsd"
 	};
 	
 	static final String[] OVERWRITE_SCHEMA_FILES = {
