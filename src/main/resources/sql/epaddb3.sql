@@ -1,0 +1,5 @@
+
+UPDATE lexicon SET CODE_VALUE='C48870', SCHEMA_DESIGNATOR='NCI', SCHEMA_VERSION=null where  CODE_VALUE='99EPADD1';
+
+--UPDATE dbversion SET version = '2.0';
+commit;

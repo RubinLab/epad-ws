@@ -2789,7 +2789,7 @@ public class AIMUtil
 		if (units.equals(""))
 			calculationResult.setDataType(new CD("99EPADD2","String","99EPAD"));
 		else
-			calculationResult.setDataType(new CD("99EPADD1","Double","99EPAD"));
+			calculationResult.setDataType(new CD("C48870","Double","NCI"));
 
 		// Create a CalculationData instance
 		edu.stanford.hakan.aim4api.base.CalculationData calculationData = new edu.stanford.hakan.aim4api.base.CalculationData();
