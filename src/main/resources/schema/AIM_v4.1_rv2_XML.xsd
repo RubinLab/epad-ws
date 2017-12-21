@@ -133,8 +133,8 @@
 	<xs:complexType name="AnnotationCollection" abstract="true">
 		<xs:sequence>
 			<xs:element name="uniqueIdentifier" type="iso:II"/>
-			<xs:element name="studyInstanceUid" type="iso:II"/>
-			<xs:element name="seriesInstanceUid" type="iso:II"/>
+			<xs:element name="studyInstanceUid" type="iso:II" minOccurs="0"/>
+			<xs:element name="seriesInstanceUid" type="iso:II" minOccurs="0"/>
 			<xs:element name="accessionNumber" type="iso:ST" minOccurs="0"/>
 			<xs:element name="description" type="iso:ST" minOccurs="0"/>
 			<xs:element name="dateTime" type="iso:TS"/>
@@ -500,6 +500,7 @@
 		<xs:sequence>
 			<xs:element name="name" type="iso:ST"/>
 			<xs:element name="id" type="iso:ST"/>
+            <xs:element name="originalId" type="iso:ST" minOccurs="0"/>
 			<xs:element name="birthDate" type="iso:TS" minOccurs="0"/>
 			<xs:element name="sex" type="iso:ST" minOccurs="0"/>
 			<xs:element name="ethnicGroup" type="iso:ST" minOccurs="0"/>
