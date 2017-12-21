@@ -550,6 +550,12 @@ public class EPADUploadDirWatcher implements Runnable
 				for (File dir: dirs)
 				{
 					if (dir.isDirectory()) {
+						if (dir.getName().contains(" "))
+                        {
+                              File newName = new File(dir.getParent(), dir.getName().replace(' ', '_'));
+                              dir.renameTo(newName);
+                              dir = newName;
+                        }
 						log.info("Sending DICOM files in upload directory " + dir.getAbsolutePath() + " to DCM4CHEE");
 						projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DCM4CHE_SEND, dir.getName(), "Started push", new Date(), null);
 						boolean ok = Dcm4CheeOperations.dcmsnd(dir, false);

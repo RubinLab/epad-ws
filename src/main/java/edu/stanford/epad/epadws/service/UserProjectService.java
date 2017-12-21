@@ -535,7 +535,7 @@ public class UserProjectService {
 		String modality = dicomObject.getString(Tag.Modality);
 		String protocol = dicomObject.getString(Tag.ProtocolName);
 		String studyDesc = dicomObject.getString(Tag.StudyDescription);
-		if (studyDesc==null || studyDesc.trim()=="") {
+		if ((studyDesc==null || studyDesc.trim().equals("")) && (protocol!=null && !protocol.trim().equals("")) ) {
 			log.info("Study desc empty using protocol" + protocol);
 			studyDesc=protocol.split("/")[0];
 		}

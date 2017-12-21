@@ -118,6 +118,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
+import edu.stanford.epad.dtos.LongitudinalReport;
 import edu.stanford.epad.dtos.RecistReport;
 import edu.stanford.epad.dtos.RecistReportUIDCell;
 import edu.stanford.epad.dtos.WaterfallReport;
@@ -135,6 +136,8 @@ import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
 import edu.stanford.hakan.aim4api.base.ImagingObservationCharacteristic;
 import edu.stanford.hakan.aim4api.base.ImagingObservationEntity;
 import edu.stanford.hakan.aim4api.base.ImagingPhysicalEntity;
+import edu.stanford.hakan.aim4api.base.MarkupEntity;
+import edu.stanford.hakan.aim4api.base.MarkupEntityCollection;
 import edu.stanford.hakan.aim4api.base.Scale;
 import edu.stanford.hakan.aim4api.questions.Question;
 import edu.stanford.hakan.aim4api.usage.AnnotationGetter;
@@ -144,6 +147,7 @@ public class AimReporter {
 	private static final String xsdFilePathV4 = EPADConfig.xsdFilePathV4;
 	
 	/**
+	 * Old version. Doesn't filter by shape
 	 * Fills in a table of String values traversing through input aim files looking for the input columns
 	 * the columns can be Name, StudyDate
 	 * or any value stored in a ImagingObservationEntity, ImagingObservationEntityCharacteristic, ImagingPhysicalEntity or CalculationEntity
@@ -155,6 +159,23 @@ public class AimReporter {
 	 * @return a json array in string format. json array contains a json object for each aim with column names as attributes
 	 */
 	public static String fillTable(EPADAIMList aims,String templatecode, String[] columns){
+		return fillTable(aims, templatecode, columns, null);
+	}
+	
+	/**
+	 * Fills in a table of String values traversing through input aim files looking for the input columns
+	 * the columns can be Name, StudyDate
+	 * or any value stored in a ImagingObservationEntity, ImagingObservationEntityCharacteristic, ImagingPhysicalEntity or CalculationEntity
+	 * label is matched to the column in all but calculation (for calculation description)
+	 * value and code (if exists) is returned as a json object 
+	 * filters by a shapes array
+	 * @param aims
+	 * @param templatecode
+	 * @param columns
+	 * @param shapes list of shapes to filter. an input of null will avoid filtering. 
+	 * @return a json array in string format. json array contains a json object for each aim with column names as attributes
+	 */
+	public static String fillTable(EPADAIMList aims,String templatecode, String[] columns, String[] shapes){
 		
 		String [][] table=null;
 		//make sure they are lower case
@@ -168,6 +189,8 @@ public class AimReporter {
 		for (EPADAIM aim:aims.ResultSet.Result) {
 			ImageAnnotationCollection iac=null;
 			Map<String,String> values=new HashMap<>();
+			Map<String,String> allCalcValues=new HashMap<>();
+			boolean hasCalcs=false;
 			for (int i=0;i<columns.length;i++) {
 				values.put(columns[i],"");
 			}
@@ -186,6 +209,38 @@ public class AimReporter {
 							log.warning("Aim template is "+ia.getListTypeCode().get(0).getCode() + " was looking for "+templatecode);
 							table[row++]=null;
 							continue;
+						}
+					}
+					//put the template in values
+					values.put("template", formJsonObj(ia.getListTypeCode().get(0).getDisplayName().getValue(),ia.getListTypeCode().get(0).getCode()));
+					
+					StringBuilder markupsStr=new StringBuilder();
+					StringBuilder shapesStr=new StringBuilder();
+					for (MarkupEntity me:ia.getMarkupEntityCollection().getMarkupEntityList()){
+						if (markupsStr.length()>0)
+							markupsStr.append(",");
+						markupsStr.append(me.getXsiType());
+					}
+					//check if the shapes should be filter and if the aim matches the filter
+					if (shapes!=null && shapes.length>0){
+						if (!checkForShapes(ia.getMarkupEntityCollection(),shapes)) {
+							for (String s:shapes){
+								shapesStr.append(s);
+								shapesStr.append(" ");
+							}
+							log.warning("Aim shape is "+markupsStr.toString() + " was looking for "+shapesStr.toString());
+							table[row++]=null;
+							continue;
+						}
+					}
+					//put shape in values
+					values.put("shapes", formJsonObj(markupsStr.toString()));
+
+					if (values.containsKey("studydate")) {
+						try{
+							values.put("studydate", formJsonObj(((DicomImageReferenceEntity)ia.getImageReferenceEntityCollection().get(0)).getImageStudy().getStartDate()));
+						}catch(Exception e){
+							log.warning("The value for StudyDate couldn't be retrieved ", e);
 						}
 					}
 					if (values.containsKey("studydate")) {
@@ -265,6 +320,22 @@ public class AimReporter {
 							}
 						}
 					}
+					//look through questions
+					if (ia.getQuestionCollection()!=null){
+						for (Question q: ia.getQuestionCollection().getListQuestion()){
+							
+							if (values.containsKey(q.getQuestion().toLowerCase())) { //key exists put the value
+								try {
+									String value=q.getAnswer();
+//									
+									values.put(q.getQuestion().toLowerCase(), formJsonObj(value));
+								}catch(Exception e) {
+									log.warning("The value for "+q.getQuestion().toLowerCase() + " couldn't be retrieved ", e);
+								}
+							}
+						}
+					}
+					
 					//look through calculation entities
 					if (ia.getCalculationEntityCollection()!=null){
 						for (CalculationEntity cal: ia.getCalculationEntityCollection().getCalculationEntityList()){
@@ -283,6 +354,43 @@ public class AimReporter {
 										values.put("length", formJsonObj(value,"RID39123"));
 									else
 										values.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
+									hasCalcs=true;
+								}catch(Exception e) {
+									log.warning("The value for "+cal.getDescription().getValue() + " couldn't be retrieved ", e);
+								}
+							}
+							
+							if (values.containsKey("allcalc") ) { //if it is allcalc put all calculations in a nested json
+								try {
+									
+									String value=((ExtendedCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getCalculationDataCollection().get(0).getValue().getValue();
+//									log.info("value is "+value + "|");
+									if (value==null || value.trim().equals("")) value="0";
+									//check the units. if they are mm. convert to cm
+									String units=((ExtendedCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getUnitOfMeasure().getValue().trim();
+									if (units.equalsIgnoreCase("mm")){
+										value=String.valueOf(Double.parseDouble(value)/10);
+									}
+									if (cal.getDescription().getValue().toLowerCase().equals("linelength"))
+										allCalcValues.put("length", formJsonObj(value,"RID39123"));
+									else{
+										//if the label and description are different. it can be shortaxis long axis
+										//get the appropriate according to the organ if present
+										//use longaxis if not
+										String label=cal.getCalculationResultCollection().get(0).getDimensionCollection().get(0).getLabel().getValue().toLowerCase();
+										if (!cal.getDescription().getValue().toLowerCase().equals(label)){
+											if (label.startsWith("shortaxis") && values.containsKey("location")){//if it is shortaxis and the location is present, location should be lymph node, ignore if it isn't 
+												if (new JSONObject(values.get("location")).getString("value").equalsIgnoreCase("lymph node") ){
+													allCalcValues.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
+												}
+											}else {
+												allCalcValues.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
+											}
+										}else {
+											allCalcValues.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
+										}
+									}
+									hasCalcs=true;
 								}catch(Exception e) {
 									log.warning("The value for "+cal.getDescription().getValue() + " couldn't be retrieved ", e);
 								}
@@ -290,21 +398,7 @@ public class AimReporter {
 						}
 					}
 					
-					//look through questions
-					if (ia.getQuestionCollection()!=null){
-						for (Question q: ia.getQuestionCollection().getListQuestion()){
-							
-							if (values.containsKey(q.getQuestion().toLowerCase())) { //key exists put the value
-								try {
-									String value=q.getAnswer();
-//									
-									values.put(q.getQuestion().toLowerCase(), formJsonObj(value));
-								}catch(Exception e) {
-									log.warning("The value for "+q.getQuestion().toLowerCase() + " couldn't be retrieved ", e);
-								}
-							}
-						}
-					}
+					
 				}
 				String[] strValues=new String[columns.length];
 				for (int i=0;i<columns.length;i++) {
@@ -317,10 +411,35 @@ public class AimReporter {
 							values.put(columns[i], formJsonObj(""));
 						}
 					}
-					strValues[i]="\""+columns[i]+"\":"+values.get(columns[i]);
+					
+					if (columns[i].equalsIgnoreCase("allcalc") && values.containsKey("allcalc") ) { //if it is allcalc put all calculations in a nested json
+						if (allCalcValues.size()==0){
+							strValues[i]="\"allcalc\":{}";
+						}else{
+							StringBuilder nestedCols=new StringBuilder("{");
+							for (Map.Entry<String, String> entry : allCalcValues.entrySet())
+							{
+								nestedCols.append("\""+entry.getKey() +"\":"+entry.getValue()+",");
+								
+							}
+							nestedCols.replace(nestedCols.length()-1, nestedCols.length(), "");
+							nestedCols.append("}");
+							
+							strValues[i]="\"allcalc\":"+nestedCols.toString();
+						}
+					}else{
+						strValues[i]="\""+columns[i]+"\":"+values.get(columns[i]);
+					}
+						
+					
+					
+					
 					
 				}
-				table[row++]=strValues;
+				if (hasCalcs)
+					table[row++]=strValues;
+				else //ignore if doesn't have any calcs
+					table[row++]=null;
 				
 				
 			} catch (AimException e) {
@@ -357,6 +476,50 @@ public class AimReporter {
 		return tableJson.toString();
 	}
 	
+	/**
+	 * checks if the input markup entity list contains any of the shapes in the shapes list
+	 * @param markupEntityCollection
+	 * @param shapes should be xsitypes but also accepts and handles line, poly, polygon ans ellipse
+	 * @return
+	 */
+	private static boolean checkForShapes(MarkupEntityCollection markupEntityCollection, String[] shapes) {
+		//first normalize the shapes to handle different versions of the shape names
+		ArrayList<String> normShapes=new ArrayList<String>();
+		for (String s:shapes){
+			switch(s.toLowerCase()){
+				case "line":
+				case "multipoint":
+					normShapes.add("multipoint");
+					break;
+				case "poly":
+				case "polygon":
+				case "polyline":
+					normShapes.add("polyline");
+					break;
+				case "spline":
+					normShapes.add("spline");
+					break;
+				case "circle":
+					normShapes.add("circle");
+					break;
+				case "point":
+					normShapes.add("point");
+					break;
+				case "normal":
+				case "ellipse":
+					normShapes.add("ellipse");
+					break;
+			}
+		}
+		for (MarkupEntity me:markupEntityCollection.getMarkupEntityList()){
+			for (String s:normShapes){
+				if (me.getXsiType().toLowerCase().contains(s.toLowerCase()))
+					return true;
+			}
+		}
+		return false;
+	}
+
 	public static String formJsonObj(String value) {
 		return "{\"value\":\""+value+"\"}";
 	}
@@ -373,6 +536,146 @@ public class AimReporter {
 	        }
 	    }
 	    return result;
+	}
+	
+	
+	/**
+	 * creates a longitudinal report object from the input aims list, using the template as the filter
+	 * @param aims
+	 * @return
+	 */
+	
+	public static LongitudinalReport getLongitudinal(EPADAIMList aims, String template, String shapesStr){
+		if (shapesStr!=null)
+			return getLongitudinal(aims, template, shapesStr.split(","));
+		return getLongitudinal(aims, template, (String[])null);
+	}
+	public static LongitudinalReport getLongitudinal(EPADAIMList aims, String template, String[] shapes){
+		String table=AimReporter.fillTable(aims,template,new String[]{"Name","StudyDate","StudyUID","SeriesUID","AimUID","AllCalc","Timepoint","Lesion","Modality","Location","Template","Shapes"},shapes);
+		if ((table==null || table.isEmpty())) 
+			return null;
+		JSONArray lesions;
+		try{
+			lesions=new JSONArray(table);
+			log.info("lesions len "+ lesions.length());
+			
+		}catch(Exception e) {
+			log.warning("couldn't parse json for "+table + " " +e.getMessage());
+			return null;
+		}
+		//get targets
+		ArrayList<String> tLesionNames=new ArrayList<>();
+		ArrayList<String> studyDates=new ArrayList<>();
+		Integer[] tTimepoints=null;
+		
+		//first pass fill in the lesion names and study dates (x and y axis of the table)
+		for (int i = 0; i < lesions.length(); i++)
+		{
+			String lesionName = ((JSONObject)((JSONObject)lesions.get(i)).get("name")).getString("value");
+			String studyDate = ((JSONObject)((JSONObject)lesions.get(i)).get("studydate")).getString("value");
+			if (!studyDates.contains(studyDate))
+				studyDates.add(studyDate);
+			if (!tLesionNames.contains(lesionName))
+					tLesionNames.add(lesionName);
+			
+		}
+		//sort lists
+		Collections.sort(tLesionNames);
+		Collections.sort(studyDates);
+		
+		if (!tLesionNames.isEmpty() && !studyDates.isEmpty()){
+			//fill in the table for target lesions
+			if (tTimepoints==null)
+				tTimepoints=new Integer[studyDates.size()];
+			RecistReportUIDCell[][] tUIDs=new RecistReportUIDCell[tLesionNames.size()][studyDates.size()];
+			Object [][] tTable=fillLongitudinalTable(tLesionNames, studyDates, lesions,tTimepoints, tUIDs);
+			
+			LongitudinalReport rr= new LongitudinalReport(tLesionNames.toArray(new String[tLesionNames.size()]), studyDates.toArray(new String[studyDates.size()]), tTable, tUIDs);
+			rr.setTimepoints(tTimepoints);
+			return rr;
+			
+		}else {
+			log.info("no target lesion in table " +table );
+		}
+		
+		return null;
+		
+
+	}
+
+	public static Object [][] fillLongitudinalTable(ArrayList<String> lesionNames, ArrayList<String> studyDates, JSONArray lesions, Integer[] timepoints, RecistReportUIDCell[][] UIDs){
+		int numofHeaderCols=LongitudinalReport.numofHeaderCols;
+		Object [][] table=new Object[lesionNames.size()][studyDates.size()+numofHeaderCols];
+		
+		int baselineIndex=0;
+		//get the values to the table
+		for (int i = 0; i < lesions.length(); i++)
+		{
+			String lesionName = ((JSONObject)((JSONObject)lesions.get(i)).get("name")).getString("value");
+			String studyDate = ((JSONObject)((JSONObject)lesions.get(i)).get("studydate")).getString("value");
+			table[lesionNames.indexOf(lesionName)][0]=lesionName;
+			//get the lesion and get the timepoint. if it is integer put that otherwise calculate using study dates
+			JSONObject tpObj=(JSONObject) ((JSONObject)lesions.get(i)).opt("timepoint");
+			if (tpObj==null)
+				tpObj=(JSONObject) ((JSONObject)lesions.get(i)).opt("lesion");
+			String lesionTimepoint=tpObj.optString("value");
+			int timepoint=0;
+			try{
+				timepoint=Integer.parseInt(lesionTimepoint);
+			}catch(NumberFormatException ne) {
+				log.info("Trying to get timepoint from text "+lesionTimepoint);
+				if (lesionTimepoint.toLowerCase().contains("baseline")) {
+					timepoint=0;
+				}else {
+					timepoint=studyDates.indexOf(studyDate)-baselineIndex;
+				}
+			}
+			if (timepoint==0)
+				baselineIndex=studyDates.indexOf(studyDate);
+			if (table[lesionNames.indexOf(lesionName)][1]!=null && !((String)table[lesionNames.indexOf(lesionName)][1]).equalsIgnoreCase(((JSONObject)((JSONObject)lesions.get(i)).get("location")).getString("value")))
+				log.warning("Location at date "+ studyDate + " is different from the same lesion on a different date. The existing one is:"+table[lesionNames.indexOf(lesionName)][2] +" whereas this is:"+((JSONObject)((JSONObject)lesions.get(i)).get("location")).getString("value"));
+			table[lesionNames.indexOf(lesionName)][1]=((JSONObject)((JSONObject)lesions.get(i)).get("location")).getString("value");
+			if (timepoints[studyDates.indexOf(studyDate)]!=null && timepoints[studyDates.indexOf(studyDate)]!= timepoint) {
+				//TODO How to handle timepoint changes? I currently override with the latest for now
+				log.info("why is the timepoint "+ timepoint + " different from the already existing "+timepoints[studyDates.indexOf(studyDate)] + " "+studyDate );
+				for (Integer t:timepoints){
+					log.info("timepoint "+ t);
+				}
+				for (String st:studyDates){
+					log.info("studyDates  "+ st);
+				}
+			}
+			timepoints[studyDates.indexOf(studyDate)]=timepoint;
+			JSONObject allcalc=((JSONObject)((JSONObject)lesions.get(i)).optJSONObject("allcalc"));
+			table[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)+numofHeaderCols]=allcalc.toString();
+			
+			if (UIDs!=null){
+				String studyUID = ((JSONObject)((JSONObject)lesions.get(i)).get("studyuid")).getString("value");
+				String seriesUID = ((JSONObject)((JSONObject)lesions.get(i)).get("seriesuid")).getString("value");
+				String aimUID=((JSONObject)((JSONObject)lesions.get(i)).get("aimuid")).getString("value");
+				String location=((JSONObject)((JSONObject)lesions.get(i)).get("location")).getString("value");
+				String modality=((JSONObject)((JSONObject)lesions.get(i)).get("modality")).getString("code");
+				if (modality.equals("99EPADM0"))
+					modality=((JSONObject)((JSONObject)lesions.get(i)).get("modality")).getString("value");
+				String templateCode=null;
+				String templateName=null;
+				if (((JSONObject)((JSONObject)lesions.get(i)).opt("template"))!=null){
+					templateCode=((JSONObject)((JSONObject)lesions.get(i)).get("template")).getString("code");
+					templateName=((JSONObject)((JSONObject)lesions.get(i)).get("template")).getString("value");
+				}
+				String shapes=null;
+				if (((JSONObject)((JSONObject)lesions.get(i)).opt("shapes"))!=null){
+					shapes=((JSONObject)((JSONObject)lesions.get(i)).get("shapes")).getString("value");
+				}
+				//put as a UID cell object
+				UIDs[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)]=new RecistReportUIDCell(studyUID, seriesUID, aimUID,timepoint,"target",location,modality,templateCode,templateName,shapes);
+				
+			}
+			
+			
+		}
+		
+		return table;
 	}
 	
 	/**
@@ -492,7 +795,7 @@ public class AimReporter {
 						if (tTimepoints[k]==tTimepoints[i]+1){
 							//see for all the nontarget lesions
 							for (int j=0;j<ntTable.length;j++){
-								if (ntTable[j][k].toLowerCase().contains("reappeared"))
+								if (ntTable[j][k]!=null && ntTable[j][k].toLowerCase().contains("reappeared"))
 									responseCats[k]="PD";
 							}
 						}else if (tTimepoints[k]>tTimepoints[i]+1){
@@ -716,6 +1019,7 @@ public class AimReporter {
 			
 					for(int i=0; i<table.length; i++){
 						try{
+							
 							sums[k]+=Double.parseDouble(table[i][j+3]);
 		
 						}catch(Exception e) {
@@ -739,6 +1043,59 @@ public class AimReporter {
 			log.info("sum "+ i+ " " + sums[i]);
 		return sums;
 	}
+	
+	/**
+	 * calculate sums of lesion dimensions for each timepoint for metric
+	 * works on longitudinal report table
+	 * @param table
+	 * @param timepoints. timepoints should start from 0 and be continuous but timepoint can repeat(they need to be adjacent)
+	 * @param metric metric name to filter from longitudinal report
+	 * @return it will return the sums for each timepoint. if the timepoint is listed twice. it will have the same amount twice
+	 */
+	private static Double[] calcSums(Object[][] table, Integer[] timepoints, String metric){
+		Double[] sums=new Double[table[0].length-LongitudinalReport.numofHeaderCols];
+		for (int k=0; k< table[0].length-LongitudinalReport.numofHeaderCols; k++) {
+			sums[k]=0.0;
+			log.info("k is "+k);
+			int j=k;
+			for (j=k; j< table[0].length-LongitudinalReport.numofHeaderCols; j++) {
+				log.info("j is "+j);
+				if (timepoints[j]==timepoints[k]){
+					if (j!=k)
+						sums[j]=null;
+			
+					for(int i=0; i<table.length; i++){
+							if (table[i][j+LongitudinalReport.numofHeaderCols]!=null && table[i][j+LongitudinalReport.numofHeaderCols] instanceof String && ((String)table[i][j+LongitudinalReport.numofHeaderCols]).startsWith("{")){
+								JSONObject allcalc=new JSONObject((String)table[i][j+LongitudinalReport.numofHeaderCols]);
+								try{
+									JSONObject metricJSON=allcalc.getJSONObject(metric);
+									if (metricJSON!=null){
+										sums[k]+=metricJSON.getDouble("value");
+										log.info("added to sum: "+metricJSON.getDouble("value") + " i: "+i+" j: "+j + " table: " +(String)table[i][j+LongitudinalReport.numofHeaderCols]);
+									}
+								}catch(Exception e){
+									log.warning("Couldn't convert to double value="+table[i][j+LongitudinalReport.numofHeaderCols],e);
+								}
+							}
+					}
+				}else{
+					//break if you see any other timepoint and skip the columns already calculated
+					
+					break;
+				}
+			}
+			k=j-1;
+			log.info("jumping to "+(k+1));
+
+		}
+//		for (int i=0;i<sums.length;i++)
+//			if (sums[i]==null)
+//				sums[i]=0.0;
+		for (int i=0;i<sums.length;i++)
+			log.info("sum "+ i+ " " + sums[i]);
+		return sums;
+	}
+	
 	/**
 	 * calculate response rates in reference to baseline (first)
 	 * @param sums
@@ -858,13 +1215,40 @@ public class AimReporter {
 	}
 
 	/**
-	 * 
+	 * Deprecated version
 	 * @param subjectIDs
 	 * @param username
 	 * @param sessionID
-	 * @return
+	 * @return RECIST waterfall
 	 */
 	public static WaterfallReport getWaterfallProject(String projectID, String username, String sessionID, String type){
+		return getWaterfallProject(projectID, username, sessionID, type, null);
+	}
+	
+	/**
+	 * Deprecated version
+	 * @param subjectIDs
+	 * @param username
+	 * @param sessionID
+	 * @param type
+	 * @param projectID
+	 * @return RECIST waterfall
+	 */
+	public static WaterfallReport getWaterfall(String subjectIDs, String username, String sessionID, String type, String projectID){
+		return getWaterfall(subjectIDs, username, sessionID, type, projectID, null);
+	}
+	
+	
+	/**
+	 * generic version of the getWaterfallProject 
+	 * @param projectID
+	 * @param username
+	 * @param sessionID
+	 * @param type
+	 * @param metric RECIST, ADLA for now
+	 * @return
+	 */
+	public static WaterfallReport getWaterfallProject(String projectID, String username, String sessionID, String type, String metric){
 		EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
 		ArrayList<String> subjects=new ArrayList<>();
 		try {
@@ -872,27 +1256,35 @@ public class AimReporter {
 			for (Subject s:subjectObjs)
 				subjects.add(s.getSubjectUID());
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.warning("Couldn't retrieve subjects for the project "+projectID, e);
 		}
+		return getWaterfall(subjects, username, sessionID, type,projectID, metric);
 		
-		return getWaterfall(subjects, username, sessionID, type,projectID);
 	}
 	
-	
-	public static WaterfallReport getWaterfall(String subjectIDs, String username, String sessionID, String type, String projectID){
+	/**
+	 * generic version of the getWaterfall
+	 * @param subjectIDs
+	 * @param username
+	 * @param sessionID
+	 * @param type
+	 * @param projectID
+	 * @param metric RECIST, ADLA for now
+	 * @return
+	 */
+	public static WaterfallReport getWaterfall(String subjectIDs, String username, String sessionID, String type, String projectID, String metric){
 		ArrayList<String> subjects = new ArrayList<>();
 		if (subjectIDs != null) {
 			String[] ids = subjectIDs.split(",");
 			for (String id: ids)
 				subjects.add(id.trim());
 		}
-		return getWaterfall(subjects, username, sessionID, type, projectID);
+		return getWaterfall(subjects, username, sessionID, type, projectID, metric);
 	}
 	
 	
 	/**
-	 * 
+	 * returns waterfall using RECIST metric
 	 * @param subjectIDs
 	 * @param username
 	 * @param sessionID
@@ -937,6 +1329,114 @@ public class AimReporter {
 	}
 	
 	
+	/**
+	 * Calculates rrbaseline from the sums 
+	 * @param sums
+	 * @param timepoints
+	 * @return min
+	 */
+	public static Double getADLAMinRRBaseLine(Double[] sums,Integer[] timepoints){
+		Double min=999999.0;
+		Double[] rrBaseline=calcRRBaseline(sums, timepoints);
+		for (int i=0;i<rrBaseline.length;i++){
+			if (rrBaseline[i]<min)
+				min=rrBaseline[i];
+		}
+		if (min==0 && rrBaseline.length>1)
+			return rrBaseline[1];
+		return min;
+	}
+	
+	/**
+	 * Calculates rrmin from the sums 
+	 * @param sums
+	 * @param timepoints
+	 * @return min
+	 */
+	public static Double getADLAMinRRMin(Double[] sums,Integer[] timepoints){
+		Double min=999999.0;
+		Double[] rrMin=calcRRMin(sums, timepoints);
+		for (int i=0;i<rrMin.length;i++){
+			if (rrMin[i]<min)
+				min=rrMin[i];
+		}
+		if (min==0 && rrMin.length>1)
+			return rrMin[1];
+		return min;
+	}
+	
+	/**
+	 * returns waterfall using metric
+	 * @param subjectIDs
+	 * @param username
+	 * @param sessionID
+	 * @return
+	 */
+	public static WaterfallReport getWaterfall(ArrayList<String> subjects, String username, String sessionID, String type, String projectID, String metric){
+		if (metric==null)
+			return getWaterfall(subjects, username, sessionID, type, projectID);
+		switch(metric){
+			case "ADLA":
+				return getWaterfallWithTemplateMetricAndShapes(subjects, username, sessionID, type, projectID, null, "standard deviation","line");
+			default:
+				return getWaterfall(subjects, username, sessionID, type, projectID);
+		}
+	}
+	
+	/**
+	 * get the waterfall report filtering with template, metric and shapes
+	 * @param subjects
+	 * @param username
+	 * @param sessionID
+	 * @param type BASELINE (default) or MIN
+	 * @param projectID
+	 * @param template
+	 * @param metric ADLA or RECIST (default)
+	 * @param shapes comma seperated list of shapes
+	 * @return
+	 */
+	public static WaterfallReport getWaterfallWithTemplateMetricAndShapes(ArrayList<String> subjects, String username, String sessionID, String type, String projectID, String template, String metric, String shapes){
+			
+		
+		ArrayList<Double> values=new ArrayList<>();
+		ArrayList<String> projects=new ArrayList<>();
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		ArrayList<String> validSubjects =new ArrayList<>();
+		for(String subjectID:subjects) {
+			SubjectReference subjectReference=new SubjectReference(projectID, subjectID);
+			EPADAIMList aims = epadOperations.getSubjectAIMDescriptions(subjectReference, username, sessionID);
+			log.info(aims.ResultSet.totalRecords+ " aims found for "+ subjectID);
+			LongitudinalReport lgtdnl=getLongitudinal(aims, template, shapes);
+			if (lgtdnl==null) {
+				log.warning("Couldn't retrieve longitudinal report for patient "+ subjectID);
+				continue;
+			}
+			validSubjects.add(subjectID);
+			projects.add(projectID);
+			
+			//let's calculate sums and the rr for the type.
+			Double[] sums=calcSums(lgtdnl.gettTable(),lgtdnl.gettTimepoints(),metric);
+			
+			
+			
+			switch(type){
+			case "BASELINE":
+				values.add(getADLAMinRRBaseLine(sums,lgtdnl.gettTimepoints()));
+				break;
+			case "MIN":
+				values.add(getADLAMinRRMin(sums,lgtdnl.gettTimepoints()));
+				break;
+			default:
+				values.add(getADLAMinRRBaseLine(sums,lgtdnl.gettTimepoints()));
+				break;
+			}
+		}
+		//let Waterfall handle the sorting
+
+//		return new WaterfallReport(validSubjects.toArray(new String[validSubjects.size()]), values.toArray(new Double[values.size()]));
+		return new WaterfallReport(validSubjects.toArray(new String[validSubjects.size()]), values.toArray(new Double[values.size()]), projects.toArray(new String[projects.size()]));
+	}
+	
 	public static WaterfallReport getWaterfall(JSONArray subj_proj_array, String username, String sessionID, String type){
 		
 		ArrayList<Double> values=new ArrayList<>();
@@ -975,4 +1475,68 @@ public class AimReporter {
 		return new WaterfallReport(validSubjects.toArray(new String[validSubjects.size()]), values.toArray(new Double[values.size()]), projects.toArray(new String[projects.size()]));
 	}
 
+	
+	public static WaterfallReport getWaterfall(JSONArray subj_proj_array, String username, String sessionID, String type, String metric){
+		if (metric==null)
+			return getWaterfall(subj_proj_array, username, sessionID, type);
+		switch(metric){
+			case "ADLA":
+				return getWaterfallWithTemplateMetricAndShapes(subj_proj_array, username, sessionID, type, null, "standard deviation","line");
+			default:
+				return getWaterfall(subj_proj_array, username, sessionID, type);
+		}
+	}
+	
+	/**
+	 * get the waterfall report filtering with template, metric and shapes
+	 * @param subj_proj_array
+	 * @param username
+	 * @param sessionID
+	 * @param type BASELINE (default) or MIN
+	 * @param template
+	 * @param metric ADLA or RECIST (default)
+	 * @param shapes comma seperated list of shapes
+	 * @return
+	 */
+	public static WaterfallReport getWaterfallWithTemplateMetricAndShapes(JSONArray subj_proj_array, String username, String sessionID, String type, String template, String metric,String shapes){
+		
+		ArrayList<Double> values=new ArrayList<>();
+		ArrayList<String> projects=new ArrayList<>();
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		ArrayList<String> validSubjects =new ArrayList<>();
+		for (int i = 0; i < subj_proj_array.length(); i++)
+		{
+			JSONObject sub_prj = subj_proj_array.getJSONObject(i);
+			SubjectReference subjectReference=new SubjectReference(sub_prj.getString("projectID"), sub_prj.getString("subjectID"));
+			EPADAIMList aims = epadOperations.getSubjectAIMDescriptions(subjectReference, username, sessionID);
+			log.info(aims.ResultSet.totalRecords+ " aims found for "+ sub_prj.getString("subjectID"));
+			LongitudinalReport lgtdnl=getLongitudinal(aims, template, shapes);
+			if (lgtdnl==null) {
+				log.warning("Couldn't retrieve longitudinal report for patient "+ sub_prj.getString("subjectID"));
+				continue;
+			}
+			validSubjects.add(sub_prj.getString("subjectID"));
+			
+			//let's calculate sums and the rr for the type.
+			Double[] sums=calcSums(lgtdnl.gettTable(),lgtdnl.gettTimepoints(),metric);
+			switch(type){
+			case "BASELINE":
+				values.add(getADLAMinRRBaseLine(sums,lgtdnl.gettTimepoints()));
+				projects.add(sub_prj.getString("projectID"));
+				break;
+			case "MIN":
+				values.add(getADLAMinRRMin(sums,lgtdnl.gettTimepoints()));
+				projects.add(sub_prj.getString("projectID"));
+				break;
+			default:
+				values.add(getADLAMinRRBaseLine(sums,lgtdnl.gettTimepoints()));
+				projects.add(sub_prj.getString("projectID"));
+				break;
+			}
+			
+		}
+		//let Waterfall handle the sorting
+
+		return new WaterfallReport(validSubjects.toArray(new String[validSubjects.size()]), values.toArray(new Double[values.size()]), projects.toArray(new String[projects.size()]));
+	}
 }

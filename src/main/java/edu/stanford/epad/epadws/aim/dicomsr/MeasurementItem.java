@@ -4,10 +4,10 @@ import com.google.gson.Gson;
 
 public class MeasurementItem {
 	
-	String value="37.3289";
-    ControlledTerm quantity= new ControlledTerm("112031", "DCM", "Attenuation Coefficient");
-    ControlledTerm units= new ControlledTerm("[hnsf'U]", "UCUM", "Hounsfield unit");
-    ControlledTerm derivationModifier= new ControlledTerm("R-00317", "SRT", "Mean");
+	String value=null;
+    ControlledTerm quantity= null;
+    ControlledTerm units= null;
+    ControlledTerm derivationModifier= null;
     
     public MeasurementItem() {
     	

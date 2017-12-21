@@ -453,6 +453,7 @@ public class AIMUtil
 		String patientID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.PatientID);
 		String patientName = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.PatientName);
 		String patientBirthDay = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.PatientBirthDate);
+
 		//just date or date with time. and put 19000101000000 so we understand it is default
 		if (patientBirthDay.trim().length() != 8 && patientBirthDay.trim().length() != 14) patientBirthDay = "19000101000000";
 		String patientSex = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.PatientSex);
@@ -462,7 +463,15 @@ public class AIMUtil
 		String dsoTime = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesTime);
 		//append time to date
 		if (dsoTime.replace(":", "").trim().length()>=6)
-			dsoDate+=dsoTime.replace(":", "").trim().substring(0, 6);
+			dsoTime=dsoTime.replace(":", "").trim().substring(0, 6);
+		else dsoTime = "000000";
+		dsoDate+=dsoTime;
+		String studyDate = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.StudyDate);
+		if (studyDate.trim().length() != 8) studyDate = "19000101";
+		String studyTime = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.StudyTime);
+		if (studyTime.trim().length() > 6) studyTime=studyTime.substring(0,6);
+		else if (studyTime.trim().length() != 6) studyTime = "000000";
+
 		String sopClassUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SOPClassUID);
 		String studyUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.StudyInstanceUID);
 		log.info("DSO:" + dsoFile.getAbsolutePath() + " PatientID:" + patientID + " studyUID:" + studyUID + " projectID:" + projectID);
@@ -472,8 +481,6 @@ public class AIMUtil
 		// TODO: This call to get Referenced Image does not work ???
 		String[] referencedImageUID = Attribute.getStringValues(dsoDICOMAttributes, TagFromName.ReferencedSOPInstanceUID);
 		String accessionNumber = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.AccessionNumber);
-		String studyDate = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.StudyDate);
-		String studyTime = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.StudyTime);
 		
 		String[] segNums = SequenceAttribute.getArrayOfSingleStringValueOrEmptyStringOfNamedAttributeWithinSequenceItems(dsoDICOMAttributes, TagFromName.SegmentSequence, TagFromName.SegmentNumber);
 		if (segNums == null) segNums = new String[1];
@@ -544,7 +551,13 @@ public class AIMUtil
 				template=new CD(t.getTemplateCode(),t.getTemplateName(),t.getCodingSchemeDesignator(),t.getCodingSchemeVersion());
 			}
 			Aim4 aim=new Aim4(username, user.getFullName(), patientName, patientID, patientBirthDay, patientSex, template, name, "", referencedImageUID[0], id.classUID, studyDate, studyTime, referencedStudyUID, referencedSeriesUID, accessionNumber, null, dsoDate);
-			
+			EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+			String uniquePatientID=epadOperations.getUniquePatientID(patientID, patientName);
+			if (!uniquePatientID.equalsIgnoreCase(patientID)){
+				aim.getPerson().setSourcePatientGroupId(new ST(patientID));
+				patientID=uniquePatientID;
+				aim.getPerson().setId(new ST(patientID));
+			}
 			DicomSegmentationEntity dc = new DicomSegmentationEntity();
 			dc.setUniqueIdentifier();
 			dc.setReferencedSopInstanceUid(new II(referencedImageUID[0]));
@@ -561,6 +574,7 @@ public class AIMUtil
 			aim.setAimSeriesInstanceUid(null);
 			aim.setAimAccessionNumber(new ST("1111"));
 			
+
 			if (generateCalcs){
 				//open the referenced images and calculate the aggregations
 				Double[] calcs=DSOUtil.generateCalcs(referencedSeriesUID,referencedImageUID,dsoFile);
