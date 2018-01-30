@@ -1436,7 +1436,10 @@ public class AIMUtil
 					//ml
 					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
-					ea.date = aim.getDateTime();
+//					ea.date = aim.getDateTime();
+					if (a.getDateTimeAsDate()!=null)
+						ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
+					
 					ea.comment = a.getComment();
 					if (a.getFirstStudyDate() != null)
 						ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
@@ -1498,7 +1501,10 @@ public class AIMUtil
 					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
 				}
-				ea.date = aim.getDateTime();
+//				ea.date = aim.getDateTime();
+				if (a.getDateTimeAsDate()!=null)
+					ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
+				
 				ea.comment = a.getComment();
 				if (a.getFirstStudyDate() != null)
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
@@ -1559,7 +1565,10 @@ public class AIMUtil
 					//ml
 					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
-					ea.date = aim.getDateTime();
+//					ea.date = aim.getDateTime();
+					if (a.getDateTimeAsDate()!=null)
+						ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
+					
 					ea.comment = a.getComment();
 					if (a.getFirstStudyDate() != null)
 						ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
@@ -1621,7 +1630,10 @@ public class AIMUtil
 					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
 				}
-				ea.date = aim.getDateTime();
+//				ea.date = aim.getDateTime();
+				if (a.getDateTimeAsDate()!=null)
+					ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
+				
 				ea.comment = a.getComment();
 				if (a.getFirstStudyDate() != null)
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
@@ -1668,7 +1680,10 @@ public class AIMUtil
 						//ml
 						ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 						ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
-						ea.date = iac.getDateTime();
+//						ea.date = iac.getDateTime();
+						if (a.getDateTimeAsDate()!=null)
+							ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
+						
 						ea.comment = a.getComment();
 						if (a.getFirstStudyDate() != null)
 							ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
@@ -1828,7 +1843,10 @@ public class AIMUtil
 				//ml
 				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 				ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
-				ea.date = iac.getDateTime();
+//				ea.date = iac.getDateTime();
+				if (a.getDateTimeAsDate()!=null)
+					ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
+				
 				ea.comment = a.getComment();
 				if (a.getFirstStudyDate() != null)
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
@@ -1859,7 +1877,10 @@ public class AIMUtil
 				//ml
 				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 				ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
-				ea.date = iac.getDateTime();
+//				ea.date = iac.getDateTime();
+				if (a.getDateTimeAsDate()!=null)
+					ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
+				
 				ea.comment = a.getComment();
 				if (a.getFirstStudyDate() != null)
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
@@ -1890,7 +1911,10 @@ public class AIMUtil
 				//ml
 				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 				ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
-				ea.date = iac.getDateTime();
+//				ea.date = iac.getDateTime();
+				if (a.getDateTimeAsDate()!=null)
+					ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
+				
 				ea.comment = a.getComment();
 				if (a.getFirstStudyDate() != null)
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
@@ -1966,7 +1990,9 @@ public class AIMUtil
 				//ml
 				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 				ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
-				ea.date = iac.getDateTime();
+//				ea.date = iac.getDateTime();
+				if (a.getDateTimeAsDate()!=null)
+					ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
 				ea.comment = a.getComment();
 				if (a.getFirstStudyDate() != null)
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
@@ -2712,7 +2738,10 @@ public class AIMUtil
 					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
 				}
-				ea.date = aim.getDateTime();
+//				ea.date = aim.getDateTime();
+				if (a.getDateTimeAsDate()!=null)
+					ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
+				
 				ea.comment = a.getComment();
 				if (a.getFirstStudyDate() != null)
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
