@@ -436,7 +436,7 @@ public class AimReporter {
 					
 					
 				}
-				if (hasCalcs)
+				if (hasCalcs) //this makes it not return anything if length or longaxis not send
 					table[row++]=strValues;
 				else //ignore if doesn't have any calcs
 					table[row++]=null;

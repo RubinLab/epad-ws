@@ -763,7 +763,7 @@ public class AimMigrator {
 		//calculate the longest line in the closed shape 
 		double[] majorAxis=getMajorAxis(pointsPX, spacingVector);
 		//add length calculation for major axis
-		ia.addCalculationEntity(Aim4.addLengthCalculation(majorAxis[2],1,"cm"));
+		ia.addCalculationEntity(Aim4.createLengthCalculation(majorAxis[2],1,"cm"));
 
 		return ia;
 	}
@@ -1278,13 +1278,13 @@ public class AimMigrator {
 		//we have definitions for these: AreaCm2,  Dev (std dev), LengthCm, Max, Mean, Min
 		//we can put osirixLesionJson.getInt("IndexInImage") as the shape identifier but we save each shape to separate aim. I am  putting 1 in all
 		//put the calculation onlt if it is different than 0. osirix puts those fields even if they are empty. (like area for a line)
-		if (osirixLesionJson.getDouble("AreaCm2")!=0) ia.addCalculationEntity(Aim4.addAreaCalculation(osirixLesionJson.getDouble("AreaCm2") ,1,"cm2"));
-		if (osirixLesionJson.getDouble("Dev")!=0) ia.addCalculationEntity(Aim4.addStdDevCalculation(osirixLesionJson.getDouble("Dev") ,1,"linear"));
-		if (osirixLesionJson.getDouble("LengthCm")!=0) ia.addCalculationEntity(Aim4.addLengthCalculation(osirixLesionJson.getDouble("LengthCm") ,1,"cm"));
-		if (osirixLesionJson.getDouble("Max")!=0) ia.addCalculationEntity(Aim4.addMaxCalculation(osirixLesionJson.getDouble("Max") ,1,"linear"));
-		if (osirixLesionJson.getDouble("Mean")!=0) ia.addCalculationEntity(Aim4.addMeanCalculation(osirixLesionJson.getDouble("Mean") ,1,"linear"));
-		if (osirixLesionJson.getDouble("Min")!=0) ia.addCalculationEntity(Aim4.addMinCalculation(osirixLesionJson.getDouble("Min") ,1,"linear"));
-
+		if (osirixLesionJson.getDouble("AreaCm2")!=0) ia.addCalculationEntity(Aim4.createAreaCalculation(osirixLesionJson.getDouble("AreaCm2") ,1,"cm2"));
+		if (osirixLesionJson.getDouble("Dev")!=0) ia.addCalculationEntity(Aim4.createStdDevCalculation(osirixLesionJson.getDouble("Dev") ,1,"linear"));
+		if (osirixLesionJson.getDouble("LengthCm")!=0) ia.addCalculationEntity(Aim4.createLengthCalculation(osirixLesionJson.getDouble("LengthCm") ,1,"cm"));
+		if (osirixLesionJson.getDouble("Max")!=0) ia.addCalculationEntity(Aim4.createMaxCalculation(osirixLesionJson.getDouble("Max") ,1,"linear"));
+		if (osirixLesionJson.getDouble("Mean")!=0) ia.addCalculationEntity(Aim4.createMeanCalculation(osirixLesionJson.getDouble("Mean") ,1,"linear"));
+		if (osirixLesionJson.getDouble("Min")!=0) ia.addCalculationEntity(Aim4.createMinCalculation(osirixLesionJson.getDouble("Min") ,1,"linear"));
+		//TODO withref
 
 		iac.addImageAnnotation(ia);
 

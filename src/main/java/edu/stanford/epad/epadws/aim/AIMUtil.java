@@ -170,7 +170,7 @@ import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.EPADAIMList.EPADAIMResultSet;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.dtos.internal.DICOMElementList;
-import edu.stanford.hakan.aim4api.project.epad.Aim;
+import edu.stanford.hakan.aim4api.project.epad.Aim4;
 import edu.stanford.hakan.aim4api.project.epad.Aim4;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
@@ -257,7 +257,7 @@ public class AIMUtil
 			
 			saveImageAnnotationToServer(iac, aim.projectID, dsoStartIndex, null, false);
 		} catch (AimException e) {
-			log.info("Aim exception getting the aim from string " + e.getMessage());
+			log.info("Aim4 exception getting the aim from string " + e.getMessage());
 		}
 	}
 	
@@ -274,7 +274,7 @@ public class AIMUtil
 			
 			saveImageAnnotationToServer(iac, aim.projectID, dsoStartIndex, null, false);
 		} catch (AimException e) {
-			log.info("Aim exception getting the aim from string " + e.getMessage());
+			log.info("Aim4 exception getting the aim from string " + e.getMessage());
 		}
 	}
 	
@@ -321,7 +321,7 @@ public class AIMUtil
 		    File storeFile = new File(storeXmlPath);
 		    String xml = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(aim);
 		    log.info("Saving AIM xml="+ xml);
-		    log.info("Saving AIM file with ID " + aim.getUniqueIdentifier() + " to temp folder "+ tempXmlPath);
+		    log.info("Saving AIM file with ID " + aim.getUniqueIdentifier().getRoot() + " to temp folder "+ tempXmlPath);
 			edu.stanford.hakan.aim4api.usage.AnnotationBuilder.saveToFile(aim, tempXmlPath, xsdFilePathV4);
 		    
 		    log.info(AnnotationBuilder.getAimXMLsaveResult());
@@ -347,7 +347,7 @@ public class AIMUtil
 		
 		    if (aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName() != null && aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName().equals("epad-plugin")) { // Which template has been used to fill the AIM file
 		        String templateName = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode(); // ex: jjv-5
-		        log.info("Found an AIM plugin template with name " + templateName + " and AIM ID " + aim.getUniqueIdentifier());
+		        log.info("Found an AIM plugin template with name " + templateName + " and AIM ID " + aim.getUniqueIdentifier().getRoot());
 		        boolean templateHasBeenFound = false;
 		        String handlerName = null;
 		        String pluginName = null;
@@ -573,7 +573,7 @@ public class AIMUtil
 			aim.setAimStudyInstanceUid(null);
 			aim.setAimSeriesInstanceUid(null);
 			aim.setAimAccessionNumber(new ST("1111"));
-			
+			aim.addFreeText("this is free text test");
 
 			if (generateCalcs){
 				//open the referenced images and calculate the aggregations
@@ -589,17 +589,17 @@ public class AIMUtil
 						units="HU";
 						
 					}
-					aim.addCalculationEntityWithRef(Aim4.addMinCalculation(calcs[0], null, units),dc);
-					aim.addCalculationEntityWithRef(Aim4.addMaxCalculation(calcs[1], null, units),dc);
-					aim.addCalculationEntityWithRef(Aim4.addMeanCalculation(calcs[2], null, units),dc);
-					aim.addCalculationEntityWithRef(Aim4.addStdDevCalculation(calcs[3], null, units),dc);
+					aim.addCalculationEntityWithRef(Aim4.createMinCalculation(calcs[0], null, units),dc);
+					aim.addCalculationEntityWithRef(Aim4.createMaxCalculation(calcs[1], null, units),dc);
+					aim.addCalculationEntityWithRef(Aim4.createMeanCalculation(calcs[2], null, units),dc);
+					aim.addCalculationEntityWithRef(Aim4.createStdDevCalculation(calcs[3], null, units),dc);
 					
 				}
 				
 			}
 			
 			log.info("Saving AIM file for DSO " + imageUID + " in series " + seriesUID + " with ID "
-					+ aim.getUniqueIdentifier() + " date "+ dsoDate);
+					+ aim.getUniqueIdentifier().getRoot() + " date "+ dsoDate);
 			try {
 				boolean missingproject = false;
 				if (projectID == null || projectID.trim().length() == 0)
@@ -886,7 +886,7 @@ public class AIMUtil
             	
             	SegmentationEntityCollection sec = imageAnnotationColl.getImageAnnotations().get(0).getSegmentationEntityCollection();
 				if (sec != null)
-					log.debug("Aim: " + imageAnnotationColl.getUniqueIdentifier().getRoot() + " SEC size:" + sec.getSegmentationEntityList().size());
+					log.debug("Aim4: " + imageAnnotationColl.getUniqueIdentifier().getRoot() + " SEC size:" + sec.getSegmentationEntityList().size());
 				if (sec != null  && imageAnnotationColl.getImageAnnotations().get(0).getListTypeCode().get(0).getCode().equals("SEG"))
 				{
 					if (uploaded)
@@ -922,10 +922,10 @@ public class AIMUtil
 								units="HU";
 								
 							}
-							aim.addCalculationEntity(Aim4.addMinCalculation(calcs[0], null, units));
-							aim.addCalculationEntity(Aim4.addMaxCalculation(calcs[1], null, units));
-							aim.addCalculationEntity(Aim4.addMeanCalculation(calcs[2], null, units));
-							aim.addCalculationEntity(Aim4.addStdDevCalculation(calcs[3], null, units));
+							aim.addCalculationEntity(Aim4.createMinCalculation(calcs[0], null, units));
+							aim.addCalculationEntity(Aim4.createMaxCalculation(calcs[1], null, units));
+							aim.addCalculationEntity(Aim4.createMeanCalculation(calcs[2], null, units));
+							aim.addCalculationEntity(Aim4.createStdDevCalculation(calcs[3], null, units));
 							
 						}
 						
@@ -963,12 +963,12 @@ public class AIMUtil
 				
 				if (imageID==null || imageID.equals("") || imageID.equalsIgnoreCase("na")) {
 					//aim has missing information. possibly from pf migration
-					log.info("Aim has missing information. possibly from pf migration. Series is"+ seriesID + " comment is "+ aim.getComment());
+					log.info("Aim4 has missing information. possibly from pf migration. Series is"+ seriesID + " comment is "+ aim.getComment());
 					//TODO fill in image, study and patient info
 					//check if series is in epad
 					DCM4CHEESeries series=Dcm4CheeQueries.getSeries(seriesID);
 					if (series==null) {
-						log.warning("Series is not in the epad repository. Cannot fill in data. Aim cannot be listed without an imageid");
+						log.warning("Series is not in the epad repository. Cannot fill in data. Aim4 cannot be listed without an imageid");
 					}else {
 						String[] comment=aim.getComment().split("/");
 						Double sliceLoc=-99999.0;
@@ -1182,7 +1182,7 @@ public class AIMUtil
         	}
         	if (e.getMessage().toLowerCase().contains("validation")) {
         		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
-        		projectOperations.createEventLog(username, projectID, null, null, null, null, null, "", "Check Aim Schema", EventMessageCodes.AIM_VALIDATION_ERROR, true);
+        		projectOperations.createEventLog(username, projectID, null, null, null, null, null, "", "Check Aim4 Schema", EventMessageCodes.AIM_VALIDATION_ERROR, true);
         		EpadDatabaseOperations epadDatabaseOperations=EpadDatabase.getInstance().getEPADDatabaseOperations();
         		epadDatabaseOperations.insertEpadEvent(sessionId,
         				EventMessageCodes.AIM_VALIDATION_ERROR, 
@@ -1236,40 +1236,42 @@ public class AIMUtil
 	//ml aimv3 is not used anymore
 	public static EPADAIMList queryAIMImageAnnotationSummaries(EPADAIMList aims, String user, int index, int count, String sessionID) throws ParserConfigurationException, AimException
 	{
-		Map<String, String> projectAimIDs = getUIDCsvList(sessionID, aims, user);
-		List<ImageAnnotation> annotations = new ArrayList<ImageAnnotation>();
-		for (String projectId: projectAimIDs.keySet())
-		{
-			annotations.addAll(AIMQueries.getAIMImageAnnotations(projectId, AIMSearchType.ANNOTATION_UID, projectAimIDs.get(projectId), user, index, count));
-		}
-		log.info("" + annotations.size() + " AIM file(s) found for user " + user);
-
-		Map<String, EPADAIM> aimMAP = new HashMap<String, EPADAIM>();
-		EPADAIMResultSet rs = aims.ResultSet;
-		for (EPADAIM aim: rs.Result)
-		{
-			aimMAP.put(aim.aimID, aim);
-		}
-		aims = new EPADAIMList();
-		long starttime = System.currentTimeMillis();
-		for (ImageAnnotation aim : annotations) {
-			Aim a = new Aim(aim);
-			EPADAIM ea = aimMAP.get(aim.getUniqueIdentifier());
-			ea.name = aim.getName();
-			ea.template = aim.getCodeMeaning();
-			ea.templateType = aim.getCodeValue();
-			ea.date = aim.getDateTime();
-			ea.comment = a.getComment();
-			if (a.getFirstStudyDate() != null)
-				ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
-			ea.patientName = a.getPatientName();
-			ea.xml = null;
-			aims.addAIM(ea);
-		}
-		long parsetime = System.currentTimeMillis();
-		log.info("Time taken to parse annotations:" + (parsetime-starttime) + " msecs");
-		log.info("" + annotations.size() + " annotations returned to client");
-		return aims;
+//		Map<String, String> projectAimIDs = getUIDCsvList(sessionID, aims, user);
+//		List<ImageAnnotation> annotations = new ArrayList<ImageAnnotation>();
+//		for (String projectId: projectAimIDs.keySet())
+//		{
+//			annotations.addAll(AIMQueries.getAIMImageAnnotations(projectId, AIMSearchType.ANNOTATION_UID, projectAimIDs.get(projectId), user, index, count));
+//		}
+//		log.info("" + annotations.size() + " AIM file(s) found for user " + user);
+//
+//		Map<String, EPADAIM> aimMAP = new HashMap<String, EPADAIM>();
+//		EPADAIMResultSet rs = aims.ResultSet;
+//		for (EPADAIM aim: rs.Result)
+//		{
+//			aimMAP.put(aim.aimID, aim);
+//		}
+//		aims = new EPADAIMList();
+//		long starttime = System.currentTimeMillis();
+//		for (ImageAnnotation aim : annotations) {
+//			Aim4 a = new Aim4(aim);
+//			EPADAIM ea = aimMAP.get(aim.getUniqueIdentifier());
+//			ea.name = aim.getName();
+//			ea.template = aim.getCodeMeaning();
+//			ea.templateType = aim.getCodeValue();
+//			ea.date = aim.getDateTime();
+//			ea.comment = a.getComment();
+//			if (a.getFirstStudyDate() != null)
+//				ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
+//			ea.patientName = a.getPatientName();
+//			ea.xml = null;
+//			aims.addAIM(ea);
+//		}
+//		long parsetime = System.currentTimeMillis();
+//		log.info("Time taken to parse annotations:" + (parsetime-starttime) + " msecs");
+//		log.info("" + annotations.size() + " annotations returned to client");
+//		return aims;
+		log.warning("not supported use queryAIMImageAnnotationSummariesV4");
+		return null;
 	}
 
 	public static void queryAIMImageAnnotationsV4(PrintWriter responseStream, EPADAIMList aims, AIMSearchType aimSearchType,
@@ -1428,7 +1430,7 @@ public class AIMUtil
 				try {
 					List<ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionsFromString(ea.xml, null);
 					ImageAnnotationCollection aim = iacs.get(0);
-					Aim a = new Aim(aim);
+					Aim4 a = new Aim4(aim);
 					ea.name = aim.getImageAnnotations().get(0).getName().getValue();
 					//ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
 					//ml
@@ -1479,8 +1481,8 @@ public class AIMUtil
 		aims = new EPADAIMList();
 		for (ImageAnnotationCollection aim : annotations) {
 			try {
-				Aim a = new Aim(aim);
-				EPADAIM ea = aimMAP.get(aim.getUniqueIdentifier());
+				Aim4 a = new Aim4(aim);
+				EPADAIM ea = aimMAP.get(aim.getUniqueIdentifier().getRoot());
 				if (ea == null)  continue;
 				if (aim.getImageAnnotations().get(0).getName() != null)
 				{
@@ -1551,7 +1553,7 @@ public class AIMUtil
 				try {
 					List<ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionsFromString(ea.xml, null);
 					ImageAnnotationCollection aim = iacs.get(0);
-					Aim a = new Aim(aim);
+					Aim4 a = new Aim4(aim);
 					ea.name = aim.getImageAnnotations().get(0).getName().getValue();
 					//ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
 					//ml
@@ -1602,8 +1604,8 @@ public class AIMUtil
 		aims = new EPADAIMList();
 		for (ImageAnnotationCollection aim : annotations) {
 			try {
-				Aim a = new Aim(aim);
-				EPADAIM ea = aimMAP.get(aim.getUniqueIdentifier());
+				Aim4 a = new Aim4(aim);
+				EPADAIM ea = aimMAP.get(aim.getUniqueIdentifier().getRoot());
 				if (ea == null)  continue;
 				if (aim.getImageAnnotations().get(0).getName() != null)
 				{
@@ -1661,7 +1663,7 @@ public class AIMUtil
 					try
 					{
 						EPADAIM ea = paimsMap.get(iac.getUniqueIdentifier().getRoot());
-						Aim a = new Aim(iac);
+						Aim4 a = new Aim4(iac);
 						ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 						//ml
 						ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
@@ -1819,7 +1821,7 @@ public class AIMUtil
 			ImageAnnotationCollection iac = iacs.get(i);
 			try
 			{
-				Aim a = new Aim(iac);
+				Aim4 a = new Aim4(iac);
 				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), aim.userName, 
 						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
@@ -1832,7 +1834,7 @@ public class AIMUtil
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
 				ea.patientName = a.getPatientName();
 				ea.xml = null;
-				ea.user = a.getLoggedInUser().getLoginName();
+				ea.user = a.getLoggedInUser().getLoginName().getValue();
 				aims.addAIM(ea);
 			} catch (Exception x) {
 				log.warning("Error parsing ImageAnnotationCollection:" + iac, x);
@@ -1850,7 +1852,7 @@ public class AIMUtil
 			ImageAnnotationCollection iac = iacs.get(i);
 			try
 			{
-				Aim a = new Aim(iac);
+				Aim4 a = new Aim4(iac);
 				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), aim.userName, 
 						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
@@ -1863,7 +1865,7 @@ public class AIMUtil
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
 				ea.patientName = a.getPatientName();
 				ea.xml = null;
-				ea.user = a.getLoggedInUser().getLoginName();
+				ea.user = a.getLoggedInUser().getLoginName().getValue();
 				aims.addAIM(ea);
 			} catch (Exception x) {
 				log.warning("Error parsing ImageAnnotationCollection:" + iac, x);
@@ -1881,7 +1883,7 @@ public class AIMUtil
 			ImageAnnotationCollection iac = iacs.get(i);
 			try
 			{
-				Aim a = new Aim(iac);
+				Aim4 a = new Aim4(iac);
 				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), aim.userName, 
 						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
@@ -1894,7 +1896,7 @@ public class AIMUtil
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
 				ea.patientName = a.getPatientName();
 				ea.xml = null;
-				ea.user = a.getLoggedInUser().getLoginName();
+				ea.user = a.getLoggedInUser().getLoginName().getValue();
 				aims.addAIM(ea);
 			} catch (Exception x) {
 				log.warning("Error parsing ImageAnnotationCollection:" + iac, x);
@@ -1958,8 +1960,8 @@ public class AIMUtil
 			ImageAnnotationCollection iac = iacs.get(i);
 			try
 			{
-				Aim a = new Aim(iac);
-				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName(), "", a.getPatientID(), a.getFirstStudyID(), a.getFirstSeriesID(), a.getFirstImageID(), 0);
+				Aim4 a = new Aim4(iac);
+				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName().getValue(), "", a.getPatientID(), a.getFirstStudyID(), a.getFirstSeriesID(), a.getFirstImageID(), 0);
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 				//ml
 				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
@@ -2690,11 +2692,11 @@ public class AIMUtil
 		EPADAIMList aims = new EPADAIMList();
 		for (ImageAnnotationCollection aim : iacs) {
 			try {
-				Aim a = new Aim(aim);
+				Aim4 a = new Aim4(aim);
 				EPADAIM ea =null;
 				try
 				{
-					ea = new EPADAIM(aim.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName(), "", a.getPatientID(), a.getFirstStudyID(), a.getFirstSeriesID(), a.getFirstImageID(), 0);
+					ea = new EPADAIM(aim.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName().getValue(), "", a.getPatientID(), a.getFirstStudyID(), a.getFirstSeriesID(), a.getFirstImageID(), 0);
 					
 				} catch (Exception x) {
 					log.warning("Error parsing ImageAnnotationCollection:" + aim, x);
