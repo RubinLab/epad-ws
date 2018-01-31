@@ -2109,6 +2109,7 @@ public class AIMUtil
 	        else
 	        	return edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionFromFile(file.getAbsolutePath());
 		} catch (Exception e) {
+			log.warning("couldn't get image annotation from file ", e);
 			return null;
 		}
     }
@@ -2827,6 +2828,7 @@ public class AIMUtil
 			desc=name;
 
 		}
+		//TODO Compact
 		ExtendedCalculationResult calculationResult=new ExtendedCalculationResult();
 
 		calculationResult.setType(Enumerations.CalculationResultIdentifier.Scalar);
