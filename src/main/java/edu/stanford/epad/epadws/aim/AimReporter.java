@@ -177,7 +177,18 @@ public class AimReporter {
 	 * @return a json array in string format. json array contains a json object for each aim with column names as attributes
 	 */
 	public static String fillTable(EPADAIMList aims,String templatecode, String[] columns, String[] shapes){
-		
+		String[] templates=templatecode.split(",");
+		if (templates.length>1){
+			String filled="";
+			for (String template:templates){
+				if (filled.isEmpty())
+					filled=fillTable(aims, template, columns,shapes);
+				else{
+					filled=filled.substring(0, filled.length()-1)+","+fillTable(aims, template, columns,shapes).substring(1);
+				}
+			}
+			return filled;
+		}
 		String [][] table=null;
 		//make sure they are lower case
 		for (int i=0;i<columns.length;i++){
