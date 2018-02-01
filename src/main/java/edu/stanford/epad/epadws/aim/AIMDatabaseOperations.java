@@ -246,7 +246,7 @@ public class AIMDatabaseOperations {
     	    }
     	    
 	        String query = " declare default element namespace '" + this.existNameSpace + "'; ";
-	        if (aimVersion == AimVersion.AIMv4_0) {
+	        if (aimVersion == AimVersion.AIMv4_0 || aimVersion == AimVersion.AIMv4_2) {
 	            query += " for $iac in collection('" + this.existCollectionName + "')/ImageAnnotationCollection ";
 	            query += " return ($iac/uniqueIdentifier, $iac/person/id, $iac/user/loginName, $iac/imageAnnotations/ImageAnnotation/markupEntityCollection, $iac/imageAnnotations/ImageAnnotation/imageReferenceEntityCollection) ";
 	        //} else if (aimVersion == AimVersion.AIMv3_0 || aimVersion == AimVersion.AIMv3_0_1 || aimVersion == AimVersion.AIMv3_0_2) {
@@ -334,7 +334,7 @@ public class AIMDatabaseOperations {
 	        NodeList listChilds = node.getChildNodes();
 	        for (int i = 0; i < listChilds.getLength(); i++) {
 	            Node currentNode = listChilds.item(i);
-	            if (aimVersion == AimVersion.AIMv4_0) {
+	            if (aimVersion == AimVersion.AIMv4_0 || aimVersion == AimVersion.AIMv4_2) {
 	
 		            if ("uniqueIdentifier".equals(currentNode.getNodeName())) {
 		                annotationID = currentNode.getAttributes().getNamedItem("root").getNodeValue();
@@ -434,7 +434,7 @@ public class AIMDatabaseOperations {
 	                }
 	            }
 	
-	                if ((aimVersion == AimVersion.AIMv4_0 && uidOK && patOK && markupOK && irefOK && userOK) || (aimVersion != AimVersion.AIMv4_0 && uidOK && patOK && userOK && markupOK)) {
+	                if (((aimVersion == AimVersion.AIMv4_0 || aimVersion == AimVersion.AIMv4_2) && uidOK && patOK && markupOK && irefOK && userOK) || (aimVersion != AimVersion.AIMv4_0 && uidOK && patOK && userOK && markupOK)) {
 	                uidOK = false;
 	                patOK = false;
 	                markupOK = false;

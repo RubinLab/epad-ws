@@ -570,10 +570,10 @@ public class AIMUtil
 			
 			//let aimapi to generate a uid
 			aim.setTrackingUniqueIdentifier(null);
-			aim.setAimStudyInstanceUid(null);
+			aim.setAimStudyInstanceUid(new II(studyUID));
+			//TODO aim series
 			aim.setAimSeriesInstanceUid(null);
-			aim.setAimAccessionNumber(new ST("1111"));
-			aim.addFreeText("this is free text test");
+			aim.setAimAccessionNumber(new ST(accessionNumber));
 
 			if (generateCalcs){
 				//open the referenced images and calculate the aggregations
@@ -2556,7 +2556,8 @@ public class AIMUtil
 		"AIMTemplate_v2rvStanford.xsd",
 		"AIM_v4_rv44_XML.xsd",
 		"ISO_datatypes_Narrative.xsd",
-		"AIM_v4.1_rv2_XML.xsd"
+		"AIM_v4.1_rv2_XML.xsd",
+		"AIM_v4.2_rv2_XML.xsd"
 	};
 	
 	static final String[] OVERWRITE_SCHEMA_FILES = {
