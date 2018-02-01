@@ -203,6 +203,7 @@ import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
+import edu.stanford.hakan.aim4api.project.epad.Aim4;
 
 /**
  * Code for handling DICOM Segmentation Objects
@@ -477,9 +478,9 @@ public class DSOUtil
 			}
 			if (ea == null)
 			{
-				ImageAnnotation aim = AIMUtil.generateAIMFileForDSO(temporaryDSOFile, username, projectID);
-				log.info("DSO AimID:" + aim.getUniqueIdentifier());
-				ea = epadDatabaseOperations.getAIM(aim.getUniqueIdentifier());
+				Aim4 aim = AIMUtil.generateAIMFileForDSO(temporaryDSOFile, username, projectID);
+				log.info("DSO AimID:" + aim.getUniqueIdentifier().getRoot());
+				ea = epadDatabaseOperations.getAIM(aim.getUniqueIdentifier().getRoot());
 				ea.dsoFrameNo = dsoEditRequest.editedFrameNumbers.get(0);
 				epadDatabaseOperations.updateAIMDSOFrameNo(ea.aimID, ea.dsoFrameNo);
 			}

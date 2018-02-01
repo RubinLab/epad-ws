@@ -410,7 +410,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 				{
 					adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
 							EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
-					adb.refreshTheAnnotationTable(AimVersion.AIMv4_0);
+					adb.refreshTheAnnotationTable(AimVersion.AIMv4_2);
 				}
 			} catch (SQLException | AimException | IOException sqle) {
 				log.warning("AIM Database operation failed:", sqle);

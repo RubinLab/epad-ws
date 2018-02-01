@@ -170,7 +170,7 @@ import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.EPADAIMList.EPADAIMResultSet;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.dtos.internal.DICOMElementList;
-import edu.stanford.hakan.aim4api.project.epad.Aim;
+import edu.stanford.hakan.aim4api.project.epad.Aim4;
 import edu.stanford.hakan.aim4api.project.epad.Aim4;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
@@ -184,6 +184,7 @@ import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.Subject;
+import edu.stanford.epad.epadws.models.Template;
 import edu.stanford.epad.epadws.plugins.PluginConfig;
 import edu.stanford.epad.epadws.processing.pipeline.task.PluginStartTask;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
@@ -194,7 +195,6 @@ import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.SessionService;
 import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.hakan.aim4api.base.AimException;
-import edu.stanford.hakan.aim4api.base.Algorithm;
 import edu.stanford.hakan.aim4api.base.CD;
 import edu.stanford.hakan.aim4api.base.CalculationEntity;
 import edu.stanford.hakan.aim4api.base.DicomImageReferenceEntity;
@@ -257,7 +257,7 @@ public class AIMUtil
 			
 			saveImageAnnotationToServer(iac, aim.projectID, dsoStartIndex, null, false);
 		} catch (AimException e) {
-			log.info("Aim exception getting the aim from string " + e.getMessage());
+			log.info("Aim4 exception getting the aim from string " + e.getMessage());
 		}
 	}
 	
@@ -274,7 +274,7 @@ public class AIMUtil
 			
 			saveImageAnnotationToServer(iac, aim.projectID, dsoStartIndex, null, false);
 		} catch (AimException e) {
-			log.info("Aim exception getting the aim from string " + e.getMessage());
+			log.info("Aim4 exception getting the aim from string " + e.getMessage());
 		}
 	}
 	
@@ -321,7 +321,7 @@ public class AIMUtil
 		    File storeFile = new File(storeXmlPath);
 		    String xml = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(aim);
 		    log.info("Saving AIM xml="+ xml);
-		    log.info("Saving AIM file with ID " + aim.getUniqueIdentifier() + " to temp folder "+ tempXmlPath);
+		    log.info("Saving AIM file with ID " + aim.getUniqueIdentifier().getRoot() + " to temp folder "+ tempXmlPath);
 			edu.stanford.hakan.aim4api.usage.AnnotationBuilder.saveToFile(aim, tempXmlPath, xsdFilePathV4);
 		    
 		    log.info(AnnotationBuilder.getAimXMLsaveResult());
@@ -347,7 +347,7 @@ public class AIMUtil
 		
 		    if (aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName() != null && aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName().equals("epad-plugin")) { // Which template has been used to fill the AIM file
 		        String templateName = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode(); // ex: jjv-5
-		        log.info("Found an AIM plugin template with name " + templateName + " and AIM ID " + aim.getUniqueIdentifier());
+		        log.info("Found an AIM plugin template with name " + templateName + " and AIM ID " + aim.getUniqueIdentifier().getRoot());
 		        boolean templateHasBeenFound = false;
 		        String handlerName = null;
 		        String pluginName = null;
@@ -431,41 +431,47 @@ public class AIMUtil
 	 * {@link PluginAIMUtil#generateAIMFileForDSO} is very similar.
 	 * 
 	 */
-	public static ImageAnnotation generateAIMFileForDSO(File dsoFile) throws Exception
+	public static Aim4 generateAIMFileForDSO(File dsoFile) throws Exception
 	{
 		return generateAIMFileForDSO(dsoFile, "shared", null);
 	}
 	
-	public static ImageAnnotation generateAIMFileForDSO(File dsoFile, String username, String projectID) throws Exception
+	public static Aim4 generateAIMFileForDSO(File dsoFile, String username, String projectID) throws Exception
 	{
 		return generateAIMFileForDSO(dsoFile, username, projectID, null);
 	}
 	
 	
-	public static ImageAnnotation generateAIMFileForDSO(File dsoFile, String username, String projectID, String aimName) throws Exception
+	public static Aim4 generateAIMFileForDSO(File dsoFile, String username, String projectID, String aimName) throws Exception
 	{
 		return generateAIMFileForDSO(dsoFile, username, projectID, aimName, false);
 	}
-	public static ImageAnnotation generateAIMFileForDSO(File dsoFile, String username, String projectID, String aimName, boolean generateCalcs) throws Exception
+	public static Aim4 generateAIMFileForDSO(File dsoFile, String username, String projectID, String aimName, boolean generateCalcs) throws Exception
 	{
 		log.info("Creating DSO AIM for user " + username + " in project " + projectID + " file:" + dsoFile.getAbsolutePath());
 		AttributeList dsoDICOMAttributes = PixelMedUtils.readDICOMAttributeList(dsoFile);
 		String patientID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.PatientID);
 		String patientName = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.PatientName);
 		String patientBirthDay = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.PatientBirthDate);
-		if (patientBirthDay.trim().length() != 8) patientBirthDay = "19000101";
+
+		//just date or date with time. and put 19000101000000 so we understand it is default
+		if (patientBirthDay.trim().length() != 8 && patientBirthDay.trim().length() != 14) patientBirthDay = "19000101000000";
 		String patientSex = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.PatientSex);
 		if (patientSex.trim().length() != 1) patientSex = "F";
 		String dsoDate = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesDate);
-		if (dsoDate.trim().length() != 8) dsoDate = "19000101";
+		if (dsoDate.trim().length() != 8 && dsoDate.trim().length() != 14) dsoDate = "19000101000000";
 		String dsoTime = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesTime);
-		if (dsoTime.trim().length() > 6) dsoTime = dsoTime.substring(0, 6);
-		else if (dsoTime.trim().length() != 6) dsoTime = "000000";
+		//append time to date
+		if (dsoTime.replace(":", "").trim().length()>=6)
+			dsoTime=dsoTime.replace(":", "").trim().substring(0, 6);
+		else dsoTime = "000000";
+		dsoDate+=dsoTime;
 		String studyDate = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.StudyDate);
 		if (studyDate.trim().length() != 8) studyDate = "19000101";
 		String studyTime = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.StudyTime);
 		if (studyTime.trim().length() > 6) studyTime=studyTime.substring(0,6);
 		else if (studyTime.trim().length() != 6) studyTime = "000000";
+
 		String sopClassUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SOPClassUID);
 		String studyUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.StudyInstanceUID);
 		log.info("DSO:" + dsoFile.getAbsolutePath() + " PatientID:" + patientID + " studyUID:" + studyUID + " projectID:" + projectID);
@@ -474,6 +480,8 @@ public class AIMUtil
 		String description = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesDescription);
 		// TODO: This call to get Referenced Image does not work ???
 		String[] referencedImageUID = Attribute.getStringValues(dsoDICOMAttributes, TagFromName.ReferencedSOPInstanceUID);
+		String accessionNumber = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.AccessionNumber);
+		
 		String[] segNums = SequenceAttribute.getArrayOfSingleStringValueOrEmptyStringOfNamedAttributeWithinSequenceItems(dsoDICOMAttributes, TagFromName.SegmentSequence, TagFromName.SegmentNumber);
 		if (segNums == null) segNums = new String[1];
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
@@ -531,38 +539,41 @@ public class AIMUtil
 			String name = aimName;
 			if (name == null || name.trim().length() == 0) name = description;
 			if (name == null || name.trim().length() == 0) name = "segmentation";
-			ImageAnnotation imageAnnotation = new ImageAnnotation(0, "", dsoDate+dsoTime, name, "SEG",
-					"SEG Only", "", "", "");
-
-			SegmentationCollection sc = new SegmentationCollection();
-			sc.AddSegmentation(new Segmentation(0, imageUID, sopClassUID, referencedImageUID[0], 1));
-			imageAnnotation.setSegmentationCollection(sc);
-			//ml adding sop class to createdicomimage references below
-			DICOMImageReference originalDICOMImageReference = PluginAIMUtil.createDICOMImageReferenceV3Compability(referencedStudyUID,
-					referencedSeriesUID, referencedImageUID[0], id.classUID, studyDate, studyTime);
-			imageAnnotation.addImageReference(originalDICOMImageReference);
-			//ml 2. image reference removed
-//			DICOMImageReference dsoDICOMImageReference = PluginAIMUtil.createDICOMImageReferenceV3Compability(studyUID, seriesUID,
-//					imageUID, sopClassUID);
-//			imageAnnotation.addImageReference(dsoDICOMImageReference);
-
-			Person person = new Person();
-			person.setSex(patientSex.trim());
-			if (patientBirthDay.trim().length() == 8)
-				person.setBirthDate(patientBirthDay.substring(0,4) + "-" + patientBirthDay.substring(4,6) + "-" + patientBirthDay.substring(6,8) + "T00:00:00"); // TODO
+			
+			EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+			edu.stanford.epad.epadws.models.User user=projectOperations.getUser(username);
+			
+			//get the seg template
+			Template t=projectOperations.getTemplate("SEG");
+			CD template=null;
+			if (t!=null){
+				//TODO it puts different values in the aim file than standard use. What does the gui put????
+				template=new CD(t.getTemplateCode(),t.getTemplateName(),t.getCodingSchemeDesignator(),t.getCodingSchemeVersion());
+			}
+			Aim4 aim=new Aim4(username, user.getFullName(), patientName, patientID, patientBirthDay, patientSex, template, name, "", referencedImageUID[0], id.classUID, studyDate, studyTime, referencedStudyUID, referencedSeriesUID, accessionNumber, null, dsoDate);
 			EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 			String uniquePatientID=epadOperations.getUniquePatientID(patientID, patientName);
-			
-			person.setId(uniquePatientID);
-			person.setName(patientName);
 			if (!uniquePatientID.equalsIgnoreCase(patientID)){
-				person.setOriginalId(patientID);
+				aim.getPerson().setSourcePatientGroupId(new ST(patientID));
 				patientID=uniquePatientID;
+				aim.getPerson().setId(new ST(patientID));
 			}
-			person.setCagridId(0);
-			imageAnnotation.addPerson(person);
-			// TODO Not general. See if we can generate AIM on GUI upload of DSO with correct user.
-			setImageAnnotationUser(imageAnnotation, username);
+			DicomSegmentationEntity dc = new DicomSegmentationEntity();
+			dc.setUniqueIdentifier();
+			dc.setReferencedSopInstanceUid(new II(referencedImageUID[0]));
+			dc.setSegmentNumber(1);
+			dc.setSopClassUid(new II(sopClassUID));
+			dc.setSopInstanceUid(new II(imageUID));
+			dc.setSeriesInstanceUid(new II(seriesUID));
+			dc.setStudyInstanceUid(new II(studyUID));
+			aim.setSegmentationEntity(dc);
+			
+			//let aimapi to generate a uid
+			aim.setTrackingUniqueIdentifier(null);
+			aim.setAimStudyInstanceUid(new II(studyUID));
+			//TODO aim series
+			aim.setAimSeriesInstanceUid(null);
+			aim.setAimAccessionNumber(new ST(accessionNumber));
 
 			if (generateCalcs){
 				//open the referenced images and calculate the aggregations
@@ -570,7 +581,6 @@ public class AIMUtil
 				//add calculations to aim
 				if (calcs!=null){
 					log.info("Retrieved calculations are: min="+calcs[0]+ " max="+calcs[1]+ " mean="+calcs[2]+" stddev="+calcs[3]);
-					Aim aim=new Aim(imageAnnotation);
 					String units="pixels";
 					if (aim.getModality().equals("PT")) {
 						units="SUV";
@@ -579,17 +589,17 @@ public class AIMUtil
 						units="HU";
 						
 					}
-					aim.addMinCalculation(calcs[0], null, units);
-					aim.addMaxCalculation(calcs[1], null, units);
-					aim.addMeanCalculation(calcs[2], null, units);
-					aim.addStdDevCalculation(calcs[3], null, units);
-					imageAnnotation=aim;
+					aim.addCalculationEntityWithRef(Aim4.createMinCalculation(calcs[0], null, units),dc);
+					aim.addCalculationEntityWithRef(Aim4.createMaxCalculation(calcs[1], null, units),dc);
+					aim.addCalculationEntityWithRef(Aim4.createMeanCalculation(calcs[2], null, units),dc);
+					aim.addCalculationEntityWithRef(Aim4.createStdDevCalculation(calcs[3], null, units),dc);
+					
 				}
 				
 			}
 			
 			log.info("Saving AIM file for DSO " + imageUID + " in series " + seriesUID + " with ID "
-					+ imageAnnotation.getUniqueIdentifier());
+					+ aim.getUniqueIdentifier().getRoot() + " date "+ dsoDate);
 			try {
 				boolean missingproject = false;
 				if (projectID == null || projectID.trim().length() == 0)
@@ -597,29 +607,29 @@ public class AIMUtil
 					missingproject = true;
 					projectID = EPADConfig.xnatUploadProjectID;
 				}
-				ImageAnnotationCollection aim4 = saveImageAnnotationToServer(imageAnnotation, projectID);
+				//don't know dso start number!!!
+				ImageAnnotationCollection aim4 = saveImageAnnotationToServer(aim, projectID, 0, null, false);
 				if (aim4 != null)
 				{
 					ImageReference imageReference = new ImageReference(projectID, patientID, referencedStudyUID, referencedSeriesUID, referencedImageUID[0]);
 					EpadDatabaseOperations dbOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-					EPADAIM aim = dbOperations.getAIM(imageAnnotation.getUniqueIdentifier());
-					if (aim != null)
+					EPADAIM eaim = dbOperations.getAIM(aim.getUniqueIdentifier().getRoot());
+					if (eaim != null)
 					{
 						if (!username.equals("shared"))
-							dbOperations.updateAIM(aim.aimID, projectID, username);
+							dbOperations.updateAIM(eaim.aimID, projectID, username);
 					}
 					else
 					{
-						aim = dbOperations.addDSOAIM(username, imageReference, seriesUID, imageAnnotation.getUniqueIdentifier(),
+						eaim = dbOperations.addDSOAIM(username, imageReference, seriesUID, aim.getUniqueIdentifier().getRoot(),
 								edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(aim4), name);
-						if ((aim.color == null || aim.color.trim().length() == 0) && segNums.length > 1)
+						if ((eaim.color == null || eaim.color.trim().length() == 0) && segNums.length > 1)
 						{
-							dbOperations.updateAIMColor(aim.aimID, ","); // Indicate multiple colors needed
+							dbOperations.updateAIMColor(eaim.aimID, ","); // Indicate multiple colors needed
 						}
 					}
 					if (missingproject)
 					{
-						EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 						Project proj = projectOperations.getFirstProjectForStudy(studyUID);
 						if (proj != null && !proj.getProjectId().equals(EPADConfig.xnatUploadProjectID))
 						{
@@ -627,7 +637,7 @@ public class AIMUtil
 						}
 					}
 				}
-				return imageAnnotation;
+				return aim;
 			} catch (AimException e) {
 				log.warning("Exception saving AIM file for DSO image " + imageUID + " in series " + seriesUID, e);
 			}
@@ -665,6 +675,7 @@ public class AIMUtil
 		List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(studyUID, referencedSeriesUID);
 		String name = imageUID;
 		if (name == null || name.trim().length() == 0) name = "segmentation";
+		
 		ImageAnnotation imageAnnotation = new ImageAnnotation(0, "", dsoDate.substring(0,4) + "-" + dsoDate.substring(4,6) + "-" + dsoDate.substring(6,8) + "T00:00:00", name, "SEG",
 				"SEG Only", "", "", "");
 
@@ -681,9 +692,7 @@ public class AIMUtil
 		Person person = new Person();
 		if (subject.getGender() != null)
 			person.setSex(subject.getGender().trim());
-		Date dob = subject.getDob();
 		String patientBirthDay = "";
-		if (dob != null) patientBirthDay = new SimpleDateFormat("yyyyMMdd").format(dob);
 		if (patientBirthDay.trim().length() == 8)
 			person.setBirthDate(patientBirthDay.substring(0,4) + "-" + patientBirthDay.substring(4,6) + "-" + patientBirthDay.substring(6,8) + "T00:00:00"); // TODO
 		person.setId(subjectID);
@@ -877,7 +886,7 @@ public class AIMUtil
             	
             	SegmentationEntityCollection sec = imageAnnotationColl.getImageAnnotations().get(0).getSegmentationEntityCollection();
 				if (sec != null)
-					log.debug("Aim: " + imageAnnotationColl.getUniqueIdentifier().getRoot() + " SEC size:" + sec.getSegmentationEntityList().size());
+					log.debug("Aim4: " + imageAnnotationColl.getUniqueIdentifier().getRoot() + " SEC size:" + sec.getSegmentationEntityList().size());
 				if (sec != null  && imageAnnotationColl.getImageAnnotations().get(0).getListTypeCode().get(0).getCode().equals("SEG"))
 				{
 					if (uploaded)
@@ -913,10 +922,10 @@ public class AIMUtil
 								units="HU";
 								
 							}
-							aim.addCalculationEntity(Aim4.addMinCalculation(calcs[0], null, units));
-							aim.addCalculationEntity(Aim4.addMaxCalculation(calcs[1], null, units));
-							aim.addCalculationEntity(Aim4.addMeanCalculation(calcs[2], null, units));
-							aim.addCalculationEntity(Aim4.addStdDevCalculation(calcs[3], null, units));
+							aim.addCalculationEntity(Aim4.createMinCalculation(calcs[0], null, units));
+							aim.addCalculationEntity(Aim4.createMaxCalculation(calcs[1], null, units));
+							aim.addCalculationEntity(Aim4.createMeanCalculation(calcs[2], null, units));
+							aim.addCalculationEntity(Aim4.createStdDevCalculation(calcs[3], null, units));
 							
 						}
 						
@@ -954,12 +963,12 @@ public class AIMUtil
 				
 				if (imageID==null || imageID.equals("") || imageID.equalsIgnoreCase("na")) {
 					//aim has missing information. possibly from pf migration
-					log.info("Aim has missing information. possibly from pf migration. Series is"+ seriesID + " comment is "+ aim.getComment());
+					log.info("Aim4 has missing information. possibly from pf migration. Series is"+ seriesID + " comment is "+ aim.getComment());
 					//TODO fill in image, study and patient info
 					//check if series is in epad
 					DCM4CHEESeries series=Dcm4CheeQueries.getSeries(seriesID);
 					if (series==null) {
-						log.warning("Series is not in the epad repository. Cannot fill in data. Aim cannot be listed without an imageid");
+						log.warning("Series is not in the epad repository. Cannot fill in data. Aim4 cannot be listed without an imageid");
 					}else {
 						String[] comment=aim.getComment().split("/");
 						Double sliceLoc=-99999.0;
@@ -1173,7 +1182,7 @@ public class AIMUtil
         	}
         	if (e.getMessage().toLowerCase().contains("validation")) {
         		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
-        		projectOperations.createEventLog(username, projectID, null, null, null, null, null, "", "Check Aim Schema", EventMessageCodes.AIM_VALIDATION_ERROR, true);
+        		projectOperations.createEventLog(username, projectID, null, null, null, null, null, "", "Check Aim4 Schema", EventMessageCodes.AIM_VALIDATION_ERROR, true);
         		EpadDatabaseOperations epadDatabaseOperations=EpadDatabase.getInstance().getEPADDatabaseOperations();
         		epadDatabaseOperations.insertEpadEvent(sessionId,
         				EventMessageCodes.AIM_VALIDATION_ERROR, 
@@ -1227,40 +1236,42 @@ public class AIMUtil
 	//ml aimv3 is not used anymore
 	public static EPADAIMList queryAIMImageAnnotationSummaries(EPADAIMList aims, String user, int index, int count, String sessionID) throws ParserConfigurationException, AimException
 	{
-		Map<String, String> projectAimIDs = getUIDCsvList(sessionID, aims, user);
-		List<ImageAnnotation> annotations = new ArrayList<ImageAnnotation>();
-		for (String projectId: projectAimIDs.keySet())
-		{
-			annotations.addAll(AIMQueries.getAIMImageAnnotations(projectId, AIMSearchType.ANNOTATION_UID, projectAimIDs.get(projectId), user, index, count));
-		}
-		log.info("" + annotations.size() + " AIM file(s) found for user " + user);
-
-		Map<String, EPADAIM> aimMAP = new HashMap<String, EPADAIM>();
-		EPADAIMResultSet rs = aims.ResultSet;
-		for (EPADAIM aim: rs.Result)
-		{
-			aimMAP.put(aim.aimID, aim);
-		}
-		aims = new EPADAIMList();
-		long starttime = System.currentTimeMillis();
-		for (ImageAnnotation aim : annotations) {
-			Aim a = new Aim(aim);
-			EPADAIM ea = aimMAP.get(aim.getUniqueIdentifier());
-			ea.name = aim.getName();
-			ea.template = aim.getCodeMeaning();
-			ea.templateType = aim.getCodeValue();
-			ea.date = aim.getDateTime();
-			ea.comment = a.getComment();
-			if (a.getFirstStudyDate() != null)
-				ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
-			ea.patientName = a.getPatientName();
-			ea.xml = null;
-			aims.addAIM(ea);
-		}
-		long parsetime = System.currentTimeMillis();
-		log.info("Time taken to parse annotations:" + (parsetime-starttime) + " msecs");
-		log.info("" + annotations.size() + " annotations returned to client");
-		return aims;
+//		Map<String, String> projectAimIDs = getUIDCsvList(sessionID, aims, user);
+//		List<ImageAnnotation> annotations = new ArrayList<ImageAnnotation>();
+//		for (String projectId: projectAimIDs.keySet())
+//		{
+//			annotations.addAll(AIMQueries.getAIMImageAnnotations(projectId, AIMSearchType.ANNOTATION_UID, projectAimIDs.get(projectId), user, index, count));
+//		}
+//		log.info("" + annotations.size() + " AIM file(s) found for user " + user);
+//
+//		Map<String, EPADAIM> aimMAP = new HashMap<String, EPADAIM>();
+//		EPADAIMResultSet rs = aims.ResultSet;
+//		for (EPADAIM aim: rs.Result)
+//		{
+//			aimMAP.put(aim.aimID, aim);
+//		}
+//		aims = new EPADAIMList();
+//		long starttime = System.currentTimeMillis();
+//		for (ImageAnnotation aim : annotations) {
+//			Aim4 a = new Aim4(aim);
+//			EPADAIM ea = aimMAP.get(aim.getUniqueIdentifier());
+//			ea.name = aim.getName();
+//			ea.template = aim.getCodeMeaning();
+//			ea.templateType = aim.getCodeValue();
+//			ea.date = aim.getDateTime();
+//			ea.comment = a.getComment();
+//			if (a.getFirstStudyDate() != null)
+//				ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
+//			ea.patientName = a.getPatientName();
+//			ea.xml = null;
+//			aims.addAIM(ea);
+//		}
+//		long parsetime = System.currentTimeMillis();
+//		log.info("Time taken to parse annotations:" + (parsetime-starttime) + " msecs");
+//		log.info("" + annotations.size() + " annotations returned to client");
+//		return aims;
+		log.warning("not supported use queryAIMImageAnnotationSummariesV4");
+		return null;
 	}
 
 	public static void queryAIMImageAnnotationsV4(PrintWriter responseStream, EPADAIMList aims, AIMSearchType aimSearchType,
@@ -1419,13 +1430,16 @@ public class AIMUtil
 				try {
 					List<ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionsFromString(ea.xml, null);
 					ImageAnnotationCollection aim = iacs.get(0);
-					Aim a = new Aim(aim);
+					Aim4 a = new Aim4(aim);
 					ea.name = aim.getImageAnnotations().get(0).getName().getValue();
 					//ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
 					//ml
 					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
-					ea.date = aim.getDateTime();
+//					ea.date = aim.getDateTime();
+					if (a.getDateTimeAsDate()!=null)
+						ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
+					
 					ea.comment = a.getComment();
 					if (a.getFirstStudyDate() != null)
 						ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
@@ -1470,8 +1484,8 @@ public class AIMUtil
 		aims = new EPADAIMList();
 		for (ImageAnnotationCollection aim : annotations) {
 			try {
-				Aim a = new Aim(aim);
-				EPADAIM ea = aimMAP.get(aim.getUniqueIdentifier());
+				Aim4 a = new Aim4(aim);
+				EPADAIM ea = aimMAP.get(aim.getUniqueIdentifier().getRoot());
 				if (ea == null)  continue;
 				if (aim.getImageAnnotations().get(0).getName() != null)
 				{
@@ -1487,7 +1501,10 @@ public class AIMUtil
 					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
 				}
-				ea.date = aim.getDateTime();
+//				ea.date = aim.getDateTime();
+				if (a.getDateTimeAsDate()!=null)
+					ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
+				
 				ea.comment = a.getComment();
 				if (a.getFirstStudyDate() != null)
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
@@ -1542,13 +1559,16 @@ public class AIMUtil
 				try {
 					List<ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionsFromString(ea.xml, null);
 					ImageAnnotationCollection aim = iacs.get(0);
-					Aim a = new Aim(aim);
+					Aim4 a = new Aim4(aim);
 					ea.name = aim.getImageAnnotations().get(0).getName().getValue();
 					//ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
 					//ml
 					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
-					ea.date = aim.getDateTime();
+//					ea.date = aim.getDateTime();
+					if (a.getDateTimeAsDate()!=null)
+						ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
+					
 					ea.comment = a.getComment();
 					if (a.getFirstStudyDate() != null)
 						ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
@@ -1593,8 +1613,8 @@ public class AIMUtil
 		aims = new EPADAIMList();
 		for (ImageAnnotationCollection aim : annotations) {
 			try {
-				Aim a = new Aim(aim);
-				EPADAIM ea = aimMAP.get(aim.getUniqueIdentifier());
+				Aim4 a = new Aim4(aim);
+				EPADAIM ea = aimMAP.get(aim.getUniqueIdentifier().getRoot());
 				if (ea == null)  continue;
 				if (aim.getImageAnnotations().get(0).getName() != null)
 				{
@@ -1610,7 +1630,10 @@ public class AIMUtil
 					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
 				}
-				ea.date = aim.getDateTime();
+//				ea.date = aim.getDateTime();
+				if (a.getDateTimeAsDate()!=null)
+					ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
+				
 				ea.comment = a.getComment();
 				if (a.getFirstStudyDate() != null)
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
@@ -1652,12 +1675,15 @@ public class AIMUtil
 					try
 					{
 						EPADAIM ea = paimsMap.get(iac.getUniqueIdentifier().getRoot());
-						Aim a = new Aim(iac);
+						Aim4 a = new Aim4(iac);
 						ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 						//ml
 						ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 						ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
-						ea.date = iac.getDateTime();
+//						ea.date = iac.getDateTime();
+						if (a.getDateTimeAsDate()!=null)
+							ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
+						
 						ea.comment = a.getComment();
 						if (a.getFirstStudyDate() != null)
 							ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
@@ -1810,20 +1836,23 @@ public class AIMUtil
 			ImageAnnotationCollection iac = iacs.get(i);
 			try
 			{
-				Aim a = new Aim(iac);
+				Aim4 a = new Aim4(iac);
 				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), aim.userName, 
 						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 				//ml
 				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 				ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
-				ea.date = iac.getDateTime();
+//				ea.date = iac.getDateTime();
+				if (a.getDateTimeAsDate()!=null)
+					ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
+				
 				ea.comment = a.getComment();
 				if (a.getFirstStudyDate() != null)
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
 				ea.patientName = a.getPatientName();
 				ea.xml = null;
-				ea.user = a.getLoggedInUser().getLoginName();
+				ea.user = a.getLoggedInUser().getLoginName().getValue();
 				aims.addAIM(ea);
 			} catch (Exception x) {
 				log.warning("Error parsing ImageAnnotationCollection:" + iac, x);
@@ -1841,20 +1870,23 @@ public class AIMUtil
 			ImageAnnotationCollection iac = iacs.get(i);
 			try
 			{
-				Aim a = new Aim(iac);
+				Aim4 a = new Aim4(iac);
 				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), aim.userName, 
 						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 				//ml
 				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 				ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
-				ea.date = iac.getDateTime();
+//				ea.date = iac.getDateTime();
+				if (a.getDateTimeAsDate()!=null)
+					ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
+				
 				ea.comment = a.getComment();
 				if (a.getFirstStudyDate() != null)
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
 				ea.patientName = a.getPatientName();
 				ea.xml = null;
-				ea.user = a.getLoggedInUser().getLoginName();
+				ea.user = a.getLoggedInUser().getLoginName().getValue();
 				aims.addAIM(ea);
 			} catch (Exception x) {
 				log.warning("Error parsing ImageAnnotationCollection:" + iac, x);
@@ -1872,20 +1904,23 @@ public class AIMUtil
 			ImageAnnotationCollection iac = iacs.get(i);
 			try
 			{
-				Aim a = new Aim(iac);
+				Aim4 a = new Aim4(iac);
 				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), aim.userName, 
 						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 				//ml
 				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 				ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
-				ea.date = iac.getDateTime();
+//				ea.date = iac.getDateTime();
+				if (a.getDateTimeAsDate()!=null)
+					ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
+				
 				ea.comment = a.getComment();
 				if (a.getFirstStudyDate() != null)
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
 				ea.patientName = a.getPatientName();
 				ea.xml = null;
-				ea.user = a.getLoggedInUser().getLoginName();
+				ea.user = a.getLoggedInUser().getLoginName().getValue();
 				aims.addAIM(ea);
 			} catch (Exception x) {
 				log.warning("Error parsing ImageAnnotationCollection:" + iac, x);
@@ -1949,13 +1984,15 @@ public class AIMUtil
 			ImageAnnotationCollection iac = iacs.get(i);
 			try
 			{
-				Aim a = new Aim(iac);
-				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName(), "", a.getPatientID(), a.getFirstStudyID(), a.getFirstSeriesID(), a.getFirstImageID(), 0);
+				Aim4 a = new Aim4(iac);
+				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName().getValue(), "", a.getPatientID(), a.getFirstStudyID(), a.getFirstSeriesID(), a.getFirstImageID(), 0);
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 				//ml
 				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 				ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
-				ea.date = iac.getDateTime();
+//				ea.date = iac.getDateTime();
+				if (a.getDateTimeAsDate()!=null)
+					ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
 				ea.comment = a.getComment();
 				if (a.getFirstStudyDate() != null)
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
@@ -2072,6 +2109,7 @@ public class AIMUtil
 	        else
 	        	return edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionFromFile(file.getAbsolutePath());
 		} catch (Exception e) {
+			log.warning("couldn't get image annotation from file ", e);
 			return null;
 		}
     }
@@ -2517,7 +2555,9 @@ public class AIMUtil
 		"AimXPath.xml",
 		"AIMTemplate_v2rvStanford.xsd",
 		"AIM_v4_rv44_XML.xsd",
-		"ISO_datatypes_Narrative.xsd"
+		"ISO_datatypes_Narrative.xsd",
+		"AIM_v4.1_rv2_XML.xsd",
+		"AIM_v4.2_rv2_XML.xsd"
 	};
 	
 	static final String[] OVERWRITE_SCHEMA_FILES = {
@@ -2680,11 +2720,11 @@ public class AIMUtil
 		EPADAIMList aims = new EPADAIMList();
 		for (ImageAnnotationCollection aim : iacs) {
 			try {
-				Aim a = new Aim(aim);
+				Aim4 a = new Aim4(aim);
 				EPADAIM ea =null;
 				try
 				{
-					ea = new EPADAIM(aim.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName(), "", a.getPatientID(), a.getFirstStudyID(), a.getFirstSeriesID(), a.getFirstImageID(), 0);
+					ea = new EPADAIM(aim.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName().getValue(), "", a.getPatientID(), a.getFirstStudyID(), a.getFirstSeriesID(), a.getFirstImageID(), 0);
 					
 				} catch (Exception x) {
 					log.warning("Error parsing ImageAnnotationCollection:" + aim, x);
@@ -2700,7 +2740,10 @@ public class AIMUtil
 					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
 				}
-				ea.date = aim.getDateTime();
+//				ea.date = aim.getDateTime();
+				if (a.getDateTimeAsDate()!=null)
+					ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
+				
 				ea.comment = a.getComment();
 				if (a.getFirstStudyDate() != null)
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
@@ -2786,6 +2829,7 @@ public class AIMUtil
 			desc=name;
 
 		}
+		//TODO Compact
 		ExtendedCalculationResult calculationResult=new ExtendedCalculationResult();
 
 		calculationResult.setType(Enumerations.CalculationResultIdentifier.Scalar);
@@ -2793,7 +2837,7 @@ public class AIMUtil
 		if (units.equals(""))
 			calculationResult.setDataType(new CD("99EPADD2","String","99EPAD"));
 		else
-			calculationResult.setDataType(new CD("99EPADD1","Double","99EPAD"));
+			calculationResult.setDataType(new CD("C48870","Double","NCI"));
 
 		// Create a CalculationData instance
 		edu.stanford.hakan.aim4api.base.CalculationData calculationData = new edu.stanford.hakan.aim4api.base.CalculationData();
@@ -2819,13 +2863,14 @@ public class AIMUtil
 		// Add calculationResult to calculation
 		cal.addCalculationResult(calculationResult);
 
-		Algorithm alg=new Algorithm();
-		alg.setName(new ST(desc));
-		alg.setVersion(new ST(VERSION));
-		ArrayList<CD> types=new ArrayList<>();
-		types.add(new CD("RID12780","Calculation","RadLex","3.2"));
-		alg.setType(types);
-		cal.setAlgorithm(alg);
+		//removing algorithm from standard calculations
+//		Algorithm alg=new Algorithm();
+//		alg.setName(new ST(desc));
+//		alg.setVersion(new ST(VERSION));
+//		ArrayList<CD> types=new ArrayList<>();
+//		types.add(new CD("RID12780","Calculation","RadLex","3.2"));
+//		alg.setType(types);
+//		cal.setAlgorithm(alg);
 
 		return cal;
 

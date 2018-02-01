@@ -127,6 +127,7 @@ import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.models.Template;
+import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
@@ -381,8 +382,20 @@ public class AimMigrator {
 		if (imageUID.equals(""))
 			imageUID="na"; //to keep all the same
 		log.info("the values retrieved are "+ sopClassUID+" "+studyDate+" "+studyTime+" "+pName+" "+pId+" "+pBirthDate+" "+pSex+" "+studyUID+" "+sourceSeriesUID+" ");
-		ImageAnnotationCollection iac = createImageAnnotationColectionFromProperties(username, pName, pId, pBirthDate, pSex);
-		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=createImageAnnotationFromProperties(username, templateCode, lesionName, comment, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID, accessionNumber, modality);
+		EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
+		User user=projOp.getUser(username);
+		ImageAnnotationCollection iac = Aim4.createImageAnnotationColectionFromProperties(username, pName, pId, pBirthDate, pSex, user.getFullName());
+		Template t=null;
+		if (templateCode==null)
+			t=projOp.getTemplate("RECIST_v2");
+		else
+			t=projOp.getTemplate(templateCode);
+		CD template=null;
+		if (t!=null){
+			//TODO it puts different values in the aim file than standard use. What does the gui put????
+			template=new CD(t.getTemplateCode(),t.getTemplateName(),t.getCodingSchemeDesignator(),t.getCodingSchemeVersion());
+		}
+		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=Aim4.createImageAnnotationFromProperties(username, template, lesionName, comment, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID, accessionNumber, modality);
 		
 		//see if you can find trial info and store as freetext
 		String trial=mintJson.optString("trial");
@@ -491,127 +504,7 @@ public class AimMigrator {
 		return features;
 	}
 
-	/**
-	 * create an ImageAnnotationCollection object using the properties
-	 * @param username
-	 * @param pName
-	 * @param pId
-	 * @param pBirthDate
-	 * @param pSex
-	 * @return
-	 */
-	public static edu.stanford.hakan.aim4api.base.ImageAnnotationCollection createImageAnnotationColectionFromProperties(String username, String pName, String pId, String pBirthDate, String pSex){
-		ImageAnnotationCollection iac = new ImageAnnotationCollection();
-		edu.stanford.hakan.aim4api.base.User user=new edu.stanford.hakan.aim4api.base.User();
-		user.setName(new ST(username));
-		user.setLoginName(new ST(username));
-		iac.setUser(user);
-		//set the date to current date
-		DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
-		Date now=new Date();
-
-		iac.setDateTime(dateFormat.format(now));
-
-		//put the patient information in aim
-		edu.stanford.hakan.aim4api.base.Person p=new edu.stanford.hakan.aim4api.base.Person();
-		p.setBirthDate(formatPatientBirthDate(pBirthDate));
-		p.setId(new ST(pId));
-		p.setName(new ST(pName));
-		p.setSex(new ST(pSex));
-		iac.setPerson(p);
-
-		return iac;
-	}
-
-
-	/**
-	 * create an ImageAnnotation object using the properties
-	 * @param username
-	 * @param templateCode
-	 * @param lesionName
-	 * @param comment
-	 * @param imageUID
-	 * @param sopClassUID
-	 * @param studyDate
-	 * @param studyTime
-	 * @param studyUID
-	 * @param sourceSeriesUID
-	 * @return
-	 * @throws Exception
-	 */
 	
-	public static edu.stanford.hakan.aim4api.base.ImageAnnotation createImageAnnotationFromProperties(String username, String templateCode, String lesionName, String comment, String imageUID,String sopClassUID,String studyDate, String studyTime,String studyUID, String sourceSeriesUID) throws Exception {
-		return createImageAnnotationFromProperties(username, templateCode, lesionName, comment, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID, "");
-	}
-	public static edu.stanford.hakan.aim4api.base.ImageAnnotation createImageAnnotationFromProperties(String username, String templateCode, String lesionName, String comment, String imageUID,String sopClassUID,String studyDate, String studyTime,String studyUID, String sourceSeriesUID, String accessionNumber) throws Exception {
-		return createImageAnnotationFromProperties(username, templateCode, lesionName, comment, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID, accessionNumber,"");
-
-	}	
-	public static edu.stanford.hakan.aim4api.base.ImageAnnotation createImageAnnotationFromProperties(String username, String templateCode, String lesionName, String comment, String imageUID,String sopClassUID,String studyDate, String studyTime,String studyUID, String sourceSeriesUID, String accessionNumber, String modality) throws Exception {
-		log.info("creating image annotation for template:"+ templateCode +" lesion:" +lesionName+ " comment:" +comment+" imageuid:"+ imageUID +" modality:"+ modality) ;
-		EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
-
-		//set the date to current date
-		DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
-		Date now=new Date();
-
-
-		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=new edu.stanford.hakan.aim4api.base.ImageAnnotation();
-		ia.refreshUniqueIdentifier();
-		ia.setDateTime(dateFormat.format(now));
-
-		Template t=null;
-		if (templateCode==null)
-			t=projOp.getTemplate("RECIST");
-		else
-			t=projOp.getTemplate(templateCode);
-		if (t!=null){
-			ia.setName(new ST(lesionName));
-
-			ArrayList<CD> types=new ArrayList<>();
-			//TODO it puts different values in the aim file than standard use. What does the gui put????
-			types.add(new CD(t.getTemplateCode(),t.getTemplateName(),t.getCodingSchemeDesignator(),t.getCodingSchemeVersion()));
-			ia.setTypeCode(types);
-
-		}
-
-		ia.setComment(new ST(comment));
-
-
-
-		//add the image reference entity
-		DicomImageReferenceEntity dicomImageReferenceEntity  = new DicomImageReferenceEntity();
-		ImageStudy study = new ImageStudy();
-		study.setInstanceUid(new II(studyUID));
-		ImageSeries series=new ImageSeries();
-		series.setInstanceUid(new II(sourceSeriesUID));
-		Image image=new Image();
-		image.setSopInstanceUid(new II(imageUID));
-		image.setSopClassUid(new II(sopClassUID));
-		ImageCollection imageCol=new ImageCollection();
-		imageCol.addImage(image);
-		series.setImageCollection(imageCol);
-		Modality mod=Modality.getInstance();
-		if (modality!=null && mod.get(modality)!=null )
-			series.setModality(mod.get(modality));
-		else if ((mod.get(sopClassUID))!=null)
-			series.setModality(mod.get(sopClassUID));
-		else 
-			series.setModality(mod.getDefaultModality());
-		
-		study.setImageSeries(series);
-		log.info("stm "+ study.getImageSeries().getModality().getCode());
-		study.setStartDate(studyDate);
-		study.setStartTime(studyTime);
-		if (accessionNumber!=null && !accessionNumber.equals("")) {
-			study.setAccessionNumber(new ST(accessionNumber));
-		}
-		dicomImageReferenceEntity.setImageStudy(study);
-		ia.addImageReferenceEntity(dicomImageReferenceEntity);
-
-		return ia;
-
-	}
 
 	/**
 	 * create a ImagingObservationEntity using the timepoint and type (in characteristic label and value) values
@@ -870,7 +763,7 @@ public class AimMigrator {
 		//calculate the longest line in the closed shape 
 		double[] majorAxis=getMajorAxis(pointsPX, spacingVector);
 		//add length calculation for major axis
-		ia.addCalculationEntity(Aim4.addLengthCalculation(majorAxis[2],1,"cm"));
+		ia.addCalculationEntity(Aim4.createLengthCalculation(majorAxis[2],1,"cm"));
 
 		return ia;
 	}
@@ -1178,19 +1071,7 @@ public class AimMigrator {
 		return getExtent(direction,bounds)*magnitude;
 	}
 
-	/**
-	 * puts 19000101000000 if null or empty
-	 * @param d
-	 * @return
-	 */
-	public static String formatPatientBirthDate(String d) {
-		if (d==null) d="";
-		String date = ((d.length() >= 4) ? d.substring(0, 4) : "1900") 
-				+ ((d.length() >= 6) ? d.substring(4, 6) : "01") 
-				+ ((d.length() >= 8) ? d.substring(6, 8) : "01") + "000000";
-		return date;
-
-	}
+	
 
 
 	/**************************Osirix******************************/
@@ -1319,8 +1200,20 @@ public class AimMigrator {
 		}
 
 		log.info("the values retrieved are "+ sopClassUID+" "+studyDate+" "+studyTime+" "+pName+" "+pId+" "+pBirthDate+" "+pSex+" "+studyUID+" "+sourceSeriesUID+" ");
-		ImageAnnotationCollection iac = createImageAnnotationColectionFromProperties(username, pName, pId, pBirthDate, pSex);
-		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=createImageAnnotationFromProperties(username, templateCode, lesionName, comment, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID, accessionNumber);
+		EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
+		User user=projOp.getUser(username);
+		ImageAnnotationCollection iac = Aim4.createImageAnnotationColectionFromProperties(username, pName, pId, pBirthDate, pSex,user.getFullName());
+		Template t=null;
+		if (templateCode==null)
+			t=projOp.getTemplate("RECIST_v2");
+		else
+			t=projOp.getTemplate(templateCode);
+		CD template=null;
+		if (t!=null){
+			//TODO it puts different values in the aim file than standard use. What does the gui put????
+			template=new CD(t.getTemplateCode(),t.getTemplateName(),t.getCodingSchemeDesignator(),t.getCodingSchemeVersion());
+		}
+		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=Aim4.createImageAnnotationFromProperties(username, template, lesionName, comment, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID, accessionNumber);
 
 		//create markup entity
 		double [][] pointsPX=extractPointsFromJsonArray(osirixLesionJson.getJSONArray("Point_px"));
@@ -1385,13 +1278,13 @@ public class AimMigrator {
 		//we have definitions for these: AreaCm2,  Dev (std dev), LengthCm, Max, Mean, Min
 		//we can put osirixLesionJson.getInt("IndexInImage") as the shape identifier but we save each shape to separate aim. I am  putting 1 in all
 		//put the calculation onlt if it is different than 0. osirix puts those fields even if they are empty. (like area for a line)
-		if (osirixLesionJson.getDouble("AreaCm2")!=0) ia.addCalculationEntity(Aim4.addAreaCalculation(osirixLesionJson.getDouble("AreaCm2") ,1,"cm2"));
-		if (osirixLesionJson.getDouble("Dev")!=0) ia.addCalculationEntity(Aim4.addStdDevCalculation(osirixLesionJson.getDouble("Dev") ,1,"linear"));
-		if (osirixLesionJson.getDouble("LengthCm")!=0) ia.addCalculationEntity(Aim4.addLengthCalculation(osirixLesionJson.getDouble("LengthCm") ,1,"cm"));
-		if (osirixLesionJson.getDouble("Max")!=0) ia.addCalculationEntity(Aim4.addMaxCalculation(osirixLesionJson.getDouble("Max") ,1,"linear"));
-		if (osirixLesionJson.getDouble("Mean")!=0) ia.addCalculationEntity(Aim4.addMeanCalculation(osirixLesionJson.getDouble("Mean") ,1,"linear"));
-		if (osirixLesionJson.getDouble("Min")!=0) ia.addCalculationEntity(Aim4.addMinCalculation(osirixLesionJson.getDouble("Min") ,1,"linear"));
-
+		if (osirixLesionJson.getDouble("AreaCm2")!=0) ia.addCalculationEntity(Aim4.createAreaCalculation(osirixLesionJson.getDouble("AreaCm2") ,1,"cm2"));
+		if (osirixLesionJson.getDouble("Dev")!=0) ia.addCalculationEntity(Aim4.createStdDevCalculation(osirixLesionJson.getDouble("Dev") ,1,"linear"));
+		if (osirixLesionJson.getDouble("LengthCm")!=0) ia.addCalculationEntity(Aim4.createLengthCalculation(osirixLesionJson.getDouble("LengthCm") ,1,"cm"));
+		if (osirixLesionJson.getDouble("Max")!=0) ia.addCalculationEntity(Aim4.createMaxCalculation(osirixLesionJson.getDouble("Max") ,1,"linear"));
+		if (osirixLesionJson.getDouble("Mean")!=0) ia.addCalculationEntity(Aim4.createMeanCalculation(osirixLesionJson.getDouble("Mean") ,1,"linear"));
+		if (osirixLesionJson.getDouble("Min")!=0) ia.addCalculationEntity(Aim4.createMinCalculation(osirixLesionJson.getDouble("Min") ,1,"linear"));
+		//TODO withref
 
 		iac.addImageAnnotation(ia);
 

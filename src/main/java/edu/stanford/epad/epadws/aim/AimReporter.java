@@ -130,6 +130,7 @@ import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.hakan.aim4api.base.AimException;
 import edu.stanford.hakan.aim4api.base.CalculationEntity;
+import edu.stanford.hakan.aim4api.base.CompactCalculationResult;
 import edu.stanford.hakan.aim4api.base.DicomImageReferenceEntity;
 import edu.stanford.hakan.aim4api.base.ExtendedCalculationResult;
 import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
@@ -235,7 +236,7 @@ public class AimReporter {
 					}
 					//put shape in values
 					values.put("shapes", formJsonObj(markupsStr.toString()));
-
+					
 					if (values.containsKey("studydate")) {
 						try{
 							values.put("studydate", formJsonObj(((DicomImageReferenceEntity)ia.getImageReferenceEntityCollection().get(0)).getImageStudy().getStartDate()));
@@ -283,6 +284,14 @@ public class AimReporter {
 							values.put("aimuid", formJsonObj(iac.getUniqueIdentifier().getRoot()));
 						}catch(Exception e){
 							log.warning("The value for AimUID couldn't be retrieved ", e);
+						}
+					}
+					if (values.containsKey("trackinguniqueidentifier")) {
+						try{
+							values.put("trackinguniqueidentifier", formJsonObj(iac.getImageAnnotation().getTrackingUniqueIdentifier().getRoot()));
+						}catch(Exception e){
+							log.warning("The value for trackingUniqueIdentifier couldn't be retrieved ", e);
+							values.put("trackinguniqueidentifier",formJsonObj(""));
 						}
 					}
 					
@@ -342,19 +351,37 @@ public class AimReporter {
 							// if it is a very old annotation and the line length is saved as LineLength handle that
 							if (values.containsKey(cal.getDescription().getValue().toLowerCase()) || (values.containsKey("length")&&cal.getDescription().getValue().toLowerCase().equals("linelength")) ) { //key exists put the value
 								try {
-									String value=((ExtendedCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getCalculationDataCollection().get(0).getValue().getValue();
-//									log.info("value is "+value + "|");
-									if (value==null || value.trim().equals("")) value="0";
-									//check the units. if they are mm. convert to cm
-									String units=((ExtendedCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getUnitOfMeasure().getValue().trim();
-									if (units.equalsIgnoreCase("mm")){
-										value=String.valueOf(Double.parseDouble(value)/10);
+									if (cal.getCalculationResultCollection().getCalculationResultList().get(0) instanceof ExtendedCalculationResult){
+										String value=((ExtendedCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getCalculationDataCollection().get(0).getValue().getValue();
+	//									log.info("value is "+value + "|");
+										if (value==null || value.trim().equals("")) value="0";
+										//check the units. if they are mm. convert to cm
+										String units=((ExtendedCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getUnitOfMeasure().getValue().trim();
+										if (units.equalsIgnoreCase("mm")){
+											value=String.valueOf(Double.parseDouble(value)/10);
+										}
+										if ((values.containsKey("length")&&cal.getDescription().getValue().toLowerCase().equals("linelength")))
+											values.put("length", formJsonObj(value,"RID39123"));
+										else
+											values.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
+										hasCalcs=true;
+									}else if(cal.getCalculationResultCollection().getCalculationResultList().get(0) instanceof CompactCalculationResult){
+										String value=((CompactCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getValue().getValue();
+	//									log.info("value is "+value + "|");
+										if (value==null || value.trim().equals("")) value="0";
+										//check the units. if they are mm. convert to cm
+										String units=((CompactCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getUnitOfMeasure().getValue().trim();
+										if (units.equalsIgnoreCase("mm")){
+											value=String.valueOf(Double.parseDouble(value)/10);
+										}
+										if ((values.containsKey("length")&&cal.getDescription().getValue().toLowerCase().equals("linelength")))
+											values.put("length", formJsonObj(value,"RID39123"));
+										else
+											values.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
+										hasCalcs=true;
+										
 									}
-									if ((values.containsKey("length")&&cal.getDescription().getValue().toLowerCase().equals("linelength")))
-										values.put("length", formJsonObj(value,"RID39123"));
-									else
-										values.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
-									hasCalcs=true;
+									
 								}catch(Exception e) {
 									log.warning("The value for "+cal.getDescription().getValue() + " couldn't be retrieved ", e);
 								}
@@ -362,35 +389,66 @@ public class AimReporter {
 							
 							if (values.containsKey("allcalc") ) { //if it is allcalc put all calculations in a nested json
 								try {
-									
-									String value=((ExtendedCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getCalculationDataCollection().get(0).getValue().getValue();
-//									log.info("value is "+value + "|");
-									if (value==null || value.trim().equals("")) value="0";
-									//check the units. if they are mm. convert to cm
-									String units=((ExtendedCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getUnitOfMeasure().getValue().trim();
-									if (units.equalsIgnoreCase("mm")){
-										value=String.valueOf(Double.parseDouble(value)/10);
-									}
-									if (cal.getDescription().getValue().toLowerCase().equals("linelength"))
-										allCalcValues.put("length", formJsonObj(value,"RID39123"));
-									else{
-										//if the label and description are different. it can be shortaxis long axis
-										//get the appropriate according to the organ if present
-										//use longaxis if not
-										String label=cal.getCalculationResultCollection().get(0).getDimensionCollection().get(0).getLabel().getValue().toLowerCase();
-										if (!cal.getDescription().getValue().toLowerCase().equals(label)){
-											if (label.startsWith("shortaxis") && values.containsKey("location")){//if it is shortaxis and the location is present, location should be lymph node, ignore if it isn't 
-												if (new JSONObject(values.get("location")).getString("value").equalsIgnoreCase("lymph node") ){
+									if (cal.getCalculationResultCollection().getCalculationResultList().get(0) instanceof ExtendedCalculationResult){
+										
+										String value=((ExtendedCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getCalculationDataCollection().get(0).getValue().getValue();
+	//									log.info("value is "+value + "|");
+										if (value==null || value.trim().equals("")) value="0";
+										//check the units. if they are mm. convert to cm
+										String units=((ExtendedCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getUnitOfMeasure().getValue().trim();
+										if (units.equalsIgnoreCase("mm")){
+											value=String.valueOf(Double.parseDouble(value)/10);
+										}
+										if (cal.getDescription().getValue().toLowerCase().equals("linelength"))
+											allCalcValues.put("length", formJsonObj(value,"RID39123"));
+										else{
+											//if the label and description are different. it can be shortaxis long axis
+											//get the appropriate according to the organ if present
+											//use longaxis if not
+											String label=cal.getCalculationResultCollection().get(0).getDimensionCollection().get(0).getLabel().getValue().toLowerCase();
+											if (!cal.getDescription().getValue().toLowerCase().equals(label)){
+												if (label.startsWith("shortaxis") && values.containsKey("location")){//if it is shortaxis and the location is present, location should be lymph node, ignore if it isn't 
+													if (new JSONObject(values.get("location")).getString("value").equalsIgnoreCase("lymph node") ){
+														allCalcValues.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
+													}
+												}else {
 													allCalcValues.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
 												}
 											}else {
 												allCalcValues.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
 											}
-										}else {
-											allCalcValues.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
 										}
+										hasCalcs=true;
+									}else if(cal.getCalculationResultCollection().getCalculationResultList().get(0) instanceof CompactCalculationResult){
+										String value=((CompactCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getValue().getValue();
+	//									log.info("value is "+value + "|");
+										if (value==null || value.trim().equals("")) value="0";
+										//check the units. if they are mm. convert to cm
+										String units=((CompactCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getUnitOfMeasure().getValue().trim();
+										if (units.equalsIgnoreCase("mm")){
+											value=String.valueOf(Double.parseDouble(value)/10);
+										}
+										if (cal.getDescription().getValue().toLowerCase().equals("linelength"))
+											allCalcValues.put("length", formJsonObj(value,"RID39123"));
+										else{
+											//if the label and description are different. it can be shortaxis long axis
+											//get the appropriate according to the organ if present
+											//use longaxis if not
+											String label=cal.getCalculationResultCollection().get(0).getDimensionCollection().get(0).getLabel().getValue().toLowerCase();
+											if (!cal.getDescription().getValue().toLowerCase().equals(label)){
+												if (label.startsWith("shortaxis") && values.containsKey("location")){//if it is shortaxis and the location is present, location should be lymph node, ignore if it isn't 
+													if (new JSONObject(values.get("location")).getString("value").equalsIgnoreCase("lymph node") ){
+														allCalcValues.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
+													}
+												}else {
+													allCalcValues.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
+												}
+											}else {
+												allCalcValues.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
+											}
+										}
+										hasCalcs=true;
 									}
-									hasCalcs=true;
 								}catch(Exception e) {
 									log.warning("The value for "+cal.getDescription().getValue() + " couldn't be retrieved ", e);
 								}
@@ -436,7 +494,7 @@ public class AimReporter {
 					
 					
 				}
-				if (hasCalcs)
+				if (hasCalcs) //this makes it not return anything if length or longaxis not send
 					table[row++]=strValues;
 				else //ignore if doesn't have any calcs
 					table[row++]=null;
