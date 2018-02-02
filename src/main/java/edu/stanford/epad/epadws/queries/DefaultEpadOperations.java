@@ -1580,13 +1580,15 @@ public class DefaultEpadOperations implements EpadOperations
 		User user = projectOperations.getUser(username);
 		if (!user.isAdmin() && !projectOperations.isOwner(username, seriesReference.projectID))
 			throw new Exception("No permissions to delete series:" + seriesReference.seriesUID + " in project " + seriesReference.projectID);
-		if (!user.isAdmin() && all)
-			throw new Exception("No permissions to delete series:" + seriesReference.seriesUID  + " from system. You are not admin. Please select delete from project. ");
+		//defer check and see if it only exists in this project
+//		if (!user.isAdmin() && all)
+//			throw new Exception("No permissions to delete series:" + seriesReference.seriesUID  + " from system. You are not admin. Please select delete from project. ");
 
 		try {
 			projectOperations.createEventLog(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID, null, null, "DELETE SERIES", "deleteAims:" + deleteAims);
 			Set<String>projectIds = UserProjectService.getAllProjectIDs();
 			//ml if the user is admin and all is not true check whether the series is in use
+			String existInOtherProject="";
 			if (!user.isAdmin() || !all) {
 				for (String projectId: projectIds)
 				{
@@ -1596,13 +1598,20 @@ public class DefaultEpadOperations implements EpadOperations
 					Set<String> allStudyUIDs = UserProjectService.getAllStudyUIDsForProject(projectId);
 					if (allStudyUIDs.contains(seriesReference.studyUID.replace('.', '_')) || allStudyUIDs.contains(seriesReference.studyUID))
 					{
+						existInOtherProject=projectId;
+						break;
 						//the user chose to select from project we do not need that anymore. 
 						//should we tell user when we are also deleting from system?
-						return "";
+//						return "";
 						//						log.info("Series " + seriesReference.studyUID + " in use by other projects:" + projectId + ", so series will not be deleted from DCM4CHEE");
 						//						return "Series " + seriesReference.seriesUID + " in use by other projects:" + projectId + ", so series will not be deleted from DCM4CHEE";
 					}
 				}
+			}
+			if (!existInOtherProject.isEmpty() && !user.isAdmin() && all){
+				log.info("Series " + seriesReference.studyUID + " in use by other projects:" + existInOtherProject + " and the user is not admin, so series will not be deleted from DCM4CHEE");
+				return "Series " + seriesReference.seriesUID + " in use by other projects:" + existInOtherProject + " and the user is not admin, so series will not be deleted from DCM4CHEE";
+
 			}
 			return deleteSeries(seriesReference, deleteAims);
 		} catch (Exception e) {
