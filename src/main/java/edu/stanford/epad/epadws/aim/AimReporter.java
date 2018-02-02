@@ -181,10 +181,12 @@ public class AimReporter {
 		if (templates.length>1){
 			String filled="";
 			for (String template:templates){
-				if (filled.isEmpty())
-					filled=fillTable(aims, template, columns,shapes);
-				else{
-					filled=filled.substring(0, filled.length()-1)+","+fillTable(aims, template, columns,shapes).substring(1);
+				String templateTable=fillTable(aims, template, columns,shapes);
+				if (!templateTable.isEmpty() && !templateTable.equals("[]")){
+					if (filled.isEmpty() || filled.equals("[]"))
+						filled=templateTable;
+					else
+						filled=filled.substring(0, filled.length()-1)+","+templateTable.substring(1);
 				}
 			}
 			return filled;
