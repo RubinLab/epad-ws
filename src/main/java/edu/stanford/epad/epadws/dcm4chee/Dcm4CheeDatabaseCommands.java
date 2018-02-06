@@ -133,4 +133,6 @@ public interface Dcm4CheeDatabaseCommands
 	public static final String SELECT_PARENT_STUDY_FOR_SERIES = "SELECT * from pacsdb.study as st, pacsdb.series as s WHERE st.pk=s.study_fk and s.series_iuid=?";
 	public static final String PK_FOR_INSTANCE = "SELECT pk from pacsdb.instance where sop_iuid=?";
 	public static final String SELECT_STUDY_AND_SERIES_FOR_INSTANCE = "SELECT i.sop_iuid, s.series_iuid, st.study_iuid from pacsdb.instance as i, pacsdb.series as s, pacsdb.study as st WHERE i.sop_iuid=? and i.series_fk=s.pk and s.study_fk=st.pk";
+	public static final String UPDATE_SERIESDESC_BY_ID = "UPDATE pacsdb.series SET series_desc=? where series_iuid=?";
+	
 }

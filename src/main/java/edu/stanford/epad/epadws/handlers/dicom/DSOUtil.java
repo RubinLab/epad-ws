@@ -269,32 +269,40 @@ public class DSOUtil
 			String seriesDescription = null;
 			String seriesUID = null;
 			String instanceUID = null;
+			instanceUID = imageReference.imageUID;
+			//get series info from the image tags
+			for (DICOMElement dicomElement : dicomElements.ResultSet.Result) {
+				if (dicomElement.tagCode.equalsIgnoreCase(PixelMedUtils.SeriesDescriptionCode)) {
+					log.info("DSO to be edited, tag:" + dicomElement.tagName + " value:" + dicomElement.value);
+					seriesDescription = dicomElement.value;
+				}
+				if (dicomElement.tagCode.equalsIgnoreCase(PixelMedUtils.SeriesInstanceUIDCode) && dicomElement.parentSequenceName==null) {
+					log.info("DSO to be edited, tag:" + dicomElement.tagName + " value:" + dicomElement.value);
+					seriesUID = dicomElement.value;
+				}
+				
+			}
 			//put name from dsoeditrequest instead of reading from tags
 			if (dsoEditRequest.name!=null){
 				seriesDescription=dsoEditRequest.name;
-			}else { //don't have name in the request get the series desc from the dso being edited
-				for (DICOMElement dicomElement : dicomElements.ResultSet.Result) {
-					if (dicomElement.tagCode.equalsIgnoreCase(PixelMedUtils.SeriesDescriptionCode)) {
-						log.info("DSO to be edited, tag:" + dicomElement.tagName + " value:" + dicomElement.value);
-						seriesDescription = dicomElement.value;
-					}
-					
-				}
+				//set the seriesdescription of the series
+				log.info("Modifying the series desc to "+seriesDescription+ " of series "+seriesUID);
+				dcm4CheeDatabaseOperations.setSeriesDescription(seriesUID, seriesDescription);
 			}
 			
-			// Always 'clobber' the orginal DSO
-//			if (seriesDescription != null && seriesDescription.toLowerCase().contains("epad"))
-			{
-				//check if the image reference series is *
-				if (imageReference.seriesUID.equals("*")) {
-					log.info("why still * " + dsoEditRequest.toJSON() );
-				}
-				
-				seriesUID = imageReference.seriesUID;
-				instanceUID = imageReference.imageUID;
-			}
-//			else
-//				seriesDescription = null;
+//			// Always 'clobber' the orginal DSO
+////			if (seriesDescription != null && seriesDescription.toLowerCase().contains("epad"))
+//			{
+//				//check if the image reference series is *
+//				if (imageReference.seriesUID.equals("*")) {
+//					log.info("why still * " + dsoEditRequest.toJSON() );
+//				}
+//				
+//				seriesUID = imageReference.seriesUID;
+//				instanceUID = imageReference.imageUID;
+//			}
+////			else
+////				seriesDescription = null;
 			List<File> editFramesTIFFMaskFiles = generateTIFFsFromPNGs(editFramesPNGMaskFiles);
 			
 			List<File> dsoTIFFMaskFiles = new ArrayList<>();

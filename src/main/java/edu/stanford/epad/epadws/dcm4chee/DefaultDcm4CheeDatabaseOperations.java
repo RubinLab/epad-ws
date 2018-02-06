@@ -837,6 +837,30 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			close(c, ps, rs);
 		}
 	}
+	
+	@Override
+	public void setSeriesDescription(String seriesUID,String seriesDesc)
+	{
+		Map<String, String> retVal = new HashMap<String, String>();
+
+		Connection c = null;
+		PreparedStatement ps = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.UPDATE_SERIESDESC_BY_ID);
+			ps.setString(1, seriesDesc);
+			ps.setString(2, seriesUID);
+			if (log.isDebugEnabled())
+				log.debug(ps.toString());
+
+			ps.executeUpdate();
+			
+		} catch (SQLException sqle) {
+			log.warning("Database operation failed; " , sqle);
+		} finally {
+			close(c, ps);
+		}
+	}
 
 	private static boolean isStudyDateColumn(String currKey)
 	{

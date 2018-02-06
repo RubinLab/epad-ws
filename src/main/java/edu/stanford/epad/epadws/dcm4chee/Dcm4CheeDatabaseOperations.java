@@ -195,4 +195,11 @@ public interface Dcm4CheeDatabaseOperations
 	 * @return
 	 */
 	DCM4CHEEImageDescription getImageDescription(String imageUID);
+
+	/**
+	 * sets the series description for dso name change
+	 * @param seriesUID
+	 * @param seriesDesc
+	 */
+	void setSeriesDescription(String seriesUID, String seriesDesc);
 }
