@@ -1435,7 +1435,10 @@ public class AIMUtil
 					//ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
 					//ml
 					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
-					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName().getValue();
+					if (aim.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName()!=null)
+						ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName().getValue();
+					else
+						ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
 //					ea.date = aim.getDateTime();
 					if (a.getDateTimeAsDate()!=null)
 						ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
