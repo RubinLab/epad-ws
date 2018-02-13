@@ -345,7 +345,7 @@ public class AIMUtil
 				log.warning("Error saving aim to mongodb", e);
 			}
 		
-		    if (aim.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName() != null && aim.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName().getValue().equals("epad-plugin")) { // Which template has been used to fill the AIM file
+		    if ((aim.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName() != null && aim.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName().getValue().equals("epad-plugin"))||(aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName() != null && aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName().equals("epad-plugin"))) { // Which template has been used to fill the AIM file
 		        String templateName = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode(); // ex: jjv-5
 		        log.info("Found an AIM plugin template with name " + templateName + " and AIM ID " + aim.getUniqueIdentifier().getRoot());
 		        boolean templateHasBeenFound = false;
