@@ -345,7 +345,7 @@ public class AIMUtil
 				log.warning("Error saving aim to mongodb", e);
 			}
 		
-		    if (aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName() != null && aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName().equals("epad-plugin")) { // Which template has been used to fill the AIM file
+		    if (aim.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName() != null && aim.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName().getValue().equals("epad-plugin")) { // Which template has been used to fill the AIM file
 		        String templateName = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode(); // ex: jjv-5
 		        log.info("Found an AIM plugin template with name " + templateName + " and AIM ID " + aim.getUniqueIdentifier().getRoot());
 		        boolean templateHasBeenFound = false;
@@ -589,6 +589,8 @@ public class AIMUtil
 						units="HU";
 						
 					}
+					//start fresh, delete old ones
+					aim.clearCalculationEntityCollection();
 					aim.addCalculationEntityWithRef(Aim4.createMinCalculation(calcs[0], null, units),dc);
 					aim.addCalculationEntityWithRef(Aim4.createMaxCalculation(calcs[1], null, units),dc);
 					aim.addCalculationEntityWithRef(Aim4.createMeanCalculation(calcs[2], null, units),dc);
@@ -897,12 +899,8 @@ public class AIMUtil
 						throw new Exception("Invalid AIM, contains empty segmentation data");
 					}
 					//ml this is a segmentation aim sent from ui. 
-					//add calculations
-					boolean generateCalcs=false;
-					if (imageAnnotationColl.getImageAnnotation().getCalculationEntityCollection().size()<1){
-						log.info("No calculations for dso. Let's calculate");
-						generateCalcs=true;
-					}
+					//delete and add the calculations everytime, ui calculates wrong anyway
+					boolean generateCalcs=true;					
 					if (generateCalcs){
 						//open the referenced images and calculate the aggregations
 						DicomSegmentationEntity dseg=(DicomSegmentationEntity) sec.getSegmentationEntityList().get(0);
@@ -922,10 +920,12 @@ public class AIMUtil
 								units="HU";
 								
 							}
-							aim.addCalculationEntity(Aim4.createMinCalculation(calcs[0], null, units));
-							aim.addCalculationEntity(Aim4.createMaxCalculation(calcs[1], null, units));
-							aim.addCalculationEntity(Aim4.createMeanCalculation(calcs[2], null, units));
-							aim.addCalculationEntity(Aim4.createStdDevCalculation(calcs[3], null, units));
+							//start fresh, delete old ones
+							aim.clearCalculationEntityCollection();
+							aim.addCalculationEntityWithRef(Aim4.createMinCalculation(calcs[0], null, units),dseg);
+							aim.addCalculationEntityWithRef(Aim4.createMaxCalculation(calcs[1], null, units),dseg);
+							aim.addCalculationEntityWithRef(Aim4.createMeanCalculation(calcs[2], null, units),dseg);
+							aim.addCalculationEntityWithRef(Aim4.createStdDevCalculation(calcs[3], null, units),dseg);
 							
 						}
 						
@@ -1435,7 +1435,7 @@ public class AIMUtil
 					//ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
 					//ml
 					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
-					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
+					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName().getValue();
 //					ea.date = aim.getDateTime();
 					if (a.getDateTimeAsDate()!=null)
 						ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
@@ -1499,7 +1499,10 @@ public class AIMUtil
 //					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 					//ml
 					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
-					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
+					if (aim.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName()!=null)
+						ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName().getValue();
+					else
+						ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
 				}
 //				ea.date = aim.getDateTime();
 				if (a.getDateTimeAsDate()!=null)
@@ -1564,7 +1567,10 @@ public class AIMUtil
 					//ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
 					//ml
 					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
-					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
+					if (aim.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName()!=null)
+						ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName().getValue();
+					else
+						ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
 //					ea.date = aim.getDateTime();
 					if (a.getDateTimeAsDate()!=null)
 						ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
@@ -1628,7 +1634,10 @@ public class AIMUtil
 //					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 					//ml
 					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
-					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
+					if (aim.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName()!=null)
+						ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName().getValue();
+					else
+						ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
 				}
 //				ea.date = aim.getDateTime();
 				if (a.getDateTimeAsDate()!=null)
@@ -1679,7 +1688,10 @@ public class AIMUtil
 						ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 						//ml
 						ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
-						ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
+						if (iac.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName()!=null)
+							ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName().getValue();
+						else
+							ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
 //						ea.date = iac.getDateTime();
 						if (a.getDateTimeAsDate()!=null)
 							ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
@@ -1842,7 +1854,11 @@ public class AIMUtil
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 				//ml
 				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
-				ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
+				if (iac.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName()!=null)
+					ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName().getValue();
+				else
+					ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
+				
 //				ea.date = iac.getDateTime();
 				if (a.getDateTimeAsDate()!=null)
 					ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
@@ -1876,7 +1892,10 @@ public class AIMUtil
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 				//ml
 				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
-				ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
+				if (iac.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName()!=null)
+					ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName().getValue();
+				else
+					ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
 //				ea.date = iac.getDateTime();
 				if (a.getDateTimeAsDate()!=null)
 					ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
@@ -1910,7 +1929,10 @@ public class AIMUtil
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 				//ml
 				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
-				ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
+				if (iac.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName()!=null)
+					ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName().getValue();
+				else
+					ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
 //				ea.date = iac.getDateTime();
 				if (a.getDateTimeAsDate()!=null)
 					ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
@@ -1989,7 +2011,10 @@ public class AIMUtil
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 				//ml
 				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
-				ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
+				if (iac.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName()!=null)
+					ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName().getValue();
+				else
+					ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
 //				ea.date = iac.getDateTime();
 				if (a.getDateTimeAsDate()!=null)
 					ea.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getDateTimeAsDate());
@@ -2738,7 +2763,10 @@ public class AIMUtil
 				{
 					//ml
 					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
-					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
+					if (aim.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName()!=null)
+						ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName().getValue();
+					else
+						ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
 				}
 //				ea.date = aim.getDateTime();
 				if (a.getDateTimeAsDate()!=null)
