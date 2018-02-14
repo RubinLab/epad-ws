@@ -4041,7 +4041,7 @@ public class DefaultEpadOperations implements EpadOperations
 				if (seriesMap.keySet().isEmpty())
 				{
 					aims.remove(i--);
-					if (aim.templateType != null && aim.templateType.equals("SEG"))
+					if (aim.template != null && aim.template.equals("SEG"))
 					{
 						try {
 							AIMUtil.deleteAIM(aim.aimID, aim.projectID);
@@ -4183,7 +4183,7 @@ public class DefaultEpadOperations implements EpadOperations
 				if (seriesMap.keySet().isEmpty())
 				{
 					aims.remove(i--);
-					if (aim.templateType != null && aim.templateType.equals("SEG"))
+					if (aim.template != null && aim.template.equals("SEG"))
 					{
 						try {
 							AIMUtil.deleteAIM(aim.aimID, aim.projectID);

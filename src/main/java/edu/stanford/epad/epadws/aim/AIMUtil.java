@@ -182,6 +182,7 @@ import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
+import edu.stanford.epad.epadws.models.Plugin;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.Template;
@@ -192,6 +193,7 @@ import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
+import edu.stanford.epad.epadws.service.PluginOperations;
 import edu.stanford.epad.epadws.service.SessionService;
 import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.hakan.aim4api.base.AimException;
@@ -344,30 +346,23 @@ public class AIMUtil
 			} catch (Exception e) {
 				log.warning("Error saving aim to mongodb", e);
 			}
-		
-		    if ((aim.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName() != null && aim.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName().getValue().equals("epad-plugin"))||(aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName() != null && aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName().equals("epad-plugin"))) { // Which template has been used to fill the AIM file
-		        String templateName = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode(); // ex: jjv-5
-		        log.info("Found an AIM plugin template with name " + templateName + " and AIM ID " + aim.getUniqueIdentifier().getRoot());
-		        boolean templateHasBeenFound = false;
-		        String handlerName = null;
-		        String pluginName = null;
-		
-		        List<String> list = PluginConfig.getInstance().getPluginTemplateList();
-		        for (int i = 0; i < list.size(); i++) {
-		            String templateNameFounded = list.get(i);
-		            if (templateNameFounded.equals(templateName)) {
-		                handlerName = PluginConfig.getInstance().getPluginHandlerList().get(i);
-		                pluginName = PluginConfig.getInstance().getPluginNameList().get(i);
-		                templateHasBeenFound = true;
-		            }
-		        }
-		
-		        if (templateHasBeenFound && jsessionID != null && invokePlugin) {
-		        	// Start plugin task
-					log.info("Starting Plugin task for:" + pluginName);
-					(new Thread(new PluginStartTask(jsessionID, pluginName, aim.getUniqueIdentifier().getRoot(), frameNumber, projectID))).start();				
-		        }
-		    }
+			//do not depend on epad-plugin. see if the template has a plugin with codevalue=plugin id
+			PluginOperations pluginOp=PluginOperations.getInstance();
+			Plugin plugin=null;
+		    try {
+				if (aim.getImageAnnotation().getListTypeCode().get(0).getCode()!=null && (plugin=pluginOp.getPlugin(aim.getImageAnnotation().getListTypeCode().get(0).getCode()))!=null){
+					String templateName = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName().getValue(); // ex: jjvector
+				    log.info("Found an AIM plugin template with name " + templateName + " and AIM ID " + aim.getUniqueIdentifier().getRoot());
+
+				    if (jsessionID != null && invokePlugin) {
+				    	// Start plugin task
+						log.info("Starting Plugin task for:" + plugin.getName());
+						(new Thread(new PluginStartTask(jsessionID, plugin.getName(), aim.getUniqueIdentifier().getRoot(), frameNumber, projectID))).start();				
+				    }
+				}
+			} catch (Exception e) {
+				log.warning("Couldn't get plugin", e);
+			}
 		}
 		return aim;
 	}	
@@ -2147,6 +2142,7 @@ public class AIMUtil
 		return runPlugIn(aimIDs, templateName, projectID, jsessionID,true);
 	}
     
+    //this actually gets template_id (codevalue) not templatename
 	public static String runPlugIn(String[] aimIDs, String templateName, String projectID, String jsessionID, boolean inParallel) throws Exception
 	{                        
 		String result = "";

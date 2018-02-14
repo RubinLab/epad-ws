@@ -819,7 +819,7 @@ public class PluginOperations {
 		String sessionID="";
 		String pluginName="";
 		String templateId=null;
-		String templateType=null;
+//		String templateType=null;
 		String user="admin";
 		EpadOperations epadOp = DefaultEpadOperations.getInstance();
 		String error="SUCCESS! Please restart ePad";
@@ -841,7 +841,8 @@ public class PluginOperations {
 				String[] templateInfo=null;
 				templateInfo=getTemplateCodeAndMeaning(templateFile);
 				templateId=templateInfo[0];
-				templateType=templateInfo[1];
+				//code meaning is not templatetype!
+//				templateType=templateInfo[1];
 			}
 			
 			//get the class names from the jar file
@@ -890,10 +891,11 @@ public class PluginOperations {
 				}
 			}
 			
-			//check if template has epad-plugin in code-meaning
-			if (templateType!=null && !templateType.equalsIgnoreCase("epad-plugin"))
-				return "The template code meaning should be epad-plugin for plugin to be triggered automatically. You have " +templateType+". Change the code meaning in template";
-			
+			//do not need this check any more, we don't depend on it. we only depend on template_id=plugin_id
+//			//check if template has epad-plugin in code-meaning
+//			if (templateType!=null && !templateType.equalsIgnoreCase("epad-plugin"))
+//				return "The template code meaning should be epad-plugin for plugin to be triggered automatically. You have " +templateType+". Change the code meaning in template";
+//			
 			//if new plugin check if it matches with something already in the system
 			if (!overwrite) {
 				//check if the plugin with name or id already exists
