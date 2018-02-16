@@ -362,6 +362,7 @@ public class EPADPutHandler
 				log.info("aims array  "+ aimIDsStr);
 				
 				String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
+				//this actually gets template_id (codevalue) not templatename
 				String templateName = httpRequest.getParameter("templateName");
 				if (templateName == null)
 					templateName = httpRequest.getParameter("pluginID");

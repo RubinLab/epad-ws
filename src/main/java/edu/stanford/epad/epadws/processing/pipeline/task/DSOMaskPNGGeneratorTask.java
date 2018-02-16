@@ -131,6 +131,7 @@ import edu.stanford.epad.epadws.processing.model.DicomSeriesProcessingStatusTrac
 import edu.stanford.epad.epadws.processing.model.SeriesPipelineState;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
+import edu.stanford.epad.epadws.service.PluginOperations;
 import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
 
@@ -272,8 +273,9 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 				epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
 				throw x;
 			}
-			
-			if (aims.size() != 0 && aims.get(0).templateType != null && aims.get(0).templateType.equals("epad-plugin"))
+			//do not depend on epad-plugin. see if the template has a plugin with codevalue=plugin id
+			PluginOperations pluginOp=PluginOperations.getInstance();
+			if (aims.size() != 0 && aims.get(0).template != null && (pluginOp.getPlugin(aims.get(0).template))!=null)
 			{
 				EPADAIMList aimList= AIMUtil.getAllVersionSummaries(aims.get(0));
 				if (aimList.ResultSet.totalRecords<0)
