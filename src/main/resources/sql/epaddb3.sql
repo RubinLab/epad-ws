@@ -36,5 +36,8 @@ INSERT IGNORE INTO lexicon (CODE_VALUE, CODE_MEANING, description,PARENT_ID,SCHE
 INSERT IGNORE INTO lexicon (CODE_VALUE, CODE_MEANING, description,PARENT_ID,SCHEMA_DESIGNATOR,SCHEMA_VERSION,creator) VALUES('S75', 'Non-cancer Lesion', 'Non-cancer Lesion',@recistv2,'99EPAD','1','admin');
 INSERT IGNORE INTO lexicon (CODE_VALUE, CODE_MEANING, description,PARENT_ID,SCHEMA_DESIGNATOR,SCHEMA_VERSION,creator) VALUES('S86', 'Evaluable', 'Evaluable',@recistv2,'99EPAD','1','admin');
 
+SET @rsz = (SELECT MAX(ID) FROM lexicon where CODE_VALUE='rsz-1');
+INSERT IGNORE INTO lexicon (CODE_VALUE, CODE_MEANING, description,PARENT_ID,SCHEMA_DESIGNATOR,SCHEMA_VERSION,creator) VALUES('rsz-2', 'energie', 'energie',@rsz,'99EPAD','1','admin');
+
 UPDATE dbversion SET version = '3.0';
 commit;
