@@ -213,6 +213,7 @@ public class AimReporter {
 			try {
 				if (aim.xml==null){
 					log.warning("Aim with no xml! Something is wrong");
+					table[row++]=null;
 					continue;
 				}
 					
