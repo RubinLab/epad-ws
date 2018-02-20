@@ -189,6 +189,8 @@ public class AimReporter {
 						filled=filled.substring(0, filled.length()-1)+","+templateTable.substring(1);
 				}
 			}
+			if (filled.isEmpty())
+				filled="[]";
 			return filled;
 		}
 		String [][] table=null;
