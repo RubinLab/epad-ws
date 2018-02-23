@@ -3739,6 +3739,9 @@ public class DefaultEpadOperations implements EpadOperations
 			return "AIM can not be added to project:" + imageReference.projectID;
 		try {
 			projectOperations.createEventLog(username, imageReference.projectID, imageReference.subjectID, imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, aimID, "CREATE AIM", aimFile.getName());
+			//see if it an update to decide whether to delete or not
+			EPADAIM oldAim = epadDatabaseOperations.getAIM(aimID);
+			
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, imageReference, aimID);
 			if (!"admin".equals(username) && !aim.userName.equalsIgnoreCase(username) && !aim.userName.equalsIgnoreCase("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
 			{
@@ -3751,8 +3754,11 @@ public class DefaultEpadOperations implements EpadOperations
 			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
 			else{
-				//delete the db entry if you couldn't save the file!
-				epadDatabaseOperations.deleteAIM(username, aim.aimID);
+				//see if it an update and do not delete if so
+				if (oldAim==null){
+					//delete the db entry if you couldn't save the file!
+					epadDatabaseOperations.deleteAIM(username, aim.aimID);
+				}
 				return "Error saving AIM file";
 			}
 		} catch (Exception e) {
