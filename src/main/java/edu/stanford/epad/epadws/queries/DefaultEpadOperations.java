@@ -113,6 +113,7 @@ import ij.process.ImageStatistics;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -133,6 +134,10 @@ import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.XML;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import com.pixelmed.dicom.ImageToDicom;
 import com.pixelmed.dicom.SOPClass;
@@ -248,6 +253,7 @@ import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.epad.epadws.xnat.XNATDeletionOperations;
 import edu.stanford.epad.epadws.xnat.XNATUtil;
 import edu.stanford.hakan.aim4api.base.AimException;
+import edu.stanford.hakan.aim4api.base.ST;
 import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
 import edu.stanford.hakan.aim4api.usage.AnnotationValidator;
 
@@ -2699,6 +2705,159 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		return null;
 
+	}
+	
+	private static List<String> validLexicon=Arrays.asList("CPT", "SNOMEDCT", "RXNORM", "NDDF", "MEDDRA", "LOINC", "DERMO", 
+			"NDFRT", "NCIT", "EDAM", "CTV3", "RCD", "DOID", "VANDF", "NDC", "MESH", "MESH", "ICD9CM", "RADLEX", "ICD10CM", 
+			"SNMI", "SIO", "ICD10", "ICD-10", "FMA", "RCTV2", "BAO", "SYMP", "ENVO", "OMIM", "TM", "HP", "ICD10PCS", "BTO", 
+			"CL", "GO", "ATC", "EDAM-BIOIMAGING", "FB-DV", "UBERON", "OBI", "DRON", "ORDO", "PAE", "PO", "MONDO", "DINTO", 
+			"DDI", "MFOEM", "OBIB", "ICF", "ECO", "PSIMOD", "DAG", "EFO", "FTC", "EDDA", "SCIO", "ICW", "RH-MESH", "ZEA", 
+			"ECG", "DDO", "CTCAE", "HRDO", "VIVO", "FYPO", "MS", "MDDB", "ECSO", "PW", "PR", "ICPC", "FIX", "PATO", "HUGO", 
+			"XAO", "NPO", "ROO", "VSAO", "AMINO-ACID", "MEO", "BRO", "ZFA", "ICNP", "PLOSTHES", "TAO", "OGMS", "COGAT", 
+			"OCRE", "CHEMINF", "ADO", "TTO", "OFSMR", "BCGO", "STY", "PDO", "OPE", "CTO", "BIRNLEX", "SWO", "RB", "SCI", 
+			"CHEBI", "ICPC2P", "GALEN", "APAONTO", "EXO", "DMTO", "MA", "MUS", "ONTOPSYCHIA", "CRISP", "FOODON", "DIAB", 
+			"ENM", "UO", "ONTODT", "PHARE", "TEO", "EXON", "DIKB", "MO", "BMT", "PTO", "HCPCS", "LBO", "SPD", "REX", "CNO", 
+			"MP", "MFOMD", "MSO", "SWEET", "JERM", "PECO", "RO", "IDO", "OBIWS", "LCSH", "ICD11-BODYSYSTEM", "PHENOMEBLAST", 
+			"ACGT-MO", "SNP", "SNPO", "OWL-DL", "PCO", "FB-BT", "IFAR", "FA", "AAO", "PDON", "OBOREL", "TOP-MENELAS", "VO", 
+			"SMASH", "ONTOLURGENCES", "SO", "NBO", "ONTOAD",  "COGPO", "DOCCC", "CCC", "PATHLEX", "IDOMAL", "HFO", "OMRSE", "CO",
+			"ROLEO", "BIBFRAME", "MAMO", "NMOBR", "SEP", "CARELEX", "PDQ", "BFO", "GAMUTS", "AERO", "DIDEO", "MF", "GEXO", "MEDO", 
+			"KORO", "LHN", "GML", "RCTONT", "GENO", "BCTT", "BCO", "DCM", "NGSONTO", "OAE", "EDDA_PT", "AO", "OMIT", "MIR", "VHOG", 
+			"OGG", "SBO", "PROVO", "CSEO", "WB-BT", "APATREATMENT", "CSSO", "SSO", "GBM", "CHMO", "GEO", "DIAGONT", "HPIO", "STATO", 
+			"GEOSPECIES", "SCHEMA", "CIO", "BIOMODELS", "DDIO", "PMR", "ASDPTO", "LPT", "COSTART", "CLO", "CMO", "LCGFT", "OBCS",
+			"DTO", "VTO", "DCAT", "PMA", "SBOL", "SBOLV", "REPO", "VSO", "CN", "GENEPIO", "GENEPIO", "AEO", "IAO", "RXNO", "EPO", 
+			"GO-PLUS", "CSO", "NCCO", "OMP", "PHENX", "HEIO", "GRO", "MI", "PEO", "PDRO", "SSN", "OPB", "CVAO", "NLMVS", "IAML-MOP", 
+			"BDO", "BAO-GPCR", "NIHSS", "GEOSPARQL", "MAT", "QUDT", "WB-PHENOTYPE", "OHD", "ROS", "DC", "ADMIN", "IDODEN", "OGDI", 
+			"GWAS", "IMGT-ONTOLOGY", "IMMDIS", "MCCL", "HAO", "LIPRO", "CANONT", "HORD", "HINO", "MPO", "BRCT", "GAZ", "OGI", "ICECI",
+			"NIDM-RESULTS", "ADAR", "SCDO", "OHMI", "GFVO", "EPSO", "EPSO", "PTRANS", "EUPATH", "EO", "SYN", "PVONTO", "FISHO", "CBO", 
+			"KIOSASLIQQ", "SP", "MEDLINEPLUS", "ISO19108TO", "ALLERGYDETECTOR", "CHEAR", "FALDO", "OMV", "TMO", "AGRO", "OPL", "FHHO",
+			"OA", "ISO19110", "MOP", "HL7", "CCONT", "GTO", "HIV", "OCDM", "ISO639-2", "ISO 639-1", "CANCO", "OBA", "TRAK", "ISO19115MI",
+			"NMR", "CDAO", "BHN", "TGMA", "ONTOTOXNUC", "FLU", "ICO", "ONTOPARON_SOCIAL", "TIME", "MSTDE-FRE", "ONTODM-CORE", "MMO",
+			"ERO", "FBBI", "RS", "EHDA", "TRON", "MCCV", "ISO19115", "AI-RHEUM", "PEAO", "ONTOVIP", "REXO", "BCTEO", "CEDARVS", 
+			"MPATH", "BIOMO", "OMIABIS", "OVAE", "TAXRANK", "WSIO", "PPIO", "WIKIPATHWAYS", "PROCCHEMICAL", "FB-SP", "BRIDG", "VT", 
+			"PLIO", "FDSAJFAHSJK", "IDOBRU", "ODNAE", "MOC", "ONTOMA", "STUFF", "PMO", "EMO", "SHR", "DCMITYPE", "ABD", "SAO", "NEMO", 
+			"CARO", "OBOE-SBC", "SBC-LTER", "FLOPO", "GBOL", "RAO", "PROCESS", "ATO", "PLANA", "MIXS", "PTS", "ISO19115CC", "CNO_ACRONYM",
+			"APAOCUEMPLOY", "EHDAA2", "ORTH", "RETO", "CTX", "CO-WHEAT", "IWIS", "ATOL", "NMOSP", "TEDDY", "MIM", "ICPS", "EXACT", "SOPHARM",
+			"GO-EXT", "APANEUROCLUSTER", "ONS", "ONL-MSA", "SDO", "NATPRO", "PEDTERM", "HO", "MOOCCUADO", "MATRCOMPOUND", "EGO", 
+			"ISO19115ROLES", "FB-CV", "EMAPA", "TMA", "HIVO004", "PIDS", "GDCO", "BIPON", "CTENO", "COMB JELLIES", "OGSF", "NCRO", 
+			"NCRNA", "MOOCCIADO", "CNOT", "BP-METADATA", "BTSE", "CEPH", "GFO-BIO", "ONTODM-KDD", "FOAF", "IDCLOUDSEO", "DAO", "TRANS", 
+			"BE", "OARCS", "PE-O", "ONTOKBCF", "PDUMDV", "ISO19115CON", "EPILONT", "TM-OTHER-FACTORS", "ICTM", "APADISORDERS", "GENE-CDS",
+			"PSO", "SIBO", "TMF", "GINAS", "MHCRO", "VARIO", "OGMD", "ISO-ANNOTATIONS", "TM-SIGNS-AND-SYMPTS", "PHAGE", "LEGALAPATEST2",
+			"FIRE", "MICRO", "NTDO", "PHMAMMADO", "GLYCO", "MWLA", "APASTATISTICAL", "MATRROCK", "GMM", "VEO", "SITBAC", "FALL", "ZFS",
+			"M-PARTOF", "BOLA57", "ISO19115PR", "PHFUMIADO", "IXNO", "CU-VO", "CCON", "HAROREADO", "IGTO", "CISAVIADO", "MOVIE",
+			"ANCESTRO", "ANCESTRO", "TM-CONST", "SSE",  "ISO19115EX", "FAO", "SEQ", "RNRMU", "TADS", "SURAT-LAMAR", "CKDO", "RDAU",
+			"TYPON", "PE", "GFO", "TRIKMENANGJUDI", "HCODONONT", "SD3", "CHD", "RSA", "PHARMGKB", "RDL", "ADALAB", "APAEDUCLUSTER",
+			"ISO19115DI", "XEO", "GRO-CPGA", "EBP", "SPTO", "DCO-DEBUGIT", "BHO", "MFMO", "IT", "MRO", "CYTO", "CIDOC-CRM", "CRM", 
+			"BP", "SURGICAL", "EOL", "INM", "INM-NPI", "SPO", "NONRCTO", "CEPATHAMIL", "CARRE", "HIVCRS", "OLATDV", "HGNC", "PSEUDO", 
+			"HUPSON", "VPH", "VCARD", "ENTITYCANDIDATES", "ADALAB-META", "RNAO", "ROC", "SEDI", "MIAPA", "OGR", "OOSTT", "GLYCORDF", 
+			"PSDS", "MSV", "ISO19115TCC", "HAAURAADO", "CIINTEADO", "MEDEON", "PCMO", "CPTAC", "MADS-RDF", "KOS", "CCTOO", "ENTITY", 
+			"CABRO", "NORREG", "APO", "FISH-AST", "TRIAGE", "KERIS99SAKONG", "MSTDE", "SOY", "LDA", "APOLLO-SV", "NEUMORE", "MANTANPESINDEN",
+			"MEGO", "MIRNAO", "BRO_ACRONYM", "IDQA", "DCCDFV", "GVANOS", "NHSQI2009", "TEST", "EHDAA", "CCO", "ONLIRA", "ONTOPNEUMO", 
+			"FLYGLYCODB", "CMF", "NEOMARK3", "CLASSY-FIRE", "INIKEEPO", "MATR", "MDCO", "MCBCC", "DDPHENO", "FO", "DIMASFAN", "ONL-MR-DA", 
+			"DERMLEX", "INTERNANO", "KOINHOKI", "BT", "BIBLIOTEK-O", "EMAP", "AS", "NEUDIGS", "COPDO", "OCHV", "CMPO", "ONSTR", "VICO", "MERA",
+			"XCO", "DUO", "MATRELEMENT", "GVP", "UNITSONT", "NEOMARK4", "NIGO", "NPIS", "NPI", "APACOMPUTER", "DCT", "CEDARPC", "BSAO", "HC",
+			"MONO", "MINERAL", "INO", "DCTERMS", "MNR", "ONTONEO", "EHRS", "BIM", "EP", "UPHENO", "TDWGSPEC", "TDWG", "TOK", "ISO19115CI", "MFO", 
+			"PGXO", "PANDA", "ELIG", "OGG-MM", "MOUSE", "ONL-DP", "APATANDT", "OCMR", "LEGALAPA", "PIERO", "MATRROCKIGNEOUS", "VRACORE", "COLL",
+			"ADW", "KISAO", "BSPO", "BUSNESS", "ISO19115SRS", "MIRO", "BNO", "GRO-CPD", "TM-MER", "NIC", "OF", "CVDO", "GAYAA", "GMO", "COMODI", 
+			"ISO19115ID", "ACRONYM", "OGROUP", "CTONT", "PPO", "PORO", "MINI-FAST-1", "RNPRIO", "CPRO", "SUICIDEO", "PP", "GPML", "CHEMBIO", 
+			"MOOCULADO", "PXO", "OBI_BCGO", "ECP", "INVERSEROLES", "ZECO", "WB-LS", "ISO-15926-2_2003", "ESSO", "DCMI", "DCO", "PROPREO", "DSEO", 
+			"HOM", "OOEVV", "PAV", "ESFO", "KONTES", "RBMS", "PHYLONT", "ITEMAS", "QIBO", "MMUSDV", "GCO", "MHC", "DLORO", "PDO_CAS", "HSAPDV", 
+			"VIVO-ISF", "BOF", "RDA-CONTENT", "INSECTH", "DDANAT", "OCVDAE", "NCCNEHR", "ISO19115DTC", "AURA","NCI","NCIM,","SNOMED","SRT","ACR",
+			"ASTM-SIGPURPOSE","BARI","BI","C4","C5","CD2","DCMUID","FMA","HPC","I10","I10P","I9","I9C","ISO639_1","ISO639_2","ISO3166_1",
+			"ISO5218_1","ISO_OID","LN","MDC","MDNS","MSH","NBD","NBG","NCDR","NICIP","NPI","POS","RFC3066","99SDM","SCPECG","SNM3","UCUM","UMLS",
+			"UPC");
+	
+	public static void analyzeNode(Node node) {
+	    
+	    NodeList nodeList = node.getChildNodes();
+	    for (int i = 0; i < nodeList.getLength(); i++) {
+	        Node currentNode = nodeList.item(i);
+	        edu.stanford.hakan.aim4api.base.CD cd =new edu.stanford.hakan.aim4api.base.CD();
+        	NamedNodeMap attrs = currentNode.getAttributes();
+        	if (attrs!=null){
+        		for (int j = 0; j < attrs.getLength(); j++){
+	        		Node attr = attrs.item(j);
+	        		switch(attr.getNodeName()){
+	    			case "codingSchemeDesignator":
+	    				cd.setCodeSystemName(attr.getNodeValue());
+	    				//see if the codesystemname/codescheme designator is good
+	    				if (!validLexicon.contains(cd.getCodeSystemName().toUpperCase().split("_")[0]) && !cd.getCodeSystemName().toUpperCase().split("_")[0].startsWith("99") && !cd.getCodeSystemName().toUpperCase().split("_")[0].startsWith("Radlex")){
+	    					log.info("Changing "+ cd.getCodeSystemName().toUpperCase().split("_")[0] );
+	    					cd.setCodeSystemName("99EPAD");
+	    					attr.setNodeValue("99EPAD");
+	    					cd.setCodeSystemVersion("1.0");
+	    					for (int k = 0; k < attrs.getLength(); k++){
+	    					 if(attrs.item(k).getNodeName().equals("codingSchemeVersion")){
+	    						 attrs.item(k).setNodeValue("1.0");
+	    	    				
+	    					 }
+	    					}
+	    				}
+	    				break;
+	    			case "codingSchemeVersion":
+	    				cd.setCodeSystemVersion(attr.getNodeValue());
+	    				if (cd.getCodeSystemName()!=null && !validLexicon.contains(cd.getCodeSystemName().split("_")[0])){
+	    					cd.setCodeSystemVersion("1.0");
+	    					attr.setNodeValue("1.0");
+	    				}
+	    				break;
+	    			case "codeMeaning":
+	    				cd.setDisplayName(new ST(attr.getNodeValue()));
+	    				break;
+	    			case "codeValue":
+	    				cd.setCode(attr.getNodeValue());
+	    				break;
+	    			}
+        		}
+        		if (!(cd.getCodeSystemName()==null && cd.getDisplayName()==null && cd.getCode()==null))
+        			log.info(cd.toString());
+        	}
+	        
+	        if (currentNode.getNodeType() == Node.ELEMENT_NODE) {
+	            analyzeNode(currentNode);
+	        }
+	    }
+	}
+	
+	public static void fixTemplateXML(File tfile, String xml) {
+		try {
+			
+			Document doc = edu.stanford.hakan.aim4api.utility.XML.getDocumentFromString(xml);
+			Node root = doc.getDocumentElement();
+			analyzeNode(root);
+			edu.stanford.hakan.aim4api.utility.XML.SaveDocucument(doc,tfile.getAbsolutePath());
+		}catch(Exception e){
+			log.warning("couldn't fix the template "+ tfile.getName() + " " + e.getMessage());
+		}
+		
+	}
+	
+	/**
+	 * checks and fixes the old templates
+	 */
+	@Override
+	public void checkOldTemplates(){
+		try{
+			
+			
+			List<EpadFile> efiles = projectOperations.getEpadFiles(null, null, null, null, FileType.TEMPLATE, false);
+			for (EpadFile efile: efiles)
+			{
+				log.info("file "+ efile.getName());
+				File tfile = new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile));
+				//do backup
+				File copyfile =new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)+"_copy");
+				String xml = EPADFileUtils.readFileAsString(tfile);
+				EPADFileUtils.overwrite(copyfile, xml);
+				fixTemplateXML(tfile,xml);
+
+			}
+			
+			
+		} catch (Exception e) {
+			log.warning("Couldn't retrieve the templates", e);
+		}
+		
+				
 	}
 	
 	@Override
