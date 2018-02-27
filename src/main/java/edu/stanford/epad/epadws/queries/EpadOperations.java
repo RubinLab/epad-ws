@@ -1752,4 +1752,9 @@ public interface EpadOperations
 	 */
 	EPADSeriesList getSeriesDescriptions(StudyReference studyReference, String username, String sessionID,
 			EPADSearchFilter searchFilter, boolean filterDSOs, boolean includeAnnotationStatus, boolean getFlagged);
+
+	/**
+	 * checks if there are old templates in the system
+	 */
+	void checkOldTemplates();
 }
