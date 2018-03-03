@@ -163,6 +163,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.EventMessageCodes;
+import edu.stanford.epad.common.util.ExportAimOperations;
 import edu.stanford.epad.common.util.MongoDBOperations;
 import edu.stanford.epad.common.util.XmlNamespaceTranslator;
 import edu.stanford.epad.dtos.EPADAIM;
@@ -2530,6 +2531,11 @@ public class AIMUtil
 			log.warning("Error converting AIM to XML", e);
 			throw e;
 		}
+		HashMap<String,String> protocol=ExportAimOperations.getDARTProtocol();
+		HashMap<String,String> sessionInfo=null;
+		
+		ExportAimOperations.sendJsonToApi(aim.getUniqueIdentifier().getRoot(), aim, aimXML, protocol, sessionInfo);
+		
 		MongoDBOperations.saveAnnotationToMongo(aim.getUniqueIdentifier().getRoot(), aimXML, collection);
 	}
 	
