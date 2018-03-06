@@ -2531,10 +2531,9 @@ public class AIMUtil
 			log.warning("Error converting AIM to XML", e);
 			throw e;
 		}
-		HashMap<String,String> protocol=ExportAimOperations.getDARTProtocol();
-		HashMap<String,String> sessionInfo=null;
 		
-		ExportAimOperations.sendJsonToApi(aim.getUniqueIdentifier().getRoot(), aim, aimXML, protocol, sessionInfo);
+		
+		ExportAimOperations.sendJsonToApi(aim.getUniqueIdentifier().getRoot(), aim, aimXML);
 		
 		MongoDBOperations.saveAnnotationToMongo(aim.getUniqueIdentifier().getRoot(), aimXML, collection);
 	}
