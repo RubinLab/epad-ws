@@ -986,7 +986,7 @@ public class Aim2DicomSRConverter {
 					//get the code meaning??? not a controlled term in aim get it back from look up table
 					calculationResult.setUnitOfMeasure(new ST(unitRetrieveFromControlledTerm(units)));
 					//ml assume all data types are double. dicom sr does not have data type
-					calculationResult.setDataType(new CD("99EPADD1","Double","99EPAD"));
+					calculationResult.setDataType(new CD("C48870","Double","NCI"));
 
 					// Create a CalculationData instance
 					CalculationData calculationData = new CalculationData();

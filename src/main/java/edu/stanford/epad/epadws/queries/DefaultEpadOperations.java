@@ -133,6 +133,10 @@ import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.XML;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import com.pixelmed.dicom.ImageToDicom;
 import com.pixelmed.dicom.SOPClass;
@@ -248,7 +252,11 @@ import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.epad.epadws.xnat.XNATDeletionOperations;
 import edu.stanford.epad.epadws.xnat.XNATUtil;
 import edu.stanford.hakan.aim4api.base.AimException;
+import edu.stanford.hakan.aim4api.base.CD;
+import edu.stanford.hakan.aim4api.base.ST;
 import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
+import edu.stanford.hakan.aim4api.compability.aimv3.Lexicon;
+import edu.stanford.hakan.aim4api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim4api.usage.AnnotationValidator;
 
 // TODO Too long - separate in to multiple classes
@@ -1580,13 +1588,15 @@ public class DefaultEpadOperations implements EpadOperations
 		User user = projectOperations.getUser(username);
 		if (!user.isAdmin() && !projectOperations.isOwner(username, seriesReference.projectID))
 			throw new Exception("No permissions to delete series:" + seriesReference.seriesUID + " in project " + seriesReference.projectID);
-		if (!user.isAdmin() && all)
-			throw new Exception("No permissions to delete series:" + seriesReference.seriesUID  + " from system. You are not admin. Please select delete from project. ");
+		//defer check and see if it only exists in this project
+//		if (!user.isAdmin() && all)
+//			throw new Exception("No permissions to delete series:" + seriesReference.seriesUID  + " from system. You are not admin. Please select delete from project. ");
 
 		try {
 			projectOperations.createEventLog(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID, null, null, "DELETE SERIES", "deleteAims:" + deleteAims);
 			Set<String>projectIds = UserProjectService.getAllProjectIDs();
 			//ml if the user is admin and all is not true check whether the series is in use
+			String existInOtherProject="";
 			if (!user.isAdmin() || !all) {
 				for (String projectId: projectIds)
 				{
@@ -1596,13 +1606,20 @@ public class DefaultEpadOperations implements EpadOperations
 					Set<String> allStudyUIDs = UserProjectService.getAllStudyUIDsForProject(projectId);
 					if (allStudyUIDs.contains(seriesReference.studyUID.replace('.', '_')) || allStudyUIDs.contains(seriesReference.studyUID))
 					{
+						existInOtherProject=projectId;
+						break;
 						//the user chose to select from project we do not need that anymore. 
 						//should we tell user when we are also deleting from system?
-						return "";
+//						return "";
 						//						log.info("Series " + seriesReference.studyUID + " in use by other projects:" + projectId + ", so series will not be deleted from DCM4CHEE");
 						//						return "Series " + seriesReference.seriesUID + " in use by other projects:" + projectId + ", so series will not be deleted from DCM4CHEE";
 					}
 				}
+			}
+			if (!existInOtherProject.isEmpty() && !user.isAdmin() && all){
+				log.info("Series " + seriesReference.studyUID + " in use by other projects:" + existInOtherProject + " and the user is not admin, so series will not be deleted from DCM4CHEE");
+				return "Series " + seriesReference.seriesUID + " in use by other projects:" + existInOtherProject + " and the user is not admin, so series will not be deleted from DCM4CHEE";
+
 			}
 			return deleteSeries(seriesReference, deleteAims);
 		} catch (Exception e) {
@@ -2692,6 +2709,204 @@ public class DefaultEpadOperations implements EpadOperations
 
 	}
 	
+	//lexicons accepted by bioportal
+//	private static List<String> validLexicon=Arrays.asList("CPT", "SNOMEDCT", "RXNORM", "NDDF", "MEDDRA", "LOINC", "DERMO", 
+//			"NDFRT", "NCIT", "EDAM", "CTV3", "RCD", "DOID", "VANDF", "NDC", "MESH", "MESH", "ICD9CM", "RADLEX", "ICD10CM", 
+//			"SNMI", "SIO", "ICD10", "ICD-10", "FMA", "RCTV2", "BAO", "SYMP", "ENVO", "OMIM", "TM", "HP", "ICD10PCS", "BTO", 
+//			"CL", "GO", "ATC", "EDAM-BIOIMAGING", "FB-DV", "UBERON", "OBI", "DRON", "ORDO", "PAE", "PO", "MONDO", "DINTO", 
+//			"DDI", "MFOEM", "OBIB", "ICF", "ECO", "PSIMOD", "DAG", "EFO", "FTC", "EDDA", "SCIO", "ICW", "RH-MESH", "ZEA", 
+//			"ECG", "DDO", "CTCAE", "HRDO", "VIVO", "FYPO", "MS", "MDDB", "ECSO", "PW", "PR", "ICPC", "FIX", "PATO", "HUGO", 
+//			"XAO", "NPO", "ROO", "VSAO", "AMINO-ACID", "MEO", "BRO", "ZFA", "ICNP", "PLOSTHES", "TAO", "OGMS", "COGAT", 
+//			"OCRE", "CHEMINF", "ADO", "TTO", "OFSMR", "BCGO", "STY", "PDO", "OPE", "CTO", "BIRNLEX", "SWO", "RB", "SCI", 
+//			"CHEBI", "ICPC2P", "GALEN", "APAONTO", "EXO", "DMTO", "MA", "MUS", "ONTOPSYCHIA", "CRISP", "FOODON", "DIAB", 
+//			"ENM", "UO", "ONTODT", "PHARE", "TEO", "EXON", "DIKB", "MO", "BMT", "PTO", "HCPCS", "LBO", "SPD", "REX", "CNO", 
+//			"MP", "MFOMD", "MSO", "SWEET", "JERM", "PECO", "RO", "IDO", "OBIWS", "LCSH", "ICD11-BODYSYSTEM", "PHENOMEBLAST", 
+//			"ACGT-MO", "SNP", "SNPO", "OWL-DL", "PCO", "FB-BT", "IFAR", "FA", "AAO", "PDON", "OBOREL", "TOP-MENELAS", "VO", 
+//			"SMASH", "ONTOLURGENCES", "SO", "NBO", "ONTOAD",  "COGPO", "DOCCC", "CCC", "PATHLEX", "IDOMAL", "HFO", "OMRSE", "CO",
+//			"ROLEO", "BIBFRAME", "MAMO", "NMOBR", "SEP", "CARELEX", "PDQ", "BFO", "GAMUTS", "AERO", "DIDEO", "MF", "GEXO", "MEDO", 
+//			"KORO", "LHN", "GML", "RCTONT", "GENO", "BCTT", "BCO", "DCM", "NGSONTO", "OAE", "EDDA_PT", "AO", "OMIT", "MIR", "VHOG", 
+//			"OGG", "SBO", "PROVO", "CSEO", "WB-BT", "APATREATMENT", "CSSO", "SSO", "GBM", "CHMO", "GEO", "DIAGONT", "HPIO", "STATO", 
+//			"GEOSPECIES", "SCHEMA", "CIO", "BIOMODELS", "DDIO", "PMR", "ASDPTO", "LPT", "COSTART", "CLO", "CMO", "LCGFT", "OBCS",
+//			"DTO", "VTO", "DCAT", "PMA", "SBOL", "SBOLV", "REPO", "VSO", "CN", "GENEPIO", "GENEPIO", "AEO", "IAO", "RXNO", "EPO", 
+//			"GO-PLUS", "CSO", "NCCO", "OMP", "PHENX", "HEIO", "GRO", "MI", "PEO", "PDRO", "SSN", "OPB", "CVAO", "NLMVS", "IAML-MOP", 
+//			"BDO", "BAO-GPCR", "NIHSS", "GEOSPARQL", "MAT", "QUDT", "WB-PHENOTYPE", "OHD", "ROS", "DC", "ADMIN", "IDODEN", "OGDI", 
+//			"GWAS", "IMGT-ONTOLOGY", "IMMDIS", "MCCL", "HAO", "LIPRO", "CANONT", "HORD", "HINO", "MPO", "BRCT", "GAZ", "OGI", "ICECI",
+//			"NIDM-RESULTS", "ADAR", "SCDO", "OHMI", "GFVO", "EPSO", "EPSO", "PTRANS", "EUPATH", "EO", "SYN", "PVONTO", "FISHO", "CBO", 
+//			"KIOSASLIQQ", "SP", "MEDLINEPLUS", "ISO19108TO", "ALLERGYDETECTOR", "CHEAR", "FALDO", "OMV", "TMO", "AGRO", "OPL", "FHHO",
+//			"OA", "ISO19110", "MOP", "HL7", "CCONT", "GTO", "HIV", "OCDM", "ISO639-2", "ISO 639-1", "CANCO", "OBA", "TRAK", "ISO19115MI",
+//			"NMR", "CDAO", "BHN", "TGMA", "ONTOTOXNUC", "FLU", "ICO", "ONTOPARON_SOCIAL", "TIME", "MSTDE-FRE", "ONTODM-CORE", "MMO",
+//			"ERO", "FBBI", "RS", "EHDA", "TRON", "MCCV", "ISO19115", "AI-RHEUM", "PEAO", "ONTOVIP", "REXO", "BCTEO", "CEDARVS", 
+//			"MPATH", "BIOMO", "OMIABIS", "OVAE", "TAXRANK", "WSIO", "PPIO", "WIKIPATHWAYS", "PROCCHEMICAL", "FB-SP", "BRIDG", "VT", 
+//			"PLIO", "FDSAJFAHSJK", "IDOBRU", "ODNAE", "MOC", "ONTOMA", "STUFF", "PMO", "EMO", "SHR", "DCMITYPE", "ABD", "SAO", "NEMO", 
+//			"CARO", "OBOE-SBC", "SBC-LTER", "FLOPO", "GBOL", "RAO", "PROCESS", "ATO", "PLANA", "MIXS", "PTS", "ISO19115CC", "CNO_ACRONYM",
+//			"APAOCUEMPLOY", "EHDAA2", "ORTH", "RETO", "CTX", "CO-WHEAT", "IWIS", "ATOL", "NMOSP", "TEDDY", "MIM", "ICPS", "EXACT", "SOPHARM",
+//			"GO-EXT", "APANEUROCLUSTER", "ONS", "ONL-MSA", "SDO", "NATPRO", "PEDTERM", "HO", "MOOCCUADO", "MATRCOMPOUND", "EGO", 
+//			"ISO19115ROLES", "FB-CV", "EMAPA", "TMA", "HIVO004", "PIDS", "GDCO", "BIPON", "CTENO", "COMB JELLIES", "OGSF", "NCRO", 
+//			"NCRNA", "MOOCCIADO", "CNOT", "BP-METADATA", "BTSE", "CEPH", "GFO-BIO", "ONTODM-KDD", "FOAF", "IDCLOUDSEO", "DAO", "TRANS", 
+//			"BE", "OARCS", "PE-O", "ONTOKBCF", "PDUMDV", "ISO19115CON", "EPILONT", "TM-OTHER-FACTORS", "ICTM", "APADISORDERS", "GENE-CDS",
+//			"PSO", "SIBO", "TMF", "GINAS", "MHCRO", "VARIO", "OGMD", "ISO-ANNOTATIONS", "TM-SIGNS-AND-SYMPTS", "PHAGE", "LEGALAPATEST2",
+//			"FIRE", "MICRO", "NTDO", "PHMAMMADO", "GLYCO", "MWLA", "APASTATISTICAL", "MATRROCK", "GMM", "VEO", "SITBAC", "FALL", "ZFS",
+//			"M-PARTOF", "BOLA57", "ISO19115PR", "PHFUMIADO", "IXNO", "CU-VO", "CCON", "HAROREADO", "IGTO", "CISAVIADO", "MOVIE",
+//			"ANCESTRO", "ANCESTRO", "TM-CONST", "SSE",  "ISO19115EX", "FAO", "SEQ", "RNRMU", "TADS", "SURAT-LAMAR", "CKDO", "RDAU",
+//			"TYPON", "PE", "GFO", "TRIKMENANGJUDI", "HCODONONT", "SD3", "CHD", "RSA", "PHARMGKB", "RDL", "ADALAB", "APAEDUCLUSTER",
+//			"ISO19115DI", "XEO", "GRO-CPGA", "EBP", "SPTO", "DCO-DEBUGIT", "BHO", "MFMO", "IT", "MRO", "CYTO", "CIDOC-CRM", "CRM", 
+//			"BP", "SURGICAL", "EOL", "INM", "INM-NPI", "SPO", "NONRCTO", "CEPATHAMIL", "CARRE", "HIVCRS", "OLATDV", "HGNC", "PSEUDO", 
+//			"HUPSON", "VPH", "VCARD", "ENTITYCANDIDATES", "ADALAB-META", "RNAO", "ROC", "SEDI", "MIAPA", "OGR", "OOSTT", "GLYCORDF", 
+//			"PSDS", "MSV", "ISO19115TCC", "HAAURAADO", "CIINTEADO", "MEDEON", "PCMO", "CPTAC", "MADS-RDF", "KOS", "CCTOO", "ENTITY", 
+//			"CABRO", "NORREG", "APO", "FISH-AST", "TRIAGE", "KERIS99SAKONG", "MSTDE", "SOY", "LDA", "APOLLO-SV", "NEUMORE", "MANTANPESINDEN",
+//			"MEGO", "MIRNAO", "BRO_ACRONYM", "IDQA", "DCCDFV", "GVANOS", "NHSQI2009", "TEST", "EHDAA", "CCO", "ONLIRA", "ONTOPNEUMO", 
+//			"FLYGLYCODB", "CMF", "NEOMARK3", "CLASSY-FIRE", "INIKEEPO", "MATR", "MDCO", "MCBCC", "DDPHENO", "FO", "DIMASFAN", "ONL-MR-DA", 
+//			"DERMLEX", "INTERNANO", "KOINHOKI", "BT", "BIBLIOTEK-O", "EMAP", "AS", "NEUDIGS", "COPDO", "OCHV", "CMPO", "ONSTR", "VICO", "MERA",
+//			"XCO", "DUO", "MATRELEMENT", "GVP", "UNITSONT", "NEOMARK4", "NIGO", "NPIS", "NPI", "APACOMPUTER", "DCT", "CEDARPC", "BSAO", "HC",
+//			"MONO", "MINERAL", "INO", "DCTERMS", "MNR", "ONTONEO", "EHRS", "BIM", "EP", "UPHENO", "TDWGSPEC", "TDWG", "TOK", "ISO19115CI", "MFO", 
+//			"PGXO", "PANDA", "ELIG", "OGG-MM", "MOUSE", "ONL-DP", "APATANDT", "OCMR", "LEGALAPA", "PIERO", "MATRROCKIGNEOUS", "VRACORE", "COLL",
+//			"ADW", "KISAO", "BSPO", "BUSNESS", "ISO19115SRS", "MIRO", "BNO", "GRO-CPD", "TM-MER", "NIC", "OF", "CVDO", "GAYAA", "GMO", "COMODI", 
+//			"ISO19115ID", "ACRONYM", "OGROUP", "CTONT", "PPO", "PORO", "MINI-FAST-1", "RNPRIO", "CPRO", "SUICIDEO", "PP", "GPML", "CHEMBIO", 
+//			"MOOCULADO", "PXO", "OBI_BCGO", "ECP", "INVERSEROLES", "ZECO", "WB-LS", "ISO-15926-2_2003", "ESSO", "DCMI", "DCO", "PROPREO", "DSEO", 
+//			"HOM", "OOEVV", "PAV", "ESFO", "KONTES", "RBMS", "PHYLONT", "ITEMAS", "QIBO", "MMUSDV", "GCO", "MHC", "DLORO", "PDO_CAS", "HSAPDV", 
+//			"VIVO-ISF", "BOF", "RDA-CONTENT", "INSECTH", "DDANAT", "OCVDAE", "NCCNEHR", "ISO19115DTC", "AURA","NCI","NCIM,","SNOMED","SRT","ACR",
+//			"ASTM-SIGPURPOSE","BARI","BI","C4","C5","CD2","DCMUID","FMA","HPC","I10","I10P","I9","I9C","ISO639_1","ISO639_2","ISO3166_1",
+//			"ISO5218_1","ISO_OID","LN","MDC","MDNS","MSH","NBD","NBG","NCDR","NICIP","NPI","POS","RFC3066","99SDM","SCPECG","SNM3","UCUM","UMLS",
+//			"UPC");
+	
+	public static void analyzeNode(Node node) {
+		try{
+			Lexicon lx=Lexicon.getInstance();
+		    NodeList nodeList = node.getChildNodes();
+		    for (int i = 0; i < nodeList.getLength(); i++) {
+		        Node currentNode = nodeList.item(i);
+		        edu.stanford.hakan.aim4api.base.CD cd =new edu.stanford.hakan.aim4api.base.CD();
+	        	NamedNodeMap attrs = currentNode.getAttributes();
+	        	if (attrs!=null){
+	//        		traverse and find the code first, we cannot depend on the order
+	        		for (int j = 0; j < attrs.getLength(); j++){
+	        			Node attr = attrs.item(j);
+	        			if (attr.getNodeName().equalsIgnoreCase("codeValue"))
+		    				cd.setCode(attr.getNodeValue());
+	        		}
+	        		for (int j = 0; j < attrs.getLength(); j++){
+		        		Node attr = attrs.item(j);
+		        		switch(attr.getNodeName()){
+		    			case "codingSchemeDesignator":
+		    				cd.setCodeSystemName(attr.getNodeValue());
+		    				//see it is is one of our old templates
+		    				if (AnnotationBuilder.oldNoLexicon.contains(cd.getCodeSystemName())){
+		    					if (cd.getCode()!=null){
+		    		    			CD lexCD=lx.get(cd.getCode());
+		    		    			if (lexCD!=null){
+				    		    		//fix the cd
+				    					log.info("Changing "+ cd.getCodeSystemName().toUpperCase() + " to "+lexCD.getCodeSystemName() );
+				    					cd.setCodeSystemName(lexCD.getCodeSystemName());
+				    					attr.setNodeValue(lexCD.getCodeSystemName());
+				    					cd.setCodeSystemVersion(lexCD.getCodeSystemVersion());
+				    					for (int k = 0; k < attrs.getLength(); k++){
+				    					 if(attrs.item(k).getNodeName().equals("codingSchemeVersion")){
+				    						 attrs.item(k).setNodeValue(lexCD.getCodeSystemVersion());
+				    	    				
+				    					 }
+				    					}
+		    		    			}else{
+		    		    				//see if it is one of the rid ones in recist_v2
+		    		    				if (cd.getCode().equals("RID7488") || cd.getCode().equals("RID396")){
+		    		    					cd.setCodeSystemName("Radlex");
+		    		    					attr.setNodeValue("Radlex");
+		    		    	    			cd.setCodeSystemVersion(null);
+		    		    				}
+		    		    			}
+		    		    		}
+		    		    		else{
+		    		    			log.warning("Controlled term code is not present, cannot fix this controlled term. codingSchemeDesignator=" + attr.getNodeValue());
+		    		    		}
+		    		    	}
+		    			
+		    				break;
+		    			case "codingSchemeVersion":
+		    				cd.setCodeSystemVersion(attr.getNodeValue());
+		    				CD lexcsCD=lx.get(cd.getCode());
+		    				if (cd.getCodeSystemName()!=null && AnnotationBuilder.oldNoLexicon.contains(cd.getCodeSystemName())){
+		    					if (lexcsCD!=null){
+		    						cd.setCodeSystemVersion(lexcsCD.getCodeSystemVersion());
+		    						attr.setNodeValue(lexcsCD.getCodeSystemVersion());
+		    					}else{
+		    						//shouldn't happen these are just what we put wrong
+		    						if (cd.getCode().equals("RID7488") || cd.getCode().equals("RID396")){
+	    		    					cd.setCodeSystemVersion(null);
+	    		    					attr.setNodeValue("");
+	    		    				}
+		    					}
+		    					
+		    				}
+		    				break;
+		    			case "codeMeaning":
+		    				cd.setDisplayName(new ST(attr.getNodeValue()));
+	
+	    					//should also set the name, epad-plugin doesn't make sense
+		    				if (cd.getDisplayName().getValue().equals("epad-plugin")){
+		    					CD lexcmCD=lx.get(cd.getCode());
+		    		    		if (lexcmCD!=null){
+		    		    			cd.setDisplayName(lexcmCD.getDisplayName());
+			    		    		log.info("set displayname to "+lexcmCD.getDisplayName());
+			    		    		attr.setNodeValue(lexcmCD.getDisplayName().getValue());
+		    		    		}
+	    					}
+		    				break;	    			
+		    			}
+	        		}
+//	        		if (!(cd.getCodeSystemName()==null && cd.getDisplayName()==null && cd.getCode()==null))
+//	        			log.info(cd.getCode()+ " " +cd.getCodeSystemName());
+	        	}
+		        
+		        if (currentNode.getNodeType() == Node.ELEMENT_NODE) {
+		            analyzeNode(currentNode);
+		        }
+		    }
+		}catch(Exception e){
+			log.warning("Analyze template failed", e);
+		}
+	}
+	
+	public static void fixTemplateXML(File tfile, String xml) {
+		try {
+			
+			Document doc = edu.stanford.hakan.aim4api.utility.XML.getDocumentFromString(xml);
+			Node root = doc.getDocumentElement();
+			analyzeNode(root);
+			edu.stanford.hakan.aim4api.utility.XML.SaveDocucument(doc,tfile.getAbsolutePath());
+		}catch(Exception e){
+			log.warning("couldn't fix the template "+ tfile.getName() + " " + e.getMessage());
+		}
+		
+	}
+	
+	/**
+	 * checks and fixes the old templates
+	 */
+	@Override
+	public void checkOldTemplates(){
+		try{
+			
+			
+			List<EpadFile> efiles = projectOperations.getEpadFiles(null, null, null, null, FileType.TEMPLATE, false);
+			for (EpadFile efile: efiles)
+			{
+				log.info("file "+ efile.getName());
+				File tfile = new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile));
+				//do backup
+				File copyfile =new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)+"_copy");
+				String xml = EPADFileUtils.readFileAsString(tfile);
+				EPADFileUtils.overwrite(copyfile, xml);
+				fixTemplateXML(tfile,xml);
+
+			}
+			
+			
+		} catch (Exception e) {
+			log.warning("Couldn't retrieve the templates", e);
+		}
+		
+				
+	}
+	
 	@Override
 	public void migrateTemplates() throws Exception {
 		List<EpadFile> efiles = projectOperations.getEpadFiles(null, null, null, null, FileType.TEMPLATE, false);
@@ -3730,6 +3945,9 @@ public class DefaultEpadOperations implements EpadOperations
 			return "AIM can not be added to project:" + imageReference.projectID;
 		try {
 			projectOperations.createEventLog(username, imageReference.projectID, imageReference.subjectID, imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, aimID, "CREATE AIM", aimFile.getName());
+			//see if it an update to decide whether to delete or not
+			EPADAIM oldAim = epadDatabaseOperations.getAIM(aimID);
+			
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, imageReference, aimID);
 			if (!"admin".equals(username) && !aim.userName.equalsIgnoreCase(username) && !aim.userName.equalsIgnoreCase("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
 			{
@@ -3742,8 +3960,11 @@ public class DefaultEpadOperations implements EpadOperations
 			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
 			else{
-				//delete the db entry if you couldn't save the file!
-				epadDatabaseOperations.deleteAIM(username, aim.aimID);
+				//see if it an update and do not delete if so
+				if (oldAim==null){
+					//delete the db entry if you couldn't save the file!
+					epadDatabaseOperations.deleteAIM(username, aim.aimID);
+				}
 				return "Error saving AIM file";
 			}
 		} catch (Exception e) {
@@ -4032,7 +4253,7 @@ public class DefaultEpadOperations implements EpadOperations
 				if (seriesMap.keySet().isEmpty())
 				{
 					aims.remove(i--);
-					if (aim.templateType != null && aim.templateType.equals("SEG"))
+					if (aim.template != null && aim.template.equals("SEG"))
 					{
 						try {
 							AIMUtil.deleteAIM(aim.aimID, aim.projectID);
@@ -4174,7 +4395,7 @@ public class DefaultEpadOperations implements EpadOperations
 				if (seriesMap.keySet().isEmpty())
 				{
 					aims.remove(i--);
-					if (aim.templateType != null && aim.templateType.equals("SEG"))
+					if (aim.template != null && aim.template.equals("SEG"))
 					{
 						try {
 							AIMUtil.deleteAIM(aim.aimID, aim.projectID);

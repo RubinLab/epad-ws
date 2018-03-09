@@ -1103,17 +1103,17 @@ private static String formatXMLtoLatest(String xml) throws AimException {
 	if (iacs.size()>1) {
 		StringBuilder aimXml = new StringBuilder("<imageAnnotations>\n");
 		for (ImageAnnotationCollection iac : iacs) {
-			ImageAnnotation ia=new ImageAnnotation(iac);
-			log.info("new aim is:"+ ia.toAimV4().getXMLString());
-			aimXml.append(ia.toAimV4().getXMLString());
+//			ImageAnnotation ia=new ImageAnnotation(iac);
+			log.info("new aim is:"+ iac.getXMLString());
+			aimXml.append(iac.getXMLString());
 		}
 		aimXml.append("</imageAnnotations>\n");
 		log.info("(multiple iac) new aim is:"+ aimXml.toString());
 		return aimXml.toString();
 	}
-	ImageAnnotation ia=new ImageAnnotation(iacs.get(0));
-	log.info("new aim is:"+ ia.toAimV4().getXMLString());
-	return ia.toAimV4().getXMLString();
+//	ImageAnnotation ia=new ImageAnnotation(iacs.get(0));
+	log.info("new aim is:"+ iacs.get(0).getXMLString());
+	return iacs.get(0).getXMLString();
 }
 
 /**

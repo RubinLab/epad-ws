@@ -522,11 +522,12 @@ public class Main
 
 	private static void checkTemplateProjectRel(){
 		try {
+			EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 			if (new ProjectToTemplate().getCount("")<=0) {
-				EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 				epadOperations.migrateTemplates();
 			}
-			
+			//check if the templates are new
+			epadOperations.checkOldTemplates();
 
 		} catch (Exception e) {
 			log.warning("Couldn't get project template relation,",e);
@@ -615,7 +616,7 @@ public class Main
 	private static void addHandlerAtContextPath(Handler handler, String contextPath, List<Handler> handlerList)
 	{
 		ContextHandler contextHandler = new ContextHandler(contextPath);
-
+		contextHandler.setAliases(true);
 		contextHandler.setResourceBase(".");
 		contextHandler.setClassLoader(Thread.currentThread().getContextClassLoader());
 		contextHandler.setHandler(handler);
@@ -688,6 +689,7 @@ public class Main
 	{
 		ResourceHandler resourceHandler = new ResourceHandler();
 		resourceHandler.setDirectoriesListed(false);
+		resourceHandler.setAliases(true);
 		resourceHandler.setWelcomeFiles(new String[] { "index.html" });
 		resourceHandler.setResourceBase(baseDirectory);
 
