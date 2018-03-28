@@ -177,21 +177,24 @@ public class AimReporter {
 	 * @return a json array in string format. json array contains a json object for each aim with column names as attributes
 	 */
 	public static String fillTable(EPADAIMList aims,String templatecode, String[] columns, String[] shapes){
-		String[] templates=templatecode.split(",");
-		if (templates.length>1){
-			String filled="";
-			for (String template:templates){
-				String templateTable=fillTable(aims, template, columns,shapes);
-				if (!templateTable.isEmpty() && !templateTable.equals("[]")){
-					if (filled.isEmpty() || filled.equals("[]"))
-						filled=templateTable;
-					else
-						filled=filled.substring(0, filled.length()-1)+","+templateTable.substring(1);
+		if (templatecode!=null && templatecode.length()>0) {
+			String[] templates=templatecode.split(",");
+		
+			if (templates.length>1){
+				String filled="";
+				for (String template:templates){
+					String templateTable=fillTable(aims, template, columns,shapes);
+					if (!templateTable.isEmpty() && !templateTable.equals("[]")){
+						if (filled.isEmpty() || filled.equals("[]"))
+							filled=templateTable;
+						else
+							filled=filled.substring(0, filled.length()-1)+","+templateTable.substring(1);
+					}
 				}
+				if (filled.isEmpty())
+					filled="[]";
+				return filled;
 			}
-			if (filled.isEmpty())
-				filled="[]";
-			return filled;
 		}
 		String [][] table=null;
 		//make sure they are lower case
