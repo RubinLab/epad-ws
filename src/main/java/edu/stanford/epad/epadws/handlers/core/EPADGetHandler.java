@@ -255,7 +255,8 @@ public class EPADGetHandler
 				//ml added for project download
 				boolean includeAims = "true".equalsIgnoreCase(httpRequest.getParameter("includeAims"));
 				if (returnStream(httpRequest)) {
-					DownloadUtil.downloadProject(true, httpResponse, projectReference, username, sessionID, searchFilter, subjectUIDs, includeAims);
+					DownloadUtil.streamProject(httpResponse, projectReference, username, sessionID, searchFilter, subjectUIDs, includeAims);
+//					DownloadUtil.downloadProject(true, httpResponse, projectReference, username, sessionID, searchFilter, subjectUIDs, includeAims);
 				}else if (returnConnected(httpRequest)) { //ml connected data for deletion
 					//need to get all subjects within and return their connected projects
 					if (searchFilter ==null) {
@@ -365,7 +366,8 @@ public class EPADGetHandler
 				}else if (returnFile(httpRequest)) {
 					DownloadUtil.downloadSubject(false, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, includeAims);
 				} else if (returnStream(httpRequest)) {
-					DownloadUtil.downloadSubject(true, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, includeAims);
+					DownloadUtil.streamSubject(httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, includeAims);
+//					DownloadUtil.downloadSubject(true, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, includeAims);
 				} else {
 					EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID, includeAnnotationStatus);
 					if (subject != null) {
@@ -470,7 +472,8 @@ public class EPADGetHandler
 					if (seriesReference.seriesUID.contains(","))
 						DownloadUtil.downloadSeries(true, httpResponse, seriesReference.seriesUID, username, sessionID, includeAims);
 					else
-						DownloadUtil.downloadSeries(true, httpResponse, seriesReference, username, sessionID, includeAims);
+						DownloadUtil.streamSeries(httpResponse, seriesReference, username, sessionID, includeAims);
+//						DownloadUtil.downloadSeries(true, httpResponse, seriesReference, username, sessionID, includeAims);
 				} else {
 					EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID, includeAnnotationStatus);
 					if (series != null) {
