@@ -1228,6 +1228,7 @@ public class AimReporter {
 	 * calculate response rates in reference to the current baseline and current min.
 	 * at the baseline min=baseline=0
 	 * till I reach min use baseline as the reference after that use min
+	 * CORRECTION: rr from min should use min only after it starts increasing
 	 * it also handles multiple baselines and gets the latest
 	 * needs timepoints for that
 	 * @param sums
@@ -1239,6 +1240,7 @@ public class AimReporter {
 		log.info("Min is "+min);
 		Double[] rr=new Double[sums.length];
 		StringBuilder rrStr= new StringBuilder();
+		
 		for (int i=0;i<sums.length;i++) {
 			if (sums[i]!=null){
 				if (timepoints[i]!=null && timepoints[i]==0) {
@@ -1251,7 +1253,7 @@ public class AimReporter {
 				}else
 					rr[i]=(sums[i]-min)*100.0/min;	
 				rrStr.append(rr[i]+ "  ");
-				if (sums[i]<min) {
+				if (sums[i]<min && i+1<sums.length && sums[i+1]>sums[i]) {
 					min=sums[i];
 					log.info("Min changed. Smaller rr. min is:"+min);
 				}
