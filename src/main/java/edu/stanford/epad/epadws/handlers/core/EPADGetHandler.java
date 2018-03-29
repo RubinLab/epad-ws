@@ -413,7 +413,9 @@ public class EPADGetHandler
 					if (studyReference.studyUID.contains(","))
 						DownloadUtil.downloadStudies(true, httpResponse, studyReference.studyUID, username, sessionID, includeAims, studyReference.projectID);
 					else
-						DownloadUtil.downloadStudy(true, httpResponse, studyReference, username, sessionID, searchFilter, seriesUIDs, includeAims);
+						DownloadUtil.streamStudy(httpResponse, studyReference, username, sessionID, searchFilter, studyUIDs, includeAims);
+
+//						DownloadUtil.downloadStudy(true, httpResponse, studyReference, username, sessionID, searchFilter, seriesUIDs, includeAims);
 				} else {
 					try {
 					EPADStudy study = epadOperations.getStudyDescription(studyReference, username, sessionID, includeAnnotationStatus);
