@@ -175,6 +175,7 @@ import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.Plugin;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectToTemplate;
+import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.plugins.PluginConfig;
 import edu.stanford.epad.epadws.plugins.PluginHandlerMap;
@@ -499,6 +500,12 @@ public class Main
 			//log.info("Checking annotations table");
 			databaseOperations.checkAndRefreshAnnotationsTable();
 			log.info("Done with database/queues init");
+			
+			//check nonassigned
+			Project nonassgnedproj=DefaultEpadProjectOperations.getInstance().getProject("nonassigned");
+			if (nonassgnedproj==null){ //no nonassigned create it
+				DefaultEpadProjectOperations.getInstance().createProject("admin", "nonassigned", "nonassigned", "Nonassigned subjects", null, ProjectType.PRIVATE);
+			}
 			//disabling xnat sync September 12, 2017
 //			List<User> users = DefaultEpadProjectOperations.getInstance().getAllUsers();
 //			if (EPADConfig.UseEPADUsersProjects && users.size() <= 1) {
