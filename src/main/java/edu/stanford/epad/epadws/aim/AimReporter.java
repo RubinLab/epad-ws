@@ -1253,9 +1253,16 @@ public class AimReporter {
 				}else
 					rr[i]=(sums[i]-min)*100.0/min;	
 				rrStr.append(rr[i]+ "  ");
-				if (sums[i]<min && i+1<sums.length && sums[i+1]>sums[i]) {
-					min=sums[i];
-					log.info("Min changed. Smaller rr. min is:"+min);
+				if (sums[i]<min) {
+					int j=1;
+					//skip nulls
+					while(i+j<sums.length && sums[i+j]==null){
+						j++;
+					}
+					if (i+j<sums.length && sums[i+j]!=null && sums[i+j]>sums[i]) {
+						min=sums[i];
+						log.info("Min changed. Smaller rr. min is:"+min);
+					}
 				}
 			}
 		}
