@@ -1131,11 +1131,11 @@ public class AimReporter {
 	 */
 	private static Double[] calcSums(Object[][] table, Integer[] timepoints, String metric){
 		Double[] sums=new Double[table[0].length-LongitudinalReport.numofHeaderCols];
-		for (int k=0; k< table[0].length-LongitudinalReport.numofHeaderCols; k++) {
+		for (int k=0; k< table[0].length-LongitudinalReport.numofHeaderCols && k< timepoints.length; k++) {
 			sums[k]=0.0;
 			log.info("k is "+k);
 			int j=k;
-			for (j=k; j< table[0].length-LongitudinalReport.numofHeaderCols; j++) {
+			for (j=k; j< table[0].length-LongitudinalReport.numofHeaderCols  && j< timepoints.length; j++) {
 				log.info("j is "+j);
 				if (timepoints[j]==timepoints[k]){
 					if (j!=k)
@@ -1425,7 +1425,7 @@ public class AimReporter {
 		Double min=999999.0;
 		Double[] rrBaseline=calcRRBaseline(sums, timepoints);
 		for (int i=0;i<rrBaseline.length;i++){
-			if (rrBaseline[i]<min)
+			if (rrBaseline[i]!=null && rrBaseline[i]<min)
 				min=rrBaseline[i];
 		}
 		if (min==0 && rrBaseline.length>1)
@@ -1443,7 +1443,7 @@ public class AimReporter {
 		Double min=999999.0;
 		Double[] rrMin=calcRRMin(sums, timepoints);
 		for (int i=0;i<rrMin.length;i++){
-			if (rrMin[i]<min)
+			if (rrMin!=null && rrMin[i]<min)
 				min=rrMin[i];
 		}
 		if (min==0 && rrMin.length>1)
@@ -1464,8 +1464,10 @@ public class AimReporter {
 		switch(metric){
 			case "ADLA":
 				return getWaterfallWithTemplateMetricAndShapes(subjects, username, sessionID, type, projectID, null, "standard deviation","line");
-			default:
+			case "RECIST":
 				return getWaterfall(subjects, username, sessionID, type, projectID);
+			default:
+				return getWaterfallWithTemplateMetricAndShapes(subjects, username, sessionID, type, projectID, null, metric, null);
 		}
 	}
 	

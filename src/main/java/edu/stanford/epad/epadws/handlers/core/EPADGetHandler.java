@@ -721,10 +721,7 @@ public class EPADGetHandler
 				String type = httpRequest.getParameter("type");
 				String metric = httpRequest.getParameter("metric"); 
 				if (report!=null && report.equalsIgnoreCase("WATERFALL")) {
-					if (metric!=null && metric.equalsIgnoreCase("ADLA"))
-						responseStream.append(AimReporter.getWaterfallProject(projectID, username, sessionID, type,"ADLA").toJSON());
-					else 
-						responseStream.append(AimReporter.getWaterfallProject(projectID, username, sessionID, type).toJSON());
+					responseStream.append(AimReporter.getWaterfallProject(projectID, username, sessionID, type, metric).toJSON());
 				}else {
 					if (aimSearchType != null)
 						aims = epadOperations.getAIMDescriptions(projectID, aimSearchType, searchValue, username, sessionID, start, count);
@@ -1534,19 +1531,13 @@ public class EPADGetHandler
 				String metric = httpRequest.getParameter("metric"); 
 				if (report!=null && report.equalsIgnoreCase("WATERFALL")) {
 					if (subjectUIDs!=null && subjectUIDs!="")
-						if (metric!=null && metric.equalsIgnoreCase("ADLA"))
-							responseStream.append(AimReporter.getWaterfall(subjectUIDs, username, sessionID, type, projectID,"ADLA").toJSON());
-						else //default is recist
-							responseStream.append(AimReporter.getWaterfall(subjectUIDs, username, sessionID, type, projectID).toJSON());
+						responseStream.append(AimReporter.getWaterfall(subjectUIDs, username, sessionID, type, projectID, metric).toJSON());
 					else {
 						String subj_proj_pairs=httpRequest.getParameter("subj_proj_pairs");
 						if (subj_proj_pairs!=null && subj_proj_pairs!=""){
 							JSONObject subj_proj_pairs_jso = new JSONObject((subj_proj_pairs));
 							JSONArray sub_proj_array = (JSONArray) subj_proj_pairs_jso.get("jsArray");
-							if (metric!=null && metric.equalsIgnoreCase("ADLA"))
-								responseStream.append(AimReporter.getWaterfall(sub_proj_array, username, sessionID, type, "ADLA").toJSON());
-							else //default is recist
-								responseStream.append(AimReporter.getWaterfall(sub_proj_array, username, sessionID, type).toJSON());
+							responseStream.append(AimReporter.getWaterfall(sub_proj_array, username, sessionID, type, metric).toJSON());
 						}
 					}
 				}else{
