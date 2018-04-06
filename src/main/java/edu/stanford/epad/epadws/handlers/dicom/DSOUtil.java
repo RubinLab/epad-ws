@@ -220,6 +220,116 @@ public class DSOUtil
 	private final static Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 			.getDcm4CheeDatabaseOperations();
 
+
+	/**
+	 * Take an existing DSO and save it again with the current dso saving code.
+	 */
+	private static DSOEditResult resaveDSO(DSOEditRequest dsoEditRequest, String referencedSeriesUID)
+	{
+		try {
+			//try fix for empty study id 
+			if (dsoEditRequest.studyUID==null || dsoEditRequest.studyUID.equals("")) {
+				dsoEditRequest.studyUID=dcm4CheeDatabaseOperations.getStudyUIDForSeries(referencedSeriesUID);
+			}
+			List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
+					dsoEditRequest.studyUID, referencedSeriesUID);
+			int width = 0;
+			int height = 0;
+			List<String> dicomFilePaths = new ArrayList<String>();
+			for (DCM4CHEEImageDescription imageDescription : imageDescriptions) {
+				try {
+					File temporaryDICOMFile = File.createTempFile(imageDescription.imageUID, ".dcm");
+					//log.info("Downloading source DICOM file for image " + imageDescription.imageUID);
+					DCM4CHEEUtil.downloadDICOMFileFromWADO(dsoEditRequest.studyUID, dsoEditRequest.seriesUID, imageDescription.imageUID, temporaryDICOMFile);
+					if (width == 0) {
+						DicomInputStream dicomInputStream = null;
+						try {
+							dicomInputStream = new DicomInputStream(new FileInputStream(temporaryDICOMFile));
+							AttributeList localDICOMAttributes = new AttributeList();
+							localDICOMAttributes.read(dicomInputStream);
+							width = (short)Attribute.getSingleIntegerValueOrDefault(localDICOMAttributes, TagFromName.Columns, 1);
+							height = (short)Attribute.getSingleIntegerValueOrDefault(localDICOMAttributes, TagFromName.Rows, 1);
+						} finally {
+							IOUtils.closeQuietly(dicomInputStream);
+						}
+					}
+					dicomFilePaths.add(temporaryDICOMFile.getAbsolutePath());
+				} catch (IOException e) {
+					log.warning("Error downloading DICOM file for referenced image " + imageDescription.imageUID + " for series "
+							+ dsoEditRequest.seriesUID, e);
+					throw new Exception("Error downloading DICOM file for referenced image " + imageDescription.imageUID + " for series "
+							+ dsoEditRequest.seriesUID);
+				}
+			}
+			ImageReference imageReference = new ImageReference(dsoEditRequest);
+			log.info("DSO to be edited, UID:" + imageReference.seriesUID);
+			DICOMElementList dicomElements = Dcm4CheeQueries.getDICOMElementsFromWADO(imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID);
+			int numberOfSegments = getNumberOfSegments(dicomElements);
+			if (numberOfSegments > 1)
+				throw new Exception("Editing of Multi-Segment DSOs not supported, number of segments:" + numberOfSegments);
+			String seriesDescription = null;
+			String seriesUID = null;
+			String instanceUID = null;
+			//put name from dsoeditrequest instead of reading from tags
+			if (dsoEditRequest.name!=null){
+				seriesDescription=dsoEditRequest.name;
+			}else { //don't have name in the request get the series desc from the dso being edited
+				for (DICOMElement dicomElement : dicomElements.ResultSet.Result) {
+					if (dicomElement.tagCode.equalsIgnoreCase(PixelMedUtils.SeriesDescriptionCode)) {
+						log.info("DSO to be edited, tag:" + dicomElement.tagName + " value:" + dicomElement.value);
+						seriesDescription = dicomElement.value;
+					}
+					
+				}
+			}
+			
+			// Always 'clobber' the orginal DSO
+//			if (seriesDescription != null && seriesDescription.toLowerCase().contains("epad"))
+			{
+				//check if the image reference series is *
+				if (imageReference.seriesUID.equals("*")) {
+					log.info("why still * " + dsoEditRequest.toJSON() );
+				}
+				
+				seriesUID = imageReference.seriesUID;
+				instanceUID = imageReference.imageUID;
+			}
+
+			List<File> dsoTIFFMaskFiles = new ArrayList<>();
+			//create empty frame temp files for all slices. they will be replaced from the dso.
+			for (int i = 0; i < imageDescriptions.size(); i++)
+			{
+					String fileName = "EmptyMask_" + i + "_";
+					File tifFile = File.createTempFile(fileName,".tif");
+					dsoTIFFMaskFiles.add(tifFile);
+					
+			}
+			dsoTIFFMaskFiles = DSOUtil.getDSOTIFFMaskFiles(imageReference, dsoTIFFMaskFiles);
+			
+			if (DSOUtil.createDSO(imageReference, dsoTIFFMaskFiles, dicomFilePaths, seriesDescription, seriesUID, instanceUID, dsoEditRequest.property, dsoEditRequest.color))
+			{
+				Integer firstFrame=TIFFMasksToDSOConverter.firstFrames.get(instanceUID);
+				TIFFMasksToDSOConverter.firstFrames.remove(instanceUID);
+				log.info("Finished generating DSO. First frame is:"+firstFrame);
+				for (File file: dsoTIFFMaskFiles)
+				{
+					deleteQuietly(file);
+				}
+				for (String dicom: dicomFilePaths)
+				{
+					deleteQuietly(new File(dicom));
+				}
+				return new DSOEditResult(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,			
+						imageReference.seriesUID, imageReference.imageUID, dsoEditRequest.aimID, firstFrame, dsoEditRequest.name);
+			}
+			else
+				return null;
+		} catch (Exception e) {
+			log.warning("Error generating DSO image " + dsoEditRequest.imageUID + " in series " + dsoEditRequest.seriesUID, e);
+			return null;
+		}
+	}
+	
 	/**
 	 * Take an existing DSO and generate a new one (with new UIDs) with substituted masked frames.
 	 */
@@ -1471,6 +1581,92 @@ public class DSOUtil
 		path.mkdirs();
 		RunSystemCommand rsc = new RunSystemCommand("miconv " + niftiFile.getAbsolutePath() + " " + pngMaskDirectoryPath + imageUID + ".png");
 		rsc.run();
+	}
+	
+	public static boolean fixDSO(String projectID, String seriesUID, String aimID, PrintWriter responseStream, String username)
+	{ // See http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
+		boolean uploadError = false;
+		try{ 
+			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+			
+			EPADAIM aim = epadDatabaseOperations.getAIM(aimID);
+			if (aim != null && username != null) {
+				EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+				if (!projectOperations.isAdmin(username) && !username.equals(aim.userName) 
+						&& !projectOperations.isOwner(username, projectID)) {
+					log.warning("No permissions to update AIM:" + aim.aimID + " for user " + username);
+					throw new Exception("No permissions to update AIM:" + aim.aimID + " for user " + username);
+				}
+			}
+			
+			log.info("Received DSO edit request for series " + seriesUID);
+			if (seriesUID==null)
+				seriesUID=aim.dsoSeriesUID;
+			
+			if (seriesUID==null)// if still null throw exception
+				throw new Exception("Couldn't find DSO series for:" + aim.aimID + " and user " + username);
+			
+			String imageUID="*";
+			
+			String studyUID="*";
+			if (seriesUID!=null){
+				studyUID=dcm4CheeDatabaseOperations.getStudyUIDForSeries(seriesUID);
+				imageUID=dcm4CheeDatabaseOperations.getFirstImageUIDInSeries(seriesUID);
+			}
+			String subjectUID="*";
+			if (!studyUID.equals("*"))
+				subjectUID=dcm4CheeDatabaseOperations.getSubjectUIDForStudy(studyUID);
+			
+			
+			
+			DSOEditRequest dsoEditRequest = new DSOEditRequest(projectID, subjectUID, studyUID, seriesUID, imageUID, aimID,new ArrayList<Integer>() );
+
+			if (dsoEditRequest != null) {
+				//TODO get from the existing dso
+//				//need to pass this all the way to segmentation writer, put into edit request
+//				String property = httpRequest.getParameter("property");
+//				String color = httpRequest.getParameter("color");
+//				String name = httpRequest.getParameter("name");
+//				dsoEditRequest.property=property;
+//				dsoEditRequest.color=color;
+//				dsoEditRequest.name=name;
+				
+				log.info("DSOEditRequest, imageUID:" + dsoEditRequest.imageUID + " aimID:" + dsoEditRequest.aimID + " number Frames:" + dsoEditRequest.editedFrameNumbers.size());
+				
+				DSOEditResult dsoEditResult = DSOUtil.resaveDSO(dsoEditRequest, aim.seriesUID);
+				if (dsoEditResult != null)
+				{
+					
+					if (dsoEditResult.aimID != null && dsoEditResult.aimID.length() > 0)
+					{
+						if (dsoEditResult.firstFrame!=null) {
+							log.info("update aim table dso first frame with "+ dsoEditResult.firstFrame + "for aim "+dsoEditResult.aimID);
+							epadDatabaseOperations.updateAIMDSOFrameNo(dsoEditResult.aimID, dsoEditResult.firstFrame);
+							epadDatabaseOperations.updateAIMName(dsoEditResult.aimID, dsoEditResult.name);
+							AIMUtil.updateDSOStartIndexAndName(aim, dsoEditResult.firstFrame, dsoEditRequest.name);							
+						}						
+					}					
+					responseStream.append(dsoEditResult.toJSON());
+				}
+				else
+				{
+					log.info("Null return from createEditDSO");
+					uploadError = true;
+				}
+			}	
+		} catch (IOException e) {
+			log.warning("IO exception handling DSO edits for series " + seriesUID, e);
+			uploadError = true;
+		} catch (FileUploadException e) {
+			log.warning("File upload exception handling DSO edits for series " + seriesUID, e);
+			uploadError = true;
+		} catch (Exception e) {
+			log.warning("Exception handling DSO edits for series " + seriesUID, e);
+			uploadError = true;
+		}
+		if (!uploadError)
+			log.info("DSO successfully edited");
+		return uploadError;
 	}
 
 	public static boolean handleDSOFramesEdit(String projectID, String subjectID, String studyUID, String seriesUID,
