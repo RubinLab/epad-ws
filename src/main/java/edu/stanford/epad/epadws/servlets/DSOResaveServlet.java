@@ -102,79 +102,24 @@
  * of non-limiting example, you will not contribute any code obtained by you under the GNU General Public License or other 
  * so-called "reciprocal" license.)
  *******************************************************************************/
-package edu.stanford.epad.epadws.handlers.admin;
+package edu.stanford.epad.epadws.servlets;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.sql.SQLException;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import edu.stanford.epad.epadws.handlers.admin.DSOResaveHandler;
+import edu.stanford.epad.epadws.handlers.admin.ImageCheckHandler;
 
-import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.epadws.epaddb.EpadDatabase;
-import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
-import edu.stanford.epad.epadws.handlers.HandlerUtil;
-import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
-import edu.stanford.epad.epadws.service.SessionService;
-
-/**
- * @author martin
- */
-public class DSOResaveHandler extends AbstractHandler
-{
-	private static final EPADLogger log = EPADLogger.getInstance();
-
-	private static final String FORBIDDEN = "Forbidden method - only GET supported on reload route";
-	private static final String INTERNAL_ERROR_MESSAGE = "Internal server error on reload route";
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid for reload route";
+public class DSOResaveServlet extends HttpServlet {
 
 	@Override
-	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-	{
-		PrintWriter responseStream = null;
-		int statusCode;
-
-		httpResponse.setContentType("text/plain;charset=UTF-8");
-		request.setHandled(true);
-
-		try {
-			responseStream = httpResponse.getWriter();
-
-			if (SessionService.hasValidSessionID(httpRequest)) {
-				String method = httpRequest.getMethod();
-				if ("GET".equalsIgnoreCase(method)) {
-					String projectID = httpRequest.getParameter("projectID");
-					String seriesUID = httpRequest.getParameter("seriesUID");
-					String aimID = httpRequest.getParameter("aimID");
-					log.info("get request for project "+projectID + " series "+ seriesUID);
-					if (projectID!=null && (seriesUID != null || aimID!=null))
-					{
-						if (DSOUtil.fixDSO(projectID,seriesUID,aimID,responseStream,"admin")){
-							statusCode = HttpServletResponse.SC_OK;
-						}else {
-							statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-						}
-					}else {
-						statusCode = HttpServletResponse.SC_NOT_ACCEPTABLE;
-					}
-					
-					
-					
-				} else {
-					statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_FORBIDDEN, FORBIDDEN, responseStream, log);
-				}
-			} else {
-				statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_SESSION_TOKEN_MESSAGE, responseStream, log);
-			}
-		} catch (Throwable t) {
-			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_ERROR_MESSAGE, t, responseStream, log);
-		}
-		httpResponse.setStatus(statusCode);
+	protected void doGet(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
+			throws ServletException, IOException {
+		new DSOResaveHandler().handle("", null, httpRequest, httpResponse);
 	}
 
-	
 }

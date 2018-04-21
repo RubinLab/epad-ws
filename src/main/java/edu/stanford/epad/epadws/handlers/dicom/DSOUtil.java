@@ -1633,7 +1633,7 @@ public class DSOUtil
 				
 				log.info("DSOEditRequest, imageUID:" + dsoEditRequest.imageUID + " aimID:" + dsoEditRequest.aimID + " number Frames:" + dsoEditRequest.editedFrameNumbers.size());
 				
-				DSOEditResult dsoEditResult = DSOUtil.resaveDSO(dsoEditRequest, aim.seriesUID);
+				DSOEditResult dsoEditResult = DSOUtil.resaveDSO(dsoEditRequest, seriesUID);
 				if (dsoEditResult != null)
 				{
 					
