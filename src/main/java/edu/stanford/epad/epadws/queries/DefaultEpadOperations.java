@@ -138,13 +138,13 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import com.pixelmed.dicom.ImageToDicom;
 import com.pixelmed.dicom.SOPClass;
 import com.pixelmed.dicom.UIDGenerator;
 
 import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
 import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
+import edu.stanford.epad.common.pixelmed.ImageToDicom;
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.pixelmed.SegmentedProperty;
 import edu.stanford.epad.common.util.EPADConfig;
@@ -2379,7 +2379,8 @@ public class DefaultEpadOperations implements EpadOperations
 		return createFile(username, seriesReference, uploadedFile, description, fileType, sessionID, 
 				false, null, null);
 	}
-
+	
+	
 	@Override
 	public int createFile(String username, SeriesReference seriesReference,
 			File uploadedFile, String description, String fileType, String sessionID, 
@@ -2390,18 +2391,22 @@ public class DefaultEpadOperations implements EpadOperations
 				throw new Exception("Error saving AIM file");
 		}
 		else {
-			if (convertToDICOM) {
+			log.info("Uploaded file is "+uploadedFile.getName().toLowerCase() + " filetype is "+fileType);
+			if (convertToDICOM || uploadedFile.getName().toLowerCase().endsWith(".png") || uploadedFile.getName().toLowerCase().endsWith(".tif") || uploadedFile.getName().toLowerCase().endsWith(".tiff")) {
 				Subject subject = projectOperations.getSubject(seriesReference.subjectID);
+				Study study=projectOperations.getStudy(seriesReference.studyUID);
+//				Series series=dcm4CheeDatabaseOperations.getSer
 				String patientName = "";
 				if (subject != null)
 					patientName = subject.getName();
 				// TODO: use modality
 				File dicomFile = new File(replaceExtension(uploadedFile.getAbsolutePath(), "dcm"));
 				new ImageToDicom(uploadedFile.getAbsolutePath(), dicomFile.getAbsolutePath(), patientName, 
-						seriesReference.seriesUID, 
-						seriesReference.studyUID, 
-						seriesReference.seriesUID, instanceNumber);
+						seriesReference.subjectID, 
+						"1", 
+						"1", instanceNumber, seriesReference.studyUID, seriesReference.seriesUID, study.getDescription(), "seriesDescription");
 				uploadedFile.delete();
+				log.info("dicomfile path "+ dicomFile.getAbsolutePath());
 				createImage(username, seriesReference.projectID, dicomFile, sessionID);
 			} else {
 				createFile(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID,

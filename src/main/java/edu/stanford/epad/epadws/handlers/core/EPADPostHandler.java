@@ -118,6 +118,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.pixelmed.dicom.UIDGenerator;
+
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
@@ -335,6 +337,12 @@ public class EPADPostHandler
 						List<String> fileTypes = (List<String>) paramData.get("fileType_List");
 						List<String> instanceNumbers = (List<String>) paramData.get("instanceNumber_List");
 						int i = 0;
+						//create a study and a series
+//						UIDGenerator u=new UIDGenerator();
+//						String studyUID=u.getNewStudyInstanceUID(studyID); 
+//						String seriesUID=u.getNewSeriesInstanceUID(studyID,seriesNumber); 
+						String studyDescription=(String) paramData.get("studyDescription");
+						String seriesDescription=(String) paramData.get("seriesDescription");
 						for (String param: paramData.keySet())
 						{
 							if (paramData.get(param) instanceof File)
