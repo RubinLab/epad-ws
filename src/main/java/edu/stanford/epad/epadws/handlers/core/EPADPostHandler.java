@@ -324,6 +324,10 @@ public class EPADPostHandler
 					String modality = httpRequest.getParameter("modality");
 					if (modality == null) modality = (String) paramData.get("modality");
 					if (numberOfFiles == 1) {
+						String studyDescription = httpRequest.getParameter("studyDescription");
+						if (studyDescription == null) studyDescription = (String) paramData.get("studyDescription");
+						String patientName = httpRequest.getParameter("patientName");
+						if (patientName == null) patientName = (String) paramData.get("patientName");
 						String description = httpRequest.getParameter("description");
 						if (description == null) description = (String) paramData.get("description");
 						String fileType = httpRequest.getParameter("fileType");
@@ -331,7 +335,7 @@ public class EPADPostHandler
 						String instanceNumber = httpRequest.getParameter("instanceNumber");
 						if (instanceNumber == null) instanceNumber = (String) paramData.get("instanceNumber");
 						if (instanceNumber == null) instanceNumber = "1";
-						statusCode = epadOperations.createFile(username, seriesReference, uploadedFile, description, fileType, sessionID, convertToDicom, modality, instanceNumber);					
+						statusCode = epadOperations.createFile(username, seriesReference, uploadedFile, description, fileType, sessionID, convertToDicom, modality, instanceNumber, studyDescription, patientName);					
 					} else if (numberOfFiles > 1) {
 						List<String> descriptions = (List<String>) paramData.get("description_List");
 						List<String> fileTypes = (List<String>) paramData.get("fileType_List");

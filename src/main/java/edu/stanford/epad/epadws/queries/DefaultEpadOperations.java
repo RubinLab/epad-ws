@@ -2380,11 +2380,17 @@ public class DefaultEpadOperations implements EpadOperations
 				false, null, null);
 	}
 	
-	
 	@Override
 	public int createFile(String username, SeriesReference seriesReference,
 			File uploadedFile, String description, String fileType, String sessionID, 
 			boolean convertToDICOM, String modality, String instanceNumber) throws Exception {
+		return createFile(username, seriesReference, uploadedFile, description, fileType, sessionID, convertToDICOM, modality, instanceNumber, null, null);
+	}
+	
+	@Override
+	public int createFile(String username, SeriesReference seriesReference,
+			File uploadedFile, String description, String fileType, String sessionID, 
+			boolean convertToDICOM, String modality, String instanceNumber, String studyDescription, String patientName) throws Exception {
 		projectOperations.createEventLog(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID, null, null, uploadedFile.getName(), "CREATE FILE", description +":" + fileType + ":" + modality, false);
 		if (fileType != null && fileType.equalsIgnoreCase(FileType.ANNOTATION.getName())) {
 			if (AIMUtil.saveAIMAnnotation(uploadedFile, seriesReference.projectID, sessionID, username))
@@ -2396,15 +2402,18 @@ public class DefaultEpadOperations implements EpadOperations
 				Subject subject = projectOperations.getSubject(seriesReference.subjectID);
 				Study study=projectOperations.getStudy(seriesReference.studyUID);
 //				Series series=dcm4CheeDatabaseOperations.getSer
-				String patientName = "";
+//				String patientName = "";
 				if (subject != null)
 					patientName = subject.getName();
+				if (study != null && studyDescription==null)
+					studyDescription=study.getDescription();
+					
 				// TODO: use modality
 				File dicomFile = new File(replaceExtension(uploadedFile.getAbsolutePath(), "dcm"));
 				new ImageToDicom(uploadedFile.getAbsolutePath(), dicomFile.getAbsolutePath(), patientName, 
 						seriesReference.subjectID, 
 						"1", 
-						"1", instanceNumber, seriesReference.studyUID, seriesReference.seriesUID, study.getDescription(), "seriesDescription");
+						"1", instanceNumber, seriesReference.studyUID, seriesReference.seriesUID, studyDescription, description);
 				uploadedFile.delete();
 				log.info("dicomfile path "+ dicomFile.getAbsolutePath());
 				createImage(username, seriesReference.projectID, dicomFile, sessionID);
