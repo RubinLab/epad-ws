@@ -504,7 +504,7 @@ public class Main
 			//check nonassigned
 			Project nonassgnedproj=DefaultEpadProjectOperations.getInstance().getProject("nonassigned");
 			if (nonassgnedproj==null){ //no nonassigned create it
-				DefaultEpadProjectOperations.getInstance().createProject("admin", "nonassigned", "nonassigned", "Nonassigned subjects", null, ProjectType.PRIVATE);
+				DefaultEpadProjectOperations.getInstance().createProject("admin", "nonassigned", "nonassigned", "Nonassigned subjects", null, ProjectType.PUBLIC);
 			
 			
 			
