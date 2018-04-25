@@ -2531,9 +2531,8 @@ public class AIMUtil
 			log.warning("Error converting AIM to XML", e);
 			throw e;
 		}
-		
-		
-		ExportAimOperations.sendJsonToApi(aim.getUniqueIdentifier().getRoot(), aim, aimXML);
+		if (EPADConfig.exportURL!=null)
+			ExportAimOperations.sendJsonToApi(aim.getUniqueIdentifier().getRoot(), aim, aimXML);
 		
 		MongoDBOperations.saveAnnotationToMongo(aim.getUniqueIdentifier().getRoot(), aimXML, collection);
 	}
