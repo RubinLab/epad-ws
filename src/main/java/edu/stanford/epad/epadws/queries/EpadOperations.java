@@ -1771,10 +1771,12 @@ public interface EpadOperations
 	 * @param instanceNumber
 	 * @param studyDescription
 	 * @param patientName
+	 * @param studyID
+	 * @param seriesNumber
 	 * @return
 	 * @throws Exception
 	 */
 	int createFile(String username, SeriesReference seriesReference, File uploadedFile, String description,
 			String fileType, String sessionID, boolean convertToDICOM, String modality, String instanceNumber,
-			String studyDescription, String patientName) throws Exception;
+			String studyDescription, String patientName, String studyID, String seriesNumber) throws Exception;
 }

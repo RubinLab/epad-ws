@@ -112,8 +112,8 @@ public class SeriesReference
 {
 	public final String projectID;
 	public final String subjectID;
-	public final String studyUID;
-	public final String seriesUID;
+	public String studyUID;
+	public String seriesUID;
 
 	public SeriesReference(String projectID, String subjectID, String studyUID, String seriesUID)
 	{

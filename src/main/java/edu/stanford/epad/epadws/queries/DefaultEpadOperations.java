@@ -2384,13 +2384,13 @@ public class DefaultEpadOperations implements EpadOperations
 	public int createFile(String username, SeriesReference seriesReference,
 			File uploadedFile, String description, String fileType, String sessionID, 
 			boolean convertToDICOM, String modality, String instanceNumber) throws Exception {
-		return createFile(username, seriesReference, uploadedFile, description, fileType, sessionID, convertToDICOM, modality, instanceNumber, null, null);
+		return createFile(username, seriesReference, uploadedFile, description, fileType, sessionID, convertToDICOM, modality, instanceNumber, null, null, "1", "1");
 	}
 	
 	@Override
 	public int createFile(String username, SeriesReference seriesReference,
 			File uploadedFile, String description, String fileType, String sessionID, 
-			boolean convertToDICOM, String modality, String instanceNumber, String studyDescription, String patientName) throws Exception {
+			boolean convertToDICOM, String modality, String instanceNumber, String studyDescription, String patientName, String studyID, String seriesNumber) throws Exception {
 		projectOperations.createEventLog(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID, null, null, uploadedFile.getName(), "CREATE FILE", description +":" + fileType + ":" + modality, false);
 		if (fileType != null && fileType.equalsIgnoreCase(FileType.ANNOTATION.getName())) {
 			if (AIMUtil.saveAIMAnnotation(uploadedFile, seriesReference.projectID, sessionID, username))
@@ -2412,8 +2412,8 @@ public class DefaultEpadOperations implements EpadOperations
 				File dicomFile = new File(replaceExtension(uploadedFile.getAbsolutePath(), "dcm"));
 				new ImageToDicom(uploadedFile.getAbsolutePath(), dicomFile.getAbsolutePath(), patientName, 
 						seriesReference.subjectID, 
-						"1", 
-						"1", instanceNumber, seriesReference.studyUID, seriesReference.seriesUID, studyDescription, description);
+						studyID, 
+						seriesNumber, instanceNumber, seriesReference.studyUID, seriesReference.seriesUID, studyDescription, description);
 				uploadedFile.delete();
 				log.info("dicomfile path "+ dicomFile.getAbsolutePath());
 				createImage(username, seriesReference.projectID, dicomFile, sessionID);
@@ -2455,7 +2455,7 @@ public class DefaultEpadOperations implements EpadOperations
 		if (UserProjectService.isDicomFile(dicomFile))
 		{
 			UserProjectService.createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username);
-			Dcm4CheeOperations.dcmsnd(dicomFile.getParentFile(), true);
+			Dcm4CheeOperations.dcmsndSingleFile(dicomFile, true);
 		}
 		else
 			throw new Exception("Invalid DICOM file");

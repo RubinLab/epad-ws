@@ -307,6 +307,90 @@ public class Dcm4CheeOperations
 		}
 	}
 
+	
+	public static boolean dcmsndSingleFile(File file, boolean throwException) throws Exception
+	{
+		InputStream is = null;
+		InputStreamReader isr = null;
+		BufferedReader br = null;
+		FileWriter tagFileWriter = null;
+		boolean success = false;
+		try {
+			String aeTitle = EPADConfig.aeTitle;
+			String dicomServerIP = EPADConfig.dicomServerIP;
+			String dicomServerPort = EPADConfig.dicomServerPort;
+			String dicomServerTitleAndPort = aeTitle + "@" + dicomServerIP + ":" + dicomServerPort;
+
+			dicomServerTitleAndPort = dicomServerTitleAndPort.trim();
+
+			String filePath = file.getAbsolutePath();
+			if (pathContainsSpaces(filePath))
+				filePath = escapeSpacesInDirPath(filePath);
+
+			
+			log.info("./dcmsnd: sending " + 1 + " file(s) - command: ./dcmsnd " + dicomServerTitleAndPort + " "
+					+ filePath);
+
+			String[] command = { "./dcmsnd", dicomServerTitleAndPort, filePath };
+			ProcessBuilder processBuilder = new ProcessBuilder(command);
+			String dicomScriptsDir = EPADConfig.getEPADWebServerDICOMScriptsDir() + "bin/";
+			File script = new File(dicomScriptsDir, "dcmsnd");
+			if (!script.exists())
+				dicomScriptsDir = EPADConfig.getEPADWebServerDICOMBinDir();
+			script = new File(dicomScriptsDir, "dcmsnd");
+			if (!script.exists())
+				throw new Exception("No script found:" + script.getAbsolutePath());
+			// Java 6 - Runtime.getRuntime().exec("chmod u+x "+script.getAbsolutePath());
+			script.setExecutable(true);
+			processBuilder.directory(new File(dicomScriptsDir));
+			processBuilder.redirectErrorStream(true);
+			Process process = processBuilder.start();
+			is = process.getInputStream();
+			isr = new InputStreamReader(is);
+			br = new BufferedReader(isr);
+
+			String line;
+			StringBuilder sb = new StringBuilder();
+			while ((line = br.readLine()) != null) {
+				sb.append(line).append("\n");
+				log.info("./dcmsend output: " + line);
+			}
+
+			try {
+				int exitValue = process.waitFor();
+				log.info("DICOM send exit value is: " + exitValue);
+				if (exitValue == 0) success = true;
+			} catch (InterruptedException e) {
+				log.warning("Didn't send DICOM files in: " + file.getAbsolutePath(), e);
+			}
+			String cmdLineOutput = sb.toString();
+
+			if (cmdLineOutput.toLowerCase().contains("error"))
+				throw new IllegalStateException("Failed for: " + parseError(cmdLineOutput));
+			return success;
+		} catch (Exception e) {
+			log.warning("DicomSendTask failed to send DICOM files", e);
+			if (e instanceof IllegalStateException && throwException) {
+				throw e;
+			}
+			if (throwException) {
+				throw new IllegalStateException("DicomSendTask failed to send DICOM files", e);
+			}
+			return success;
+		} catch (OutOfMemoryError oome) {
+			log.warning("DicomSendTask out of memory: ", oome);
+			if (throwException) {
+				throw new IllegalStateException("DicomSendTask out of memory: ", oome);
+			}
+			return success;
+		} finally {
+			IOUtils.closeQuietly(tagFileWriter);
+			IOUtils.closeQuietly(br);
+			IOUtils.closeQuietly(isr);
+			IOUtils.closeQuietly(is);
+		}
+	}
+
 	/**
 	 * TODO This does not work. The ./dcmdeleteSeries script invoked the dcm4chee twiddle command but it appears that the
 	 * moveSeriesToTrash operation it calls has no effect in this version of dcm4chee. See:
