@@ -408,6 +408,7 @@ public class DefaultEpadOperations implements EpadOperations
 					matchAccessionNumber = false;
 					Set<String> studyUIDsInXNAT = UserProjectService.getStudyUIDsForSubject(projectID,
 							epadSubject.subjectID);
+					//TODO what is this??
 					for (String studyUID: studyUIDsInXNAT)
 					{
 						SubjectReference subjectReference = new SubjectReference(projectID, epadSubject.subjectID);
@@ -4836,7 +4837,8 @@ public class DefaultEpadOperations implements EpadOperations
 		Set<String> examTypes = getExamTypesForStudy(studyUID);
 		int numberOfSeries = dcm4CheeStudy.seriesCount;
 		int numberOfImages = dcm4CheeStudy.imagesCount;
-		Set<String> seriesUIDs = dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(studyUID);
+		//not being used, performance issue fix
+//		Set<String> seriesUIDs = dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(studyUID);
 		StudyProcessingStatus studyProcessingStatus = getStudyProcessingStatus(studyUID);
 		//		//int numberOfAnnotations = (seriesUIDs.size() <= 0) ? 0 : AIMQueries.getNumberOfAIMAnnotationsForSeriesSet(seriesUIDs, username);
 		//		EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(suppliedProjectID, null, studyUID), null, sessionID);
