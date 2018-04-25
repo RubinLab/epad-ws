@@ -1757,4 +1757,26 @@ public interface EpadOperations
 	 * checks if there are old templates in the system
 	 */
 	void checkOldTemplates();
+
+	/**
+	 * created a file with study desc and patient name (used for tiffs to create the patient and study)
+	 * @param username
+	 * @param seriesReference
+	 * @param uploadedFile
+	 * @param description
+	 * @param fileType
+	 * @param sessionID
+	 * @param convertToDICOM
+	 * @param modality
+	 * @param instanceNumber
+	 * @param studyDescription
+	 * @param patientName
+	 * @param studyID
+	 * @param seriesNumber
+	 * @return
+	 * @throws Exception
+	 */
+	int createFile(String username, SeriesReference seriesReference, File uploadedFile, String description,
+			String fileType, String sessionID, boolean convertToDICOM, String modality, String instanceNumber,
+			String studyDescription, String patientName, String studyID, String seriesNumber) throws Exception;
 }

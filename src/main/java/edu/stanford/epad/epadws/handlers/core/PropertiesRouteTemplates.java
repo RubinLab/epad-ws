@@ -108,5 +108,5 @@ public class PropertiesRouteTemplates
 {
 	public static final String PROPERTY_LIST = "/properties/";
 	public static final String SEGMENTED_PROPERTY = PROPERTY_LIST + "segmentedproperty/";
-
+	public static final String DICOMUID = "/properties/dicomuid/";
 }

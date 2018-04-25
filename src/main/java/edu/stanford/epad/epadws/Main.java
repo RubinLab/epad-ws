@@ -151,6 +151,7 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.admin.ConvertAIM4Handler;
 import edu.stanford.epad.epadws.handlers.admin.CopyAimsToExistHandler;
+import edu.stanford.epad.epadws.handlers.admin.DSOResaveHandler;
 import edu.stanford.epad.epadws.handlers.admin.ImageCheckHandler;
 import edu.stanford.epad.epadws.handlers.admin.ImageReprocessingHandler;
 import edu.stanford.epad.epadws.handlers.admin.ResourceCheckHandler;
@@ -603,6 +604,7 @@ public class Main
 			addHandlerAtContextPath(new ServerStatusHandler(), "/epad/status", handlerList);
 			addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
 			addHandlerAtContextPath(new ImageReprocessingHandler(), "/epad/imagereprocess", handlerList);
+			addHandlerAtContextPath(new DSOResaveHandler(), "/epad/dsoresave", handlerList);
 			addHandlerAtContextPath(new ConvertAIM4Handler(), "/epad/convertaim4", handlerList);
 			addHandlerAtContextPath(new CopyAimsToExistHandler(), "/epad/copyToExist", handlerList);
 			addHandlerAtContextPath(new XNATSyncHandler(), "/epad/syncxnat", handlerList);

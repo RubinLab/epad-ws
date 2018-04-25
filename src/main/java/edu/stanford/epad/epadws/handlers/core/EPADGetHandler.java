@@ -193,6 +193,7 @@ import edu.stanford.epad.epadws.service.PluginStoreOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.service.TCIAService;
 import edu.stanford.epad.epadws.service.UserProjectService;
+import edu.stanford.hakan.aim4api.utility.GenerateId;
 
 /**
  * @author martin
@@ -2380,6 +2381,10 @@ public class EPADGetHandler
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PropertiesRouteTemplates.SEGMENTED_PROPERTY, pathInfo);
 				SegmentedPropertyHelper sp= new SegmentedPropertyHelper();
 				responseStream.append(sp.getProperties());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(PropertiesRouteTemplates.DICOMUID, pathInfo)) {
+				responseStream.append(GenerateId.getUUID());
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else

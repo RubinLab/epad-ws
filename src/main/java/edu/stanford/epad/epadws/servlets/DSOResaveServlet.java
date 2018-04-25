@@ -102,46 +102,24 @@
  * of non-limiting example, you will not contribute any code obtained by you under the GNU General Public License or other 
  * so-called "reciprocal" license.)
  *******************************************************************************/
-package edu.stanford.epad.epadws.handlers.core;
+package edu.stanford.epad.epadws.servlets;
 
-import java.util.Map;
+import java.io.IOException;
 
-import edu.stanford.epad.epadws.handlers.HandlerUtil;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-public class SeriesReference
-{
-	public final String projectID;
-	public final String subjectID;
-	public String studyUID;
-	public String seriesUID;
+import edu.stanford.epad.epadws.handlers.admin.DSOResaveHandler;
+import edu.stanford.epad.epadws.handlers.admin.ImageCheckHandler;
 
-	public SeriesReference(String projectID, String subjectID, String studyUID, String seriesUID)
-	{
-		this.projectID = projectID;
-		this.subjectID = subjectID;
-		this.studyUID = studyUID;
-		this.seriesUID = seriesUID;
+public class DSOResaveServlet extends HttpServlet {
+
+	@Override
+	protected void doGet(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
+			throws ServletException, IOException {
+		new DSOResaveHandler().handle("", null, httpRequest, httpResponse);
 	}
 
-	public static SeriesReference extract(String template, String pathInfo)
-	{
-		Map<String, String> templateMap = HandlerUtil.getTemplateMap(template, pathInfo);
-		String projectID = HandlerUtil.getTemplateParameter(templateMap, "project", "");
-		String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject", "");
-		String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
-		String seriesUID = HandlerUtil.getTemplateParameter(templateMap, "series");
-
-		ProjectReference.validateProjectID(projectID);
-		SubjectReference.validateSubjectID(subjectID);
-		StudyReference.validateStudyUID(studyUID);
-		validateSeriesUID(seriesUID);
-
-		return new SeriesReference(projectID, subjectID, studyUID, seriesUID);
-	}
-
-	protected static void validateSeriesUID(String seriesUID)
-	{
-		if (seriesUID == null || seriesUID.equals(""))
-			throw new RuntimeException("Invalid series UID found in request");
-	}
 }
