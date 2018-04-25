@@ -505,9 +505,7 @@ public class Main
 			Project nonassgnedproj=DefaultEpadProjectOperations.getInstance().getProject("nonassigned");
 			if (nonassgnedproj==null){ //no nonassigned create it
 				DefaultEpadProjectOperations.getInstance().createProject("admin", "nonassigned", "nonassigned", "Nonassigned subjects", null, ProjectType.PUBLIC);
-			
-			
-			
+				log.info("Nonassigned project is not found. Creating.");
 			
 			}
 			//disabling xnat sync September 12, 2017
