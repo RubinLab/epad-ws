@@ -383,7 +383,7 @@ public class EPADPostHandler
 								if (instanceNumbers != null && instanceNumbers.size() > i)
 									instanceNumber = instanceNumbers.get(i);
 								else
-									instanceNumber=String.valueOf(i);
+									instanceNumber=String.valueOf(i+1);
 								statusCode = epadOperations.createFile(username, seriesReference, f, description, fileType, sessionID, convertToDicom, modality, instanceNumber, studyDescription, patientName, studyID, seriesNumber);
 								i++;
 							
