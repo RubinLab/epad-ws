@@ -108,6 +108,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -118,13 +121,10 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.pixelmed.dicom.UIDGenerator;
-
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADMessage;
-import edu.stanford.epad.dtos.EPADPlugin;
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
@@ -340,17 +340,26 @@ public class EPADPostHandler
 						List<String> descriptions = (List<String>) paramData.get("description_List");
 						List<String> fileTypes = (List<String>) paramData.get("fileType_List");
 						List<String> instanceNumbers = (List<String>) paramData.get("instanceNumber_List");
+						
 						int i = 0;
-						//create a study and a series
-//						UIDGenerator u=new UIDGenerator();
-//						String studyUID=u.getNewStudyInstanceUID(studyID); 
-//						String seriesUID=u.getNewSeriesInstanceUID(studyID,seriesNumber); 
-						String studyDescription=(String) paramData.get("studyDescription");
-						String seriesDescription=(String) paramData.get("seriesDescription");
+						String studyDescription = httpRequest.getParameter("studyDescription");
+						if (studyDescription == null) studyDescription = (String) paramData.get("studyDescription");
+						String patientName = httpRequest.getParameter("patientName");
+						if (patientName == null) patientName = (String) paramData.get("patientName");
+						List<File> files=new ArrayList<>();
 						for (String param: paramData.keySet())
 						{
 							if (paramData.get(param) instanceof File)
 							{
+								files.add(((File)paramData.get(param)));
+							}
+						}
+						Collections.sort(files, new Comparator<File>(){
+						     public int compare(File o1, File o2){
+						         return o1.getName().compareTo(o2.getName()) ;
+						     }
+						});
+						for (File f:files){
 								String description = httpRequest.getParameter("description");
 								if (descriptions != null && descriptions.size() > i)
 									description = descriptions.get(i);
@@ -360,9 +369,11 @@ public class EPADPostHandler
 								String instanceNumber = "1";
 								if (instanceNumbers != null && instanceNumbers.size() > i)
 									instanceNumber = instanceNumbers.get(i);
-								statusCode = epadOperations.createFile(username, seriesReference, (File)paramData.get(param), description, fileType, sessionID, convertToDicom, modality, instanceNumber);
+								else
+									instanceNumber=String.valueOf(i);
+								statusCode = epadOperations.createFile(username, seriesReference, f, description, fileType, sessionID, convertToDicom, modality, instanceNumber, studyDescription, patientName);
 								i++;
-							}
+							
 						}
 					}
 					
