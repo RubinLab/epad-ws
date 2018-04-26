@@ -202,6 +202,7 @@ import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
+import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
 import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
 import edu.stanford.hakan.aim4api.project.epad.Aim4;
 
@@ -224,15 +225,41 @@ public class DSOUtil
 	/**
 	 * Take an existing DSO and save it again with the current dso saving code.
 	 */
-	private static DSOEditResult resaveDSO(DSOEditRequest dsoEditRequest, String referencedSeriesUID)
+	private static DSOEditResult resaveDSO(DSOEditRequest dsoEditRequest, String dsoSeriesUID)
 	{
 		try {
 			//try fix for empty study id 
 			if (dsoEditRequest.studyUID==null || dsoEditRequest.studyUID.equals("")) {
-				dsoEditRequest.studyUID=dcm4CheeDatabaseOperations.getStudyUIDForSeries(referencedSeriesUID);
+				dsoEditRequest.studyUID=dcm4CheeDatabaseOperations.getStudyUIDForSeries(dsoSeriesUID);
 			}
+			
+			//get the aim to get referenced series, if not present, try header, if not return cannot edit
+			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+			EPADAIM aim = null;
+			if (dsoEditRequest.aimID!=null)
+				aim= epadDatabaseOperations.getAIM(dsoEditRequest.aimID);
+			else {
+				//if there is just one aim for dso get that and handle null aim
+				List<EPADAIM> aims= epadDatabaseOperations.getAIMsByDSOSeries(dsoSeriesUID);
+				if (aims!=null && aims.size()==1){
+					aim=aims.get(0);
+					dsoEditRequest.aimID=aim.aimID;
+				}
+			}
+			
+			String referencedSeriesID=null;
+			if (aim != null ) {
+				referencedSeriesID=aim.seriesUID;
+				dsoEditRequest.name=aim.name;
+			}
+			//TODO try header
+			if (referencedSeriesID==null || referencedSeriesID.equals("")){
+				throw new Exception("Couldn't read referenced seriesuid from the aim");
+			}
+			
 			List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
-					dsoEditRequest.studyUID, referencedSeriesUID);
+					dsoEditRequest.studyUID, referencedSeriesID);
+			
 			int width = 0;
 			int height = 0;
 			List<String> dicomFilePaths = new ArrayList<String>();
@@ -305,7 +332,21 @@ public class DSOUtil
 					
 			}
 			dsoTIFFMaskFiles = DSOUtil.getDSOTIFFMaskFiles(imageReference, dsoTIFFMaskFiles);
-			
+			int firstNonempty=0;
+			//find first nonempty
+			for(int i=0; i<dsoTIFFMaskFiles.size(); i++){
+				if (dsoTIFFMaskFiles.get(i).length()!=0){
+					log.info("Found the first nonempty "+ i);
+					firstNonempty=i;
+					break;
+				}
+			}
+			//go through the files and replace the empty ones with the correct empty
+			for(int i=0; i<dsoTIFFMaskFiles.size(); i++){
+				if (dsoTIFFMaskFiles.get(i).length()==0){
+					dsoTIFFMaskFiles.set(i, copyEmptyTiffFile(dsoTIFFMaskFiles.get(firstNonempty), dsoTIFFMaskFiles.get(i).getName(), width, height));
+				}
+			}
 			if (DSOUtil.createDSO(imageReference, dsoTIFFMaskFiles, dicomFilePaths, seriesDescription, seriesUID, instanceUID, dsoEditRequest.property, dsoEditRequest.color))
 			{
 				Integer firstFrame=TIFFMasksToDSOConverter.firstFrames.get(instanceUID);
@@ -1640,10 +1681,25 @@ public class DSOUtil
 					if (dsoEditResult.aimID != null && dsoEditResult.aimID.length() > 0)
 					{
 						if (dsoEditResult.firstFrame!=null) {
+							if (aim==null || aim.aimID==null){
+								aim = epadDatabaseOperations.getAIM(dsoEditResult.aimID);
+							}
+								
+							if (aim.xml==null){
+								List<ImageAnnotationCollection> paims = AIMQueries.getAIMImageAnnotationsV4(projectID, AIMSearchType.ANNOTATION_UID, aim.aimID, "admin");
+								if(paims!=null && paims.size()==1){
+									aim.xml=edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(paims.get(0));
+										
+								}else {
+									log.warning("Could not find the aim file for dso. aimid = "+ dsoEditResult.aimID + " dso series "+ dsoEditResult.seriesUID);;
+									
+								}
+							}
 							log.info("update aim table dso first frame with "+ dsoEditResult.firstFrame + "for aim "+dsoEditResult.aimID);
 							epadDatabaseOperations.updateAIMDSOFrameNo(dsoEditResult.aimID, dsoEditResult.firstFrame);
 							epadDatabaseOperations.updateAIMName(dsoEditResult.aimID, dsoEditResult.name);
-							AIMUtil.updateDSOStartIndexAndName(aim, dsoEditResult.firstFrame, dsoEditRequest.name);							
+							AIMUtil.updateDSOStartIndexAndName(aim, dsoEditResult.firstFrame, dsoEditRequest.name);	
+													
 						}						
 					}					
 					responseStream.append(dsoEditResult.toJSON());

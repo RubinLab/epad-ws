@@ -107,6 +107,7 @@ package edu.stanford.epad.epadws.handlers.admin;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
+import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -115,10 +116,14 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
+import edu.stanford.epad.epadws.handlers.core.ProjectReference;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.SessionService;
 
 /**
@@ -150,15 +155,54 @@ public class DSOResaveHandler extends AbstractHandler
 					String projectID = httpRequest.getParameter("projectID");
 					String seriesUID = httpRequest.getParameter("seriesUID");
 					String aimID = httpRequest.getParameter("aimID");
+					String nameContains= httpRequest.getParameter("nameContains");
 					log.info("get request for project "+projectID + " series "+ seriesUID);
-					if (projectID!=null && (seriesUID != null || aimID!=null))
+					if (projectID!=null)
 					{
-						if (DSOUtil.fixDSO(projectID,seriesUID,aimID,responseStream,"admin")){
-							statusCode = HttpServletResponse.SC_OK;
+						//fix specific dso
+						if (seriesUID != null || aimID!=null){ 
+							if (!DSOUtil.fixDSO(projectID,seriesUID,aimID,responseStream,"admin")){
+								statusCode = HttpServletResponse.SC_OK;
+							}else {
+								statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+							}
 						}else {
-							statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+							//get all aims in project containing the parameter and run fixdso on that
+							EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+							List<EPADAIM> aims=epadDatabaseOperations.getAIMs(new ProjectReference(projectID));
+							int fixedCount=0;
+							int errorCount=0;
+							for (EPADAIM aim: aims){
+								if (aim.dsoSeriesUID==null) //only dsos
+									continue;
+								if (nameContains!=null || nameContains.length()>0 ){
+									if (!aim.name.toLowerCase().contains(nameContains.toLowerCase())){
+										log.info("Skipping aim: "+aim.name+ " dso series uid: "+ aim.dsoSeriesUID);
+										responseStream.append("Skipping aim: "+aim.name+ " dso series uid: "+ aim.dsoSeriesUID);
+										continue;
+									}
+								}
+								log.info("Attempting to fix "+aim.name);
+								if (!DSOUtil.fixDSO(projectID,aim.dsoSeriesUID,aim.aimID,responseStream,"admin")){
+									log.info("Fixed");
+									fixedCount++;
+								}else {
+									log.info("Error");
+									responseStream.append("Could not fix dso for aim: "+aim.name+ " dso series uid: "+ aim.dsoSeriesUID);
+									errorCount++;
+								}
+							}
+							responseStream.append("Finished processing project with "+ fixedCount + " success "+ errorCount + " errors");
+							if (errorCount>0){
+								statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+							}
+							else {
+								statusCode = HttpServletResponse.SC_OK;
+							}
 						}
+						
 					}else {
+						log.warning("Project ID is required");
 						statusCode = HttpServletResponse.SC_NOT_ACCEPTABLE;
 					}
 					
