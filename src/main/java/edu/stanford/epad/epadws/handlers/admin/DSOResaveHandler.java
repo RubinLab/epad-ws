@@ -177,6 +177,8 @@ public class DSOResaveHandler extends AbstractHandler
 									continue;
 								if (nameContains!=null || nameContains.length()>0 ){
 									if (!aim.name.toLowerCase().contains(nameContains.toLowerCase())){
+										log.info("Skipping aim: "+aim.name+ " dso series uid: "+ aim.dsoSeriesUID);
+										responseStream.append("Skipping aim: "+aim.name+ " dso series uid: "+ aim.dsoSeriesUID);
 										continue;
 									}
 								}
