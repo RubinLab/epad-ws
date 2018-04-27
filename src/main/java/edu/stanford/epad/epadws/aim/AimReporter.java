@@ -177,21 +177,24 @@ public class AimReporter {
 	 * @return a json array in string format. json array contains a json object for each aim with column names as attributes
 	 */
 	public static String fillTable(EPADAIMList aims,String templatecode, String[] columns, String[] shapes){
-		String[] templates=templatecode.split(",");
-		if (templates.length>1){
-			String filled="";
-			for (String template:templates){
-				String templateTable=fillTable(aims, template, columns,shapes);
-				if (!templateTable.isEmpty() && !templateTable.equals("[]")){
-					if (filled.isEmpty() || filled.equals("[]"))
-						filled=templateTable;
-					else
-						filled=filled.substring(0, filled.length()-1)+","+templateTable.substring(1);
+		if (templatecode!=null && templatecode.length()>0) {
+			String[] templates=templatecode.split(",");
+		
+			if (templates.length>1){
+				String filled="";
+				for (String template:templates){
+					String templateTable=fillTable(aims, template, columns,shapes);
+					if (!templateTable.isEmpty() && !templateTable.equals("[]")){
+						if (filled.isEmpty() || filled.equals("[]"))
+							filled=templateTable;
+						else
+							filled=filled.substring(0, filled.length()-1)+","+templateTable.substring(1);
+					}
 				}
+				if (filled.isEmpty())
+					filled="[]";
+				return filled;
 			}
-			if (filled.isEmpty())
-				filled="[]";
-			return filled;
 		}
 		String [][] table=null;
 		//make sure they are lower case
@@ -1128,11 +1131,11 @@ public class AimReporter {
 	 */
 	private static Double[] calcSums(Object[][] table, Integer[] timepoints, String metric){
 		Double[] sums=new Double[table[0].length-LongitudinalReport.numofHeaderCols];
-		for (int k=0; k< table[0].length-LongitudinalReport.numofHeaderCols; k++) {
+		for (int k=0; k< table[0].length-LongitudinalReport.numofHeaderCols && k< timepoints.length; k++) {
 			sums[k]=0.0;
 			log.info("k is "+k);
 			int j=k;
-			for (j=k; j< table[0].length-LongitudinalReport.numofHeaderCols; j++) {
+			for (j=k; j< table[0].length-LongitudinalReport.numofHeaderCols  && j< timepoints.length; j++) {
 				log.info("j is "+j);
 				if (timepoints[j]==timepoints[k]){
 					if (j!=k)
@@ -1225,6 +1228,7 @@ public class AimReporter {
 	 * calculate response rates in reference to the current baseline and current min.
 	 * at the baseline min=baseline=0
 	 * till I reach min use baseline as the reference after that use min
+	 * CORRECTION: rr from min should use min only after it starts increasing
 	 * it also handles multiple baselines and gets the latest
 	 * needs timepoints for that
 	 * @param sums
@@ -1236,6 +1240,7 @@ public class AimReporter {
 		log.info("Min is "+min);
 		Double[] rr=new Double[sums.length];
 		StringBuilder rrStr= new StringBuilder();
+		
 		for (int i=0;i<sums.length;i++) {
 			if (sums[i]!=null){
 				if (timepoints[i]!=null && timepoints[i]==0) {
@@ -1249,8 +1254,15 @@ public class AimReporter {
 					rr[i]=(sums[i]-min)*100.0/min;	
 				rrStr.append(rr[i]+ "  ");
 				if (sums[i]<min) {
-					min=sums[i];
-					log.info("Min changed. Smaller rr. min is:"+min);
+					int j=1;
+					//skip nulls
+					while(i+j<sums.length && sums[i+j]==null){
+						j++;
+					}
+					if (i+j<sums.length && sums[i+j]!=null && sums[i+j]>sums[i]) {
+						min=sums[i];
+						log.info("Min changed. Smaller rr. min is:"+min);
+					}
 				}
 			}
 		}
@@ -1413,7 +1425,7 @@ public class AimReporter {
 		Double min=999999.0;
 		Double[] rrBaseline=calcRRBaseline(sums, timepoints);
 		for (int i=0;i<rrBaseline.length;i++){
-			if (rrBaseline[i]<min)
+			if (rrBaseline[i]!=null && rrBaseline[i]<min)
 				min=rrBaseline[i];
 		}
 		if (min==0 && rrBaseline.length>1)
@@ -1431,7 +1443,7 @@ public class AimReporter {
 		Double min=999999.0;
 		Double[] rrMin=calcRRMin(sums, timepoints);
 		for (int i=0;i<rrMin.length;i++){
-			if (rrMin[i]<min)
+			if (rrMin!=null && rrMin[i]<min)
 				min=rrMin[i];
 		}
 		if (min==0 && rrMin.length>1)
@@ -1452,8 +1464,10 @@ public class AimReporter {
 		switch(metric){
 			case "ADLA":
 				return getWaterfallWithTemplateMetricAndShapes(subjects, username, sessionID, type, projectID, null, "standard deviation","line");
-			default:
+			case "RECIST":
 				return getWaterfall(subjects, username, sessionID, type, projectID);
+			default:
+				return getWaterfallWithTemplateMetricAndShapes(subjects, username, sessionID, type, projectID, null, metric, null);
 		}
 	}
 	
@@ -1489,19 +1503,19 @@ public class AimReporter {
 			projects.add(projectID);
 			
 			//let's calculate sums and the rr for the type.
-			Double[] sums=calcSums(lgtdnl.gettTable(),lgtdnl.gettTimepoints(),metric);
+			Double[] sums=calcSums(lgtdnl.gettTable(),lgtdnl.getStTimepoints(),metric);
 			
 			
 			
 			switch(type){
 			case "BASELINE":
-				values.add(getADLAMinRRBaseLine(sums,lgtdnl.gettTimepoints()));
+				values.add(getADLAMinRRBaseLine(sums,lgtdnl.getStTimepoints()));
 				break;
 			case "MIN":
-				values.add(getADLAMinRRMin(sums,lgtdnl.gettTimepoints()));
+				values.add(getADLAMinRRMin(sums,lgtdnl.getStTimepoints()));
 				break;
 			default:
-				values.add(getADLAMinRRBaseLine(sums,lgtdnl.gettTimepoints()));
+				values.add(getADLAMinRRBaseLine(sums,lgtdnl.getStTimepoints()));
 				break;
 			}
 		}
@@ -1592,18 +1606,18 @@ public class AimReporter {
 			validSubjects.add(sub_prj.getString("subjectID"));
 			
 			//let's calculate sums and the rr for the type.
-			Double[] sums=calcSums(lgtdnl.gettTable(),lgtdnl.gettTimepoints(),metric);
+			Double[] sums=calcSums(lgtdnl.gettTable(),lgtdnl.getStTimepoints(),metric);
 			switch(type){
 			case "BASELINE":
-				values.add(getADLAMinRRBaseLine(sums,lgtdnl.gettTimepoints()));
+				values.add(getADLAMinRRBaseLine(sums,lgtdnl.getStTimepoints()));
 				projects.add(sub_prj.getString("projectID"));
 				break;
 			case "MIN":
-				values.add(getADLAMinRRMin(sums,lgtdnl.gettTimepoints()));
+				values.add(getADLAMinRRMin(sums,lgtdnl.getStTimepoints()));
 				projects.add(sub_prj.getString("projectID"));
 				break;
 			default:
-				values.add(getADLAMinRRBaseLine(sums,lgtdnl.gettTimepoints()));
+				values.add(getADLAMinRRBaseLine(sums,lgtdnl.getStTimepoints()));
 				projects.add(sub_prj.getString("projectID"));
 				break;
 			}
