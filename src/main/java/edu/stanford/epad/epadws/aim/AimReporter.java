@@ -184,7 +184,7 @@ public class AimReporter {
 				String filled="";
 				for (String template:templates){
 					String templateTable=fillTable(aims, template, columns,shapes);
-					if (!templateTable.isEmpty() && !templateTable.equals("[]")){
+					if (templateTable!=null && !templateTable.isEmpty() && !templateTable.equals("[]")){
 						if (filled.isEmpty() || filled.equals("[]"))
 							filled=templateTable;
 						else
@@ -201,7 +201,7 @@ public class AimReporter {
 		for (int i=0;i<columns.length;i++){
 			columns[i]=columns[i].toLowerCase();
 		}
-		if (aims.ResultSet.totalRecords==0) return null;
+		if (aims==null || aims.ResultSet.totalRecords==0) return null;
 		table=new String[aims.ResultSet.totalRecords][columns.length];
 		int row=0;
 		//for each aim. find the item that contains the label to match and return the value (and/or code?)
