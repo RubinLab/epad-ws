@@ -1503,19 +1503,19 @@ public class AimReporter {
 			projects.add(projectID);
 			
 			//let's calculate sums and the rr for the type.
-			Double[] sums=calcSums(lgtdnl.gettTable(),lgtdnl.gettTimepoints(),metric);
+			Double[] sums=calcSums(lgtdnl.gettTable(),lgtdnl.getStTimepoints(),metric);
 			
 			
 			
 			switch(type){
 			case "BASELINE":
-				values.add(getADLAMinRRBaseLine(sums,lgtdnl.gettTimepoints()));
+				values.add(getADLAMinRRBaseLine(sums,lgtdnl.getStTimepoints()));
 				break;
 			case "MIN":
-				values.add(getADLAMinRRMin(sums,lgtdnl.gettTimepoints()));
+				values.add(getADLAMinRRMin(sums,lgtdnl.getStTimepoints()));
 				break;
 			default:
-				values.add(getADLAMinRRBaseLine(sums,lgtdnl.gettTimepoints()));
+				values.add(getADLAMinRRBaseLine(sums,lgtdnl.getStTimepoints()));
 				break;
 			}
 		}
@@ -1606,18 +1606,18 @@ public class AimReporter {
 			validSubjects.add(sub_prj.getString("subjectID"));
 			
 			//let's calculate sums and the rr for the type.
-			Double[] sums=calcSums(lgtdnl.gettTable(),lgtdnl.gettTimepoints(),metric);
+			Double[] sums=calcSums(lgtdnl.gettTable(),lgtdnl.getStTimepoints(),metric);
 			switch(type){
 			case "BASELINE":
-				values.add(getADLAMinRRBaseLine(sums,lgtdnl.gettTimepoints()));
+				values.add(getADLAMinRRBaseLine(sums,lgtdnl.getStTimepoints()));
 				projects.add(sub_prj.getString("projectID"));
 				break;
 			case "MIN":
-				values.add(getADLAMinRRMin(sums,lgtdnl.gettTimepoints()));
+				values.add(getADLAMinRRMin(sums,lgtdnl.getStTimepoints()));
 				projects.add(sub_prj.getString("projectID"));
 				break;
 			default:
-				values.add(getADLAMinRRBaseLine(sums,lgtdnl.gettTimepoints()));
+				values.add(getADLAMinRRBaseLine(sums,lgtdnl.getStTimepoints()));
 				projects.add(sub_prj.getString("projectID"));
 				break;
 			}
