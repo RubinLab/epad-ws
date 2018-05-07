@@ -843,6 +843,7 @@ public class EPADGetHandler
 				String templateCode = httpRequest.getParameter("templatecode");
 				String[] shapes = (httpRequest.getParameter("shapes")!=null)?httpRequest.getParameter("shapes").split(","):null; //comma separated values
 				if (report!=null) {
+					aims = AIMUtil.filterPermittedImageAnnotations(aims, username, sessionID);
 					if (report.equalsIgnoreCase("RECIST")){
 						RecistReport recistTable=AimReporter.getRecist(aims);
 						if (recistTable!=null)
@@ -873,6 +874,7 @@ public class EPADGetHandler
 						}
 					}
 				} else if (returnTable) {
+					aims = AIMUtil.filterPermittedImageAnnotations(aims, username, sessionID);
 					String columns = httpRequest.getParameter("columns"); //comma seperated
 					if (columns!=null) {
 						String[] columnsArray=columns.split(",");
