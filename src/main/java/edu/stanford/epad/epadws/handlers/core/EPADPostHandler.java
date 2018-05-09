@@ -360,6 +360,9 @@ public class EPADPostHandler
 						int i = 0;
 						List<File> files=new ArrayList<>();
 						if (uploadedFile.getName().toLowerCase().endsWith(".zip")) {
+							if (uploadedFile.getName().contains(" ")){
+								uploadedFile = EPADFileUtils.renameFile(uploadedFile, uploadedFile.getName().replace(' ', '_'));
+							}
 							EPADFileUtils.extractFolder(uploadedFile.getAbsolutePath());
 							//to prevent infinite loop for zip uploads
 							File parent = uploadedFile.getParentFile();
