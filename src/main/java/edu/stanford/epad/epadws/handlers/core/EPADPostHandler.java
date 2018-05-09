@@ -104,7 +104,6 @@
  *******************************************************************************/
 package edu.stanford.epad.epadws.handlers.core;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
@@ -344,7 +343,8 @@ public class EPADPostHandler
 					if (seriesReference.seriesUID.equals("new")){
 						seriesReference.seriesUID=u.getNewSeriesInstanceUID(studyID,seriesNumber);
 					}
-					if (numberOfFiles == 1) {
+					log.info("filename "+uploadedFile.getName());
+					if (numberOfFiles == 1 && !uploadedFile.getName().toLowerCase().endsWith("zip")) {
 						String description = httpRequest.getParameter("description");
 						if (description == null) description = (String) paramData.get("description");
 						String fileType = httpRequest.getParameter("fileType");
@@ -353,17 +353,45 @@ public class EPADPostHandler
 						if (instanceNumber == null) instanceNumber = (String) paramData.get("instanceNumber");
 						if (instanceNumber == null) instanceNumber = "1";
 						statusCode = epadOperations.createFile(username, seriesReference, uploadedFile, description, fileType, sessionID, convertToDicom, modality, instanceNumber, studyDescription, patientName, studyID, seriesNumber);					
-					} else if (numberOfFiles > 1) {
+					} else if (numberOfFiles > 1 || uploadedFile.getName().toLowerCase().endsWith(".zip")) {
 						List<String> descriptions = (List<String>) paramData.get("description_List");
 						List<String> fileTypes = (List<String>) paramData.get("fileType_List");
 						List<String> instanceNumbers = (List<String>) paramData.get("instanceNumber_List");
 						int i = 0;
 						List<File> files=new ArrayList<>();
-						for (String param: paramData.keySet())
-						{
-							if (paramData.get(param) instanceof File)
+						if (uploadedFile.getName().toLowerCase().endsWith(".zip")) {
+							EPADFileUtils.extractFolder(uploadedFile.getAbsolutePath());
+							//to prevent infinite loop for zip uploads
+							File parent = uploadedFile.getParentFile();
+				            File zipDirectory = new File(parent, uploadedFile.getName().substring(0, uploadedFile.getName().length()-4));
+				            File[] files1 = zipDirectory.listFiles();
+				            for (File f: files1)
+				            {
+				            	  if (f.isDirectory() && !f.getName().equalsIgnoreCase("__MACOSX"))
+				                  {
+				                         File[] files2 = f.listFiles();
+				                         for (File f2: files2)
+				                         {
+				                        	 if (f2.isFile())
+				                                files.add(f2);
+				                         }
+				                         continue;
+				                  }
+				            	  if (f.getName().toLowerCase().endsWith(".zip"))
+				  				  {
+				  					f.delete();
+				  					continue;	
+				  				  }
+				            	  if (f.isFile())
+				            		  files.add(f);
+				            }
+						}else {
+							for (String param: paramData.keySet())
 							{
-								files.add(((File)paramData.get(param)));
+								if (paramData.get(param) instanceof File)
+								{
+									files.add(((File)paramData.get(param)));
+								}
 							}
 						}
 						//sort the files by filename to assign instance numbers
@@ -384,6 +412,7 @@ public class EPADPostHandler
 									instanceNumber = instanceNumbers.get(i);
 								else
 									instanceNumber=String.valueOf(i+1);
+								log.info("sending file "+f.getName());
 								statusCode = epadOperations.createFile(username, seriesReference, f, description, fileType, sessionID, convertToDicom, modality, instanceNumber, studyDescription, patientName, studyID, seriesNumber);
 								i++;
 							
