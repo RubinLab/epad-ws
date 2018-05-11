@@ -964,6 +964,11 @@ public class DSOUtil
 			return null;
 		}
 		
+		//calculate the voxel volume
+		double volume=0;
+		//=pixelspacingx * pixelspacingy * slicethickness
+		
+		
 		//open the dso
 		try {
 			SourceImage dso=new SourceImage(dsoFile.getAbsolutePath());
@@ -972,12 +977,27 @@ public class DSOUtil
 			SourceImage refImage=null;
 			PixelMapDouble pixelMap = new PixelMapDouble();
 			for(int i=0;i<dso.getNumberOfFrames();i++){
+				int voxelCount=0;
 				//get pixel values for this dso frame
 				//mask get raw values is enough
 				double[] mask=getPixelValuesAsArray(dso, i);
 				
 				log.info("getting image "+ referencedImageUIDs[i]+ " for "+ i+ "th frame");
-				refImage=new SourceImage(tmpFolder.getAbsolutePath()+"/"+referencedImageUIDs[i]+".dcm");
+				//read the header and get the voxel volume
+				double voxelVolume=0;
+				DicomInputStream dicomInputStream = null;
+				try {
+					dicomInputStream = new DicomInputStream(new FileInputStream(tmpFolder.getAbsolutePath()+"/"+referencedImageUIDs[i]+".dcm"));
+					AttributeList list = new AttributeList();
+					list.read(dicomInputStream);
+					voxelVolume=calcVoxelVolume(list);
+					refImage=new SourceImage(list);
+				}catch (Exception e){
+					log.warning("Exception occured trying to read the referenced image as dicominputstream "+ e.getMessage());
+				}
+				
+				
+				
 				//we need to transform the values. using pixelmed
 				double[] image=getTransformedPixelValuesAsArray(refImage,0);
 				if (image.length!=mask.length){
@@ -999,19 +1019,22 @@ public class DSOUtil
 						} else {
 							pixelMap.put(val, f + 1);
 						}
+						voxelCount++;
 //						log.info("j="+j+" val ="+val);
 					}
 					
 				}
+				volume+=voxelVolume*(double)voxelCount;
 				
 			}
 			pixelMap.minMaxRange();
 			pixelMap.calc();
 			
 			log.info("min="+pixelMap.getMin() +" max="+pixelMap.getMax()+ " mean=" +pixelMap.getMean()+ " stddev="+ pixelMap.getStdDev());
+			log.info("volume="+volume);
 			//done with the temp folder delete it
 			EPADFileUtils.deleteDirectoryAndContents(tmpFolder);
-			return new Double[]{pixelMap.getMin() ,pixelMap.getMax(),pixelMap.getMean(),pixelMap.getStdDev()};
+			return new Double[]{pixelMap.getMin() ,pixelMap.getMax(),pixelMap.getMean(),pixelMap.getStdDev(),volume};
 		} catch (IOException e) {
 			log.warning("Cannot read file ",e);
 		} catch (DicomException e) {
@@ -1023,11 +1046,43 @@ public class DSOUtil
 		}
 		
 		
+		
+		
 		return null;
 		
 	}
 	
 	
+	public static double calcVoxelVolume(AttributeList list){
+		double voxelVolume=0;
+		String pixelSpacing=Attribute.getDelimitedStringValuesOrNull(list,TagFromName.PixelSpacing);
+		log.info("the pixelspacing is "+pixelSpacing);
+		String sliceThickness=Attribute.getSingleStringValueOrNull(list,TagFromName.SliceThickness);
+		log.info("the sliceThickness is "+sliceThickness);
+		
+		if (sliceThickness!=null && pixelSpacing!=null){
+			try{
+				String[] pixelSpacingVals=pixelSpacing.split("\\");
+				double psX=0;
+				double psY=0;
+				if (pixelSpacingVals.length==2){
+					psX=Double.parseDouble(pixelSpacingVals[0]);
+					psY=Double.parseDouble(pixelSpacingVals[1]);
+				}else{
+					log.warning("pixel spacing not seperated properly "+ pixelSpacingVals.length);
+				}
+				double st=Double.parseDouble(sliceThickness);
+				
+				voxelVolume=psX*psY*st;
+			}catch(Exception e){
+				log.warning("Couldn't calculate the voxelVolume",e);
+				return 0;
+			}
+			
+		}else return 0;
+		
+		return voxelVolume;
+	}
 
 	public static String getPixelValues(SourceImage sImg, int frameNum){
 		return JSON.toString(getPixelValuesAsArray(sImg,frameNum));
