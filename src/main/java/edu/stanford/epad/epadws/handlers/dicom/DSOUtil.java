@@ -1024,14 +1024,15 @@ public class DSOUtil
 					}
 					
 				}
-				volume+=voxelVolume*(double)voxelCount;
+				volume+=voxelVolume*(double)voxelCount; 
+				log.info("voxelvolume="+voxelVolume + " voxelcount "+ voxelCount);
 				
 			}
 			pixelMap.minMaxRange();
 			pixelMap.calc();
 			
 			log.info("min="+pixelMap.getMin() +" max="+pixelMap.getMax()+ " mean=" +pixelMap.getMean()+ " stddev="+ pixelMap.getStdDev());
-			log.info("volume="+volume);
+			log.info("volume="+volume );
 			//done with the temp folder delete it
 			EPADFileUtils.deleteDirectoryAndContents(tmpFolder);
 			return new Double[]{pixelMap.getMin() ,pixelMap.getMax(),pixelMap.getMean(),pixelMap.getStdDev(),volume};
@@ -1062,7 +1063,7 @@ public class DSOUtil
 		
 		if (sliceThickness!=null && pixelSpacing!=null){
 			try{
-				String[] pixelSpacingVals=pixelSpacing.split("\\");
+				String[] pixelSpacingVals=pixelSpacing.split("\\\\");
 				double psX=0;
 				double psY=0;
 				if (pixelSpacingVals.length==2){
