@@ -503,7 +503,7 @@ public class Main
 			log.info("Done with database/queues init");
 			
 			//check nonassigned
-			Project nonassgnedproj=DefaultEpadProjectOperations.getInstance().getProject("nonassigned");
+			Project nonassgnedproj=DefaultEpadProjectOperations.getInstance().getProject(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned"));
 			if (nonassgnedproj==null){ //no nonassigned create it
 				DefaultEpadProjectOperations.getInstance().createProject("admin", "nonassigned", "nonassigned", "Nonassigned subjects", null, ProjectType.PUBLIC);
 				log.info("Nonassigned project is not found. Creating.");
