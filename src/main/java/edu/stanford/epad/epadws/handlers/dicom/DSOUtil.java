@@ -1013,6 +1013,7 @@ public class DSOUtil
 			SourceImage refImage=null;
 			PixelMapDouble pixelMap = new PixelMapDouble();
 			for(int i=0;i<dso.getNumberOfFrames();i++){
+				
 				//get pixel values for this dso frame
 				//mask get raw values is enough
 				double[] mask=getPixelValuesAsArray(dso, i);
@@ -1033,7 +1034,6 @@ public class DSOUtil
 				}
 				
 				
-				
 				//we need to transform the values. using pixelmed
 				double[] image=getTransformedPixelValuesAsArray(refImage,0);
 				if (image.length!=mask.length){
@@ -1046,6 +1046,9 @@ public class DSOUtil
 						log.warning("not a binary mask" + mask[j]+ " Aborting");
 						return null;
 					}
+					if (mask[j]==1){
+						voxelCount++;
+					}
 					double val=image[j]*mask[j];
 					if (val!=0)  {
 						// add it to the map or inc its frequency
@@ -1055,12 +1058,9 @@ public class DSOUtil
 						} else {
 							pixelMap.put(val, f + 1);
 						}
-						voxelCount++;
-//						log.info("j="+j+" val ="+val);
 					}
 					
-				}
-								
+				}		
 			}
 			pixelMap.minMaxRange();
 			pixelMap.calc();
