@@ -922,7 +922,7 @@ public class AIMUtil
 							aim.addCalculationEntityWithRef(Aim4.createMaxCalculation(calcs[1], null, units),dseg);
 							aim.addCalculationEntityWithRef(Aim4.createMeanCalculation(calcs[2], null, units),dseg);
 							aim.addCalculationEntityWithRef(Aim4.createStdDevCalculation(calcs[3], null, units),dseg);
-							aim.addCalculationEntityWithRef(Aim4.createVolumeCalculation(calcs[4], null, units),dseg);
+							if (calcs.length>4) aim.addCalculationEntityWithRef(Aim4.createVolumeCalculation(calcs[4], null, units),dseg);
 							
 						}
 						
