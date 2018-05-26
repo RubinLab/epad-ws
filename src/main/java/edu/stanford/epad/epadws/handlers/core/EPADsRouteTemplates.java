@@ -111,4 +111,6 @@ public class EPADsRouteTemplates
 	public static final String EPAD_VERSION = EPAD_LIST + "version/";
 	public static final String EPAD_TEMPLATES = EPAD_LIST + "templates/";
 
+	public static final String EPAD_STATS = EPAD_LIST + "stats/";
+
 }

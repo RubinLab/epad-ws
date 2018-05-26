@@ -1779,4 +1779,5 @@ public interface EpadOperations
 	int createFile(String username, SeriesReference seriesReference, File uploadedFile, String description,
 			String fileType, String sessionID, boolean convertToDICOM, String modality, String instanceNumber,
 			String studyDescription, String patientName, String studyID, String seriesNumber) throws Exception;
+	
 }
