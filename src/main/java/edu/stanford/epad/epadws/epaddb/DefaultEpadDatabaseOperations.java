@@ -130,6 +130,7 @@ import edu.stanford.epad.dtos.AnnotationStatus;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADData;
 import edu.stanford.epad.dtos.EPADDataList;
+import edu.stanford.epad.dtos.EPADUsage;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.aim.AIMDatabaseOperations;
@@ -1769,6 +1770,36 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			if (rs.next()) {
 				status = rs.getInt(1);
 				return SeriesProcessingStatus.getValue(status);
+			} else
+				return null;
+		} catch (IllegalArgumentException e) {
+			log.warning("Invalid enum value for " + SeriesProcessingStatus.class.getName(), e);
+			return null;
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+			return null;
+		} finally {
+			close(c, ps, rs);
+		}
+	}
+	
+	@Override
+	public EPADUsage getStats(String year)
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		int status = -1;
+		
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.GET_YEARLY_CUMULATIVE_STAT);
+			//we need to add % here
+			ps.setString(1, '%'+year+'%');
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				return new EPADUsage(null, rs.getInt(1), rs.getInt(2), rs.getInt(3), rs.getInt(4), rs.getInt(5), rs.getInt(6), rs.getInt(7), rs.getInt(9), rs.getInt(10), rs.getInt(8), rs.getInt(11), rs.getInt(13), rs.getInt(12), null);
 			} else
 				return null;
 		} catch (IllegalArgumentException e) {

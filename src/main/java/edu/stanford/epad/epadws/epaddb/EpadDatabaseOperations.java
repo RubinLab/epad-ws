@@ -113,6 +113,7 @@ import java.util.Set;
 import edu.stanford.epad.dtos.AnnotationStatus;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADDataList;
+import edu.stanford.epad.dtos.EPADUsage;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
@@ -474,6 +475,13 @@ public interface EpadDatabaseOperations
 	 * calculates the monthly cumulatives from epadstatistics table getting just the latest and puts it to epadstatistics_monthly
 	 */
 	void calcMonthlyCumulatives();
+
+	/**
+	 * Gets cumulative statistics by year
+	 * @param year
+	 * @return
+	 */
+	EPADUsage getStats(String year);
 
 	
 

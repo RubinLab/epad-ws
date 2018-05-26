@@ -155,6 +155,7 @@ import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.epad.dtos.EPADTemplateContainer;
 import edu.stanford.epad.dtos.EPADTemplateContainerList;
 import edu.stanford.epad.dtos.EPADTemplateUsageList;
+import edu.stanford.epad.dtos.EPADUsage;
 import edu.stanford.epad.dtos.EPADUsageList;
 import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
@@ -2324,6 +2325,14 @@ public class EPADGetHandler
 					EPADDataList epads = EpadDatabase.getInstance().getEPADDatabaseOperations().getEpadHostNames();
 					responseStream.append(epads.toJSON());
 				} 
+				
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(EPADsRouteTemplates.EPAD_STATS, pathInfo)) {
+				String year = httpRequest.getParameter("year");
+				
+				EPADUsage epads = EpadDatabase.getInstance().getEPADDatabaseOperations().getStats(year);
+				responseStream.append(epads.toJSON());
 				
 				statusCode = HttpServletResponse.SC_OK;
 
