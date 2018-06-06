@@ -1702,6 +1702,8 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 						dicomFileDescriptions = new HashSet<DICOMFileDescription>();
 						dicomFileDescriptions.add(dicomFileDescription);
 					}
+					//keep a list of imageuids to avoid duplicates
+					Set<String> imageuids = new HashSet<String>();
 					for (DICOMFileDescription dicomFileDescription: dicomFileDescriptions)
 					{
 						if (Thread.currentThread().isInterrupted())
@@ -1709,6 +1711,10 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 						String dicomFilePath = getDICOMFilePath(dicomFileDescription);
 						String modality = dicomFileDescription.modality;
 						File dicomFile = new File(dicomFilePath);
+						//ignore if it is already in the list (ignores the old one as the list is ordered create_time desc)
+						if (imageuids.contains(dicomFileDescription.imageUID)) continue;
+
+				        imageuids.add(dicomFileDescription.imageUID);
 						String name = dicomFileDescription.imageUID + ".dcm";
 						String imageZipPath = seriesZipPath + "/" + name;
 						// If the file does not exist locally (because it is stored on another file system), download it.
@@ -1909,6 +1915,8 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 					dicomFileDescriptions = new HashSet<DICOMFileDescription>();
 					dicomFileDescriptions.add(dicomFileDescription);
 				}
+				//keep a list of imageuids to avoid duplicates
+				Set<String> imageuids = new HashSet<String>();
 				for (DICOMFileDescription dicomFileDescription: dicomFileDescriptions)
 				{
 					if (Thread.currentThread().isInterrupted())
@@ -1916,6 +1924,10 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 					String dicomFilePath = getDICOMFilePath(dicomFileDescription);
 					String modality = dicomFileDescription.modality;
 					File dicomFile = new File(dicomFilePath);
+					//ignore if it is already in the list (ignores the old one as the list is ordered create_time desc)
+					if (imageuids.contains(dicomFileDescription.imageUID)) continue;
+
+			        imageuids.add(dicomFileDescription.imageUID);
 					String name = dicomFileDescription.imageUID + ".dcm";
 					String imageZipPath = seriesZipPath + "/" + name;
 					// If the file does not exist locally (because it is stored on another file system), download it.
@@ -2094,6 +2106,8 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 				dicomFileDescriptions = new HashSet<DICOMFileDescription>();
 				dicomFileDescriptions.add(dicomFileDescription);
 			}
+			//keep a list of imageuids to avoid duplicates
+			Set<String> imageuids = new HashSet<String>();
 			for (DICOMFileDescription dicomFileDescription: dicomFileDescriptions)
 			{
 				if (Thread.currentThread().isInterrupted())
@@ -2101,6 +2115,10 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 				String dicomFilePath = getDICOMFilePath(dicomFileDescription);
 				String modality = dicomFileDescription.modality;
 				File dicomFile = new File(dicomFilePath);
+				//ignore if it is already in the list (ignores the old one as the list is ordered create_time desc)
+				if (imageuids.contains(dicomFileDescription.imageUID)) continue;
+
+		        imageuids.add(dicomFileDescription.imageUID);
 				String name = dicomFileDescription.imageUID + ".dcm";
 				String imageZipPath = seriesZipPath + "/" + name;
 				// If the file does not exist locally (because it is stored on another file system), download it.
@@ -2258,6 +2276,8 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 			dicomFileDescriptions = new HashSet<DICOMFileDescription>();
 			dicomFileDescriptions.add(dicomFileDescription);
 		}
+		//keep a list of imageuids to avoid duplicates
+		Set<String> imageuids = new HashSet<String>();
 		for (DICOMFileDescription dicomFileDescription: dicomFileDescriptions)
 		{
 			if (Thread.currentThread().isInterrupted())
@@ -2265,6 +2285,10 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 			String dicomFilePath = getDICOMFilePath(dicomFileDescription);
 			String modality = dicomFileDescription.modality;
 			File dicomFile = new File(dicomFilePath);
+			//ignore if it is already in the list (ignores the old one as the list is ordered create_time desc)
+			if (imageuids.contains(dicomFileDescription.imageUID)) continue;
+
+	        imageuids.add(dicomFileDescription.imageUID);
 			String name = dicomFileDescription.imageUID + ".dcm";
 			String imageZipPath = seriesZipPath + "/" + name;
 			// If the file does not exist locally (because it is stored on another file system), download it.

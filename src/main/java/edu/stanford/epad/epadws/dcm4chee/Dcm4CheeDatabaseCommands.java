@@ -112,7 +112,8 @@ package edu.stanford.epad.epadws.dcm4chee;
  */
 public interface Dcm4CheeDatabaseCommands
 {
-	public static final String SELECT_FILES_FOR_SERIES = "SELECT i.sop_iuid, i.inst_no, s.series_iuid, f.created_time, f.filepath, f.file_size, st.study_iuid, s.modality from pacsdb.files as f, pacsdb.instance as i, pacsdb.series as s, pacsdb.study as st WHERE f.instance_fk=i.pk and i.series_fk=s.pk and s.study_fk=st.pk and s.series_iuid=?";
+	//order by sop_iuid and createdtime(desc) to handle multiple versions of the same file
+	public static final String SELECT_FILES_FOR_SERIES = "SELECT i.sop_iuid, i.inst_no, s.series_iuid, f.created_time, f.filepath, f.file_size, st.study_iuid, s.modality from pacsdb.files as f, pacsdb.instance as i, pacsdb.series as s, pacsdb.study as st WHERE f.instance_fk=i.pk and i.series_fk=s.pk and s.study_fk=st.pk and s.series_iuid=?  order by i.sop_iuid, created_time desc";
 	public static final String SELECT_IMAGE_UID_FOR_SERIES = "SELECT sop_iuid from pacsdb.instance as i, pacsdb.series as s where i.series_fk=s.pk and s.series_iuid=? order by i.inst_no";
 	//ml remove * for faster access and format blob on query 
 	public static final String SELECT_IMAGE_FOR_SERIES = "SELECT i.sop_iuid,i.inst_no,i.inst_custom1,i.content_datetime,i.updated_time,i.created_time,i.sop_cuid,CAST(i.inst_attrs AS CHAR(10000) CHARACTER SET utf8) as inst_attrs_ch  from pacsdb.instance as i, pacsdb.series as s where i.series_fk=s.pk and s.series_iuid=? and i.sop_iuid=?";
