@@ -1713,7 +1713,6 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 						File dicomFile = new File(dicomFilePath);
 						//ignore if it is already in the list (ignores the old one as the list is ordered create_time desc)
 						if (imageuids.contains(dicomFileDescription.imageUID)) continue;
-
 						imageuids.add(dicomFileDescription.imageUID);
 						String name = dicomFileDescription.imageUID + ".dcm";
 						String imageZipPath = seriesZipPath + "/" + name;
@@ -1926,7 +1925,6 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 					File dicomFile = new File(dicomFilePath);
 					//ignore if it is already in the list (ignores the old one as the list is ordered create_time desc)
 					if (imageuids.contains(dicomFileDescription.imageUID)) continue;
-					
 					imageuids.add(dicomFileDescription.imageUID);
 					String name = dicomFileDescription.imageUID + ".dcm";
 					String imageZipPath = seriesZipPath + "/" + name;
@@ -2117,7 +2115,6 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 				File dicomFile = new File(dicomFilePath);
 				//ignore if it is already in the list (ignores the old one as the list is ordered create_time desc)
 				if (imageuids.contains(dicomFileDescription.imageUID)) continue;
-				
 				imageuids.add(dicomFileDescription.imageUID);
 				String name = dicomFileDescription.imageUID + ".dcm";
 				String imageZipPath = seriesZipPath + "/" + name;
@@ -2287,7 +2284,6 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 			File dicomFile = new File(dicomFilePath);
 			//ignore if it is already in the list (ignores the old one as the list is ordered create_time desc)
 			if (imageuids.contains(dicomFileDescription.imageUID)) continue;
-			
 			imageuids.add(dicomFileDescription.imageUID);
 			String name = dicomFileDescription.imageUID + ".dcm";
 			String imageZipPath = seriesZipPath + "/" + name;
