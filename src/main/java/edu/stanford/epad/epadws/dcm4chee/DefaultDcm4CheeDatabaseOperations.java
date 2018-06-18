@@ -631,6 +631,49 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		return dicomFileDescriptions;
 	}
 
+	/**
+	 * Looks in DCM4CHEE database to find an ordered list of all DICOM file descriptions.
+	 */
+	@Override
+	public List<DICOMFileDescription> getOrderedDICOMFilesForSeries(String seriesUID)
+	{
+		List<DICOMFileDescription> dicomFileDescriptions = new ArrayList<DICOMFileDescription>();
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_FILES_FOR_SERIES);
+			ps.setString(1, seriesUID);
+			if (log.isDebugEnabled())
+				log.debug(ps.toString());
+			rs = ps.executeQuery();
+			while (rs.next()) {
+				Map<String, String> resultMap = createResultMap(rs);
+				String studyUID = resultMap.get("study_iuid");
+				String createdTime = resultMap.get("created_time");
+				String imageUID = resultMap.get("sop_iuid");
+				int instanceNumber = extractInteger(seriesUID, "instance number", resultMap.get("inst_no"), 0);
+				String filePath = resultMap.get("filepath");
+				int fileSize = extractInteger(seriesUID, "file_size", resultMap.get("file_size"), 0);
+				String modality = resultMap.get("modality");
+				
+				DICOMFileDescription dicomFileDescription = new DICOMFileDescription(studyUID, seriesUID, imageUID,
+						instanceNumber, filePath, fileSize, createdTime, modality);
+				dicomFileDescriptions.add(dicomFileDescription);
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+		if (log.isDebugEnabled())
+			log.debug("Found " + dicomFileDescriptions.size() + " rows");
+		return dicomFileDescriptions;
+	}
+
 	@Override
 	public List<DCM4CHEEImageDescription> getImageDescriptions(String studyUID, String seriesUID)
 	{

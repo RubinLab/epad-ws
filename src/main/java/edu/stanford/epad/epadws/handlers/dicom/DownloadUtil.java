@@ -1682,7 +1682,7 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 					if (Thread.currentThread().isInterrupted())
 						throw new Exception("Download Interrupted");
 					log.info("Streaming study:" + studyReference.studyUID + " series:" + series.seriesUID);
-					Set<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getDICOMFilesForSeries(series.seriesUID);
+					List<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getOrderedDICOMFilesForSeries(series.seriesUID);
 					Study estudy = projectOperations.getStudy(studyReference.studyUID);
 					estudy.save();
 					// Get the last image (alphabetically last - looks like this is true all the time???)
@@ -1699,7 +1699,7 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 								dicomFileDescription = dsoFile;
 							}
 						}
-						dicomFileDescriptions = new HashSet<DICOMFileDescription>();
+						dicomFileDescriptions = new ArrayList<DICOMFileDescription>();
 						dicomFileDescriptions.add(dicomFileDescription);
 					}
 					//keep a list of imageuids to avoid duplicates
@@ -1894,7 +1894,7 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 				if (Thread.currentThread().isInterrupted())
 					throw new Exception("Download Interrupted");
 				log.info("Streaming study:" + studyReference.studyUID + " series:" + series.seriesUID);
-				Set<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getDICOMFilesForSeries(series.seriesUID);
+				List<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getOrderedDICOMFilesForSeries(series.seriesUID);
 				Study estudy = projectOperations.getStudy(studyReference.studyUID);
 				estudy.save();
 				// Get the last image (alphabetically last - looks like this is true all the time???)
@@ -1911,7 +1911,7 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 							dicomFileDescription = dsoFile;
 						}
 					}
-					dicomFileDescriptions = new HashSet<DICOMFileDescription>();
+					dicomFileDescriptions = new ArrayList<DICOMFileDescription>();
 					dicomFileDescriptions.add(dicomFileDescription);
 				}
 				//keep a list of imageuids to avoid duplicates
@@ -2084,7 +2084,7 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 			if (Thread.currentThread().isInterrupted())
 				throw new Exception("Download Interrupted");
 			log.info("Streaming study:" + studyReference.studyUID + " series:" + series.seriesUID);
-			Set<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getDICOMFilesForSeries(series.seriesUID);
+			List<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getOrderedDICOMFilesForSeries(series.seriesUID);
 			Study estudy = projectOperations.getStudy(studyReference.studyUID);
 			estudy.save();
 			// Get the last image (alphabetically last - looks like this is true all the time???)
@@ -2101,7 +2101,7 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 						dicomFileDescription = dsoFile;
 					}
 				}
-				dicomFileDescriptions = new HashSet<DICOMFileDescription>();
+				dicomFileDescriptions = new ArrayList<DICOMFileDescription>();
 				dicomFileDescriptions.add(dicomFileDescription);
 			}
 			//keep a list of imageuids to avoid duplicates
@@ -2253,7 +2253,7 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 		if (Thread.currentThread().isInterrupted())
 			throw new Exception("Download Interrupted");
 		log.info("Streaming series:" + series.seriesUID);
-		Set<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getDICOMFilesForSeries(series.seriesUID);
+		List<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getOrderedDICOMFilesForSeries(series.seriesUID);
 		Study study = projectOperations.getStudy(seriesReference.studyUID);
 		study.save();
 		// Get the last image (alphabetically last - looks like this is true all the time???)
@@ -2270,7 +2270,7 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 					dicomFileDescription = dsoFile;
 				}
 			}
-			dicomFileDescriptions = new HashSet<DICOMFileDescription>();
+			dicomFileDescriptions = new ArrayList<DICOMFileDescription>();
 			dicomFileDescriptions.add(dicomFileDescription);
 		}
 		//keep a list of imageuids to avoid duplicates
