@@ -406,6 +406,7 @@ public class Dcm4CheeQueries
 	{
 		String studyUID = getStringValueFromRow(dcm4CheeSeriesData, "study_iuid");
 		String seriesUID = getStringValueFromRow(dcm4CheeSeriesData, "series_iuid");
+		String seriesNoStr = getStringValueFromRow(dcm4CheeSeriesData, "series_no");
 		String patientID = getStringValueFromRow(dcm4CheeSeriesData, "pat_id");
 		String patientName = getStringValueFromRow(dcm4CheeSeriesData, "pat_name");
 		String seriesDate = getStringValueFromRow(dcm4CheeSeriesData, "pps_start");
@@ -430,9 +431,15 @@ public class Dcm4CheeQueries
 		String accessionNumber = getStringValueFromRow(dcm4CheeSeriesData, "accession_no");
 		String createdTime = getTimestampFromRow(dcm4CheeSeriesData, "created_time");
 		boolean isDSO = "SEG".equalsIgnoreCase(getStringValueFromRow(dcm4CheeSeriesData, "modality"));
+		int seriesNo=0;
+		try{
+			seriesNo = Integer.parseInt(seriesNoStr);
+		}catch(NumberFormatException e){
+			log.warning("Coundn't get the series no, header string is "+ seriesNoStr);
+		}
 		DCM4CHEESeries dcm4cheeSeries = new DCM4CHEESeries(studyUID, seriesUID, patientID, patientName, seriesDate,
 				examType, thumbnailURL, seriesDescription, numberOfSeriesRelatedInstances, imagesInSeries, seriesStatus,
-				bodyPart, institution, stationName, department, accessionNumber, createdTime, isDSO);
+				bodyPart, institution, stationName, department, accessionNumber, createdTime, isDSO, seriesNo);
 		return dcm4cheeSeries;
 
 	}

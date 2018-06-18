@@ -4904,6 +4904,7 @@ public class DefaultEpadOperations implements EpadOperations
 		String department = dcm4CheeSeries.department;
 		int numberOfImages = dcm4CheeSeries.imagesInSeries;
 		int numberOfSeriesRelatedInstances = dcm4CheeSeries.numberOfSeriesRelatedInstances;
+		int seriesNo = dcm4CheeSeries.seriesNo;
 		String firstImageUIDInSeries = (numberOfSeriesRelatedInstances != 1) ? "" : dcm4CheeDatabaseOperations
 				.getFirstImageUIDInSeries(seriesUID);
 
@@ -4928,7 +4929,7 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		return new EPADSeries(projectID, subjectID, patientName, studyUID, seriesUID, seriesDate, seriesDescription,
 				examType, bodyPart, accessionNumber, numberOfImages, numberOfSeriesRelatedInstances, numberOfAnnotations,
-				institution, stationName, department, seriesProcessingStatus, createdTime, firstImageUIDInSeries, dcm4CheeSeries.isDSO, annotationStatus, userStatusList);
+				institution, stationName, department, seriesProcessingStatus, createdTime, firstImageUIDInSeries, dcm4CheeSeries.isDSO, annotationStatus, userStatusList, seriesNo);
 	}
 
 	public AnnotationStatus getAnnotationStatusProject(String projectUID,
