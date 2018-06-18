@@ -195,4 +195,11 @@ public interface Dcm4CheeDatabaseOperations
 	 * @return
 	 */
 	DCM4CHEEImageDescription getImageDescription(String imageUID);
+
+	/**
+	 * get the ordered list of dicom files
+	 * @param seriesUID
+	 * @return
+	 */
+	List<DICOMFileDescription> getOrderedDICOMFilesForSeries(String seriesUID);
 }
