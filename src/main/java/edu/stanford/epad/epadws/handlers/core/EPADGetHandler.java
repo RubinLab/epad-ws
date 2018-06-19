@@ -1705,8 +1705,12 @@ public class EPADGetHandler
 				String return_username = HandlerUtil.getTemplateParameter(templateMap, "username");
 				boolean usage = "true".equalsIgnoreCase(httpRequest.getParameter("includeSystemUsage"));
 				EPADUser user = epadOperations.getUserDescription(username, return_username, sessionID, usage);
-				responseStream.append(user.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
+				if (user!=null){
+					responseStream.append(user.toJSON());
+					statusCode = HttpServletResponse.SC_OK;
+				}else {
+					statusCode = HttpServletResponse.SC_NOT_FOUND;
+				}
 
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_SESSIONS, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER, pathInfo);
