@@ -110,7 +110,7 @@ import java.util.Set;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 
 public enum UserRole {
-	OWNER("Owner"), COLLABORATOR("Collaborator"), MEMBER("Member");
+	OWNER("Owner"), COLLABORATOR("Collaborator"), MEMBER("Member"), STUDYONLY("StudyOnly");
 
 	private String name;
 
