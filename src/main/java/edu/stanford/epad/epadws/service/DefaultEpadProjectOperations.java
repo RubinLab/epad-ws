@@ -2010,7 +2010,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			else 
 				throw new Exception("User " + username  + " does not exist in project:" + projectID);
 		}
-		if (role.equals(UserRole.COLLABORATOR))
+		//add studyonly to filter aims
+		if (role.equals(UserRole.COLLABORATOR) || role.equals(UserRole.STUDYONLY))
 			return true;
 		else
 			return false;
