@@ -1620,6 +1620,9 @@ public static Set<String> streamProject(HttpServletResponse httpResponse, Projec
 		EPADSearchFilter searchFilter, String subjectUIDs, boolean includeAIMs) throws Exception
 {
 	log.info("Streaming project:" + projectReference.projectID + " includeAIMs:" + includeAIMs);
+	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
+	File downloadDir = new File(downloadDirPath);
+	downloadDir.mkdirs();
 
 	String zipName = "Project-" + projectReference.projectID + ".zip";
 	httpResponse.setContentType("application/zip");
@@ -1682,7 +1685,7 @@ public static Set<String> streamProject(HttpServletResponse httpResponse, Projec
 				if (Thread.currentThread().isInterrupted())
 					throw new Exception("Download Interrupted");
 				log.info("Streaming study:" + studyReference.studyUID + " series:" + series.seriesUID);
-				List<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getOrderedDICOMFilesForSeries(series.seriesUID);
+				Set<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getDICOMFilesForSeries(series.seriesUID);
 				Study estudy = projectOperations.getStudy(studyReference.studyUID);
 				estudy.save();
 				// Get the last image (alphabetically last - looks like this is true all the time???)
@@ -1699,7 +1702,7 @@ public static Set<String> streamProject(HttpServletResponse httpResponse, Projec
 							dicomFileDescription = dsoFile;
 						}
 					}
-					dicomFileDescriptions = new ArrayList<DICOMFileDescription>();
+					dicomFileDescriptions = new HashSet<DICOMFileDescription>();
 					dicomFileDescriptions.add(dicomFileDescription);
 				}
 				//keep a list of imageuids to avoid duplicates
@@ -1708,36 +1711,32 @@ public static Set<String> streamProject(HttpServletResponse httpResponse, Projec
 				{
 					if (Thread.currentThread().isInterrupted())
 						throw new Exception("Download Interrupted");
-					String dicomFilePath = getDICOMFilePath(dicomFileDescription);
 					String modality = dicomFileDescription.modality;
-					File dicomFile = new File(dicomFilePath);
 					//ignore if it is already in the list (ignores the old one as the list is ordered create_time desc)
 					if (imageuids.contains(dicomFileDescription.imageUID)) continue;
 					imageuids.add(dicomFileDescription.imageUID);
 					String name = dicomFileDescription.imageUID + ".dcm";
+					File dicomFile = new File(downloadDir, name);
 					String imageZipPath = seriesZipPath + "/" + name;
-					// If the file does not exist locally (because it is stored on another file system), download it.
-					if (!dicomFile.exists()) {
-						log.info("Downloading file:" + dicomFile.getAbsolutePath());
-						FileOutputStream fos = null;
-						checkDiskSpace(dicomFile);
-						try 
-						{
-							fos = new FileOutputStream(dicomFile);
+					log.debug("Downloading file:" + dicomFile.getAbsolutePath());
+					FileOutputStream fos = null;
+					checkDiskSpace(dicomFile);
+					try 
+					{
+						fos = new FileOutputStream(dicomFile);
 
-							String queryString = "requestType=WADO&studyUID=" + seriesReference.studyUID 
-									+ "&seriesUID=" + seriesReference.seriesUID + "&objectUID=" + dicomFileDescription.imageUID + "&contentType=application/dicom";
-							log.debug("Downloading file, using WADO:" + queryString);
-							performWADOQuery(queryString, fos);
-						}
-						catch (Exception x)
-						{
-							log.warning("Error downloading image using wado");
-						}
-						finally 
-						{
-							if (fos != null) fos.close();
-						}
+						String queryString = "requestType=WADO&studyUID=" + seriesReference.studyUID 
+								+ "&seriesUID=" + seriesReference.seriesUID + "&objectUID=" + dicomFileDescription.imageUID + "&contentType=application/dicom";
+						log.debug("Downloading file, using WADO:" + queryString);
+						performWADOQuery(queryString, fos);
+					}
+					catch (Exception x)
+					{
+						log.warning("Error downloading image using wado");
+					}
+					finally 
+					{
+						if (fos != null) fos.close();
 					}
 					log.debug("Streaming file: " + imageZipPath);
 					try
@@ -1768,6 +1767,7 @@ public static Set<String> streamProject(HttpServletResponse httpResponse, Projec
 						log.warning("Error closing zip file", e);
 						throw e;
 					}
+					dicomFile.delete();
 				}
 
 				//ml include aims copied from series
@@ -1824,6 +1824,7 @@ public static Set<String> streamProject(HttpServletResponse httpResponse, Projec
 		e.printStackTrace();
 		throw e;
 	}
+	EPADFileUtils.deleteDirectoryAndContents(downloadDir);
 	return dlSubjects;
 }
 
@@ -1831,6 +1832,9 @@ public static void streamSubject(HttpServletResponse httpResponse, SubjectRefere
 		EPADSearchFilter searchFilter, String studyUIDs, boolean includeAIMs) throws Exception
 {
 	log.info("Streaming projectID:" + subjectReference.projectID + " subject:" + subjectReference.subjectID);
+	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
+	File downloadDir = new File(downloadDirPath);
+	downloadDir.mkdirs();
 	Set<String> studies = new HashSet<String>();
 	if (studyUIDs != null) {
 		String[] ids = studyUIDs.split(",");
@@ -1894,7 +1898,7 @@ public static void streamSubject(HttpServletResponse httpResponse, SubjectRefere
 			if (Thread.currentThread().isInterrupted())
 				throw new Exception("Download Interrupted");
 			log.info("Streaming study:" + studyReference.studyUID + " series:" + series.seriesUID);
-			List<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getOrderedDICOMFilesForSeries(series.seriesUID);
+			Set<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getDICOMFilesForSeries(series.seriesUID);
 			Study estudy = projectOperations.getStudy(studyReference.studyUID);
 			estudy.save();
 			// Get the last image (alphabetically last - looks like this is true all the time???)
@@ -1911,7 +1915,7 @@ public static void streamSubject(HttpServletResponse httpResponse, SubjectRefere
 						dicomFileDescription = dsoFile;
 					}
 				}
-				dicomFileDescriptions = new ArrayList<DICOMFileDescription>();
+				dicomFileDescriptions = new HashSet<DICOMFileDescription>();
 				dicomFileDescriptions.add(dicomFileDescription);
 			}
 			//keep a list of imageuids to avoid duplicates
@@ -1920,36 +1924,32 @@ public static void streamSubject(HttpServletResponse httpResponse, SubjectRefere
 			{
 				if (Thread.currentThread().isInterrupted())
 					throw new Exception("Download Interrupted");
-				String dicomFilePath = getDICOMFilePath(dicomFileDescription);
 				String modality = dicomFileDescription.modality;
-				File dicomFile = new File(dicomFilePath);
 				//ignore if it is already in the list (ignores the old one as the list is ordered create_time desc)
 				if (imageuids.contains(dicomFileDescription.imageUID)) continue;
 				imageuids.add(dicomFileDescription.imageUID);
 				String name = dicomFileDescription.imageUID + ".dcm";
+				File dicomFile = new File(downloadDir, name);
 				String imageZipPath = seriesZipPath + "/" + name;
-				// If the file does not exist locally (because it is stored on another file system), download it.
-				if (!dicomFile.exists()) {
-					log.info("Downloading file:" + dicomFile.getAbsolutePath());
-					FileOutputStream fos = null;
-					checkDiskSpace(dicomFile);
-					try 
-					{
-						fos = new FileOutputStream(dicomFile);
+				log.debug("Downloading file:" + dicomFile.getAbsolutePath());
+				FileOutputStream fos = null;
+				checkDiskSpace(dicomFile);
+				try 
+				{
+					fos = new FileOutputStream(dicomFile);
 
-						String queryString = "requestType=WADO&studyUID=" + seriesReference.studyUID 
-								+ "&seriesUID=" + seriesReference.seriesUID + "&objectUID=" + dicomFileDescription.imageUID + "&contentType=application/dicom";
-						log.debug("Downloading file, using WADO:" + queryString);
-						performWADOQuery(queryString, fos);
-					}
-					catch (Exception x)
-					{
-						log.warning("Error downloading image using wado");
-					}
-					finally 
-					{
-						if (fos != null) fos.close();
-					}
+					String queryString = "requestType=WADO&studyUID=" + seriesReference.studyUID 
+							+ "&seriesUID=" + seriesReference.seriesUID + "&objectUID=" + dicomFileDescription.imageUID + "&contentType=application/dicom";
+					log.debug("Downloading file, using WADO:" + queryString);
+					performWADOQuery(queryString, fos);
+				}
+				catch (Exception x)
+				{
+					log.warning("Error downloading image using wado");
+				}
+				finally 
+				{
+					if (fos != null) fos.close();
 				}
 				log.debug("Streaming file: " + imageZipPath);
 				try
@@ -1980,6 +1980,7 @@ public static void streamSubject(HttpServletResponse httpResponse, SubjectRefere
 					log.warning("Error closing zip file", e);
 					throw e;
 				}
+				dicomFile.delete();
 			}
 
 			//ml include aims copied from series
@@ -2035,10 +2036,14 @@ public static void streamSubject(HttpServletResponse httpResponse, SubjectRefere
 		e.printStackTrace();
 		throw e;
 	}
+	EPADFileUtils.deleteDirectoryAndContents(downloadDir);
 }
 public static void streamStudy(HttpServletResponse httpResponse, StudyReference studyReference, String username, String sessionID, EPADSearchFilter searchFilter, String seriesUIDs, boolean includeAIMs) throws Exception
 {
 	log.info("Streaming projectID:" + studyReference.projectID + " subject:" + studyReference.subjectID + " study:" + studyReference.studyUID);
+	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
+	File downloadDir = new File(downloadDirPath);
+	downloadDir.mkdirs();
 	String zipName = "Patient-" + studyReference.subjectID + "-Study-" + studyReference.studyUID + ".zip";
 	httpResponse.setContentType("application/zip");
 	httpResponse.setHeader("Content-Disposition", "attachment;filename=\"" + zipName + "\"");		
@@ -2084,7 +2089,7 @@ public static void streamStudy(HttpServletResponse httpResponse, StudyReference 
 		if (Thread.currentThread().isInterrupted())
 			throw new Exception("Download Interrupted");
 		log.info("Streaming study:" + studyReference.studyUID + " series:" + series.seriesUID);
-		List<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getOrderedDICOMFilesForSeries(series.seriesUID);
+		Set<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getDICOMFilesForSeries(series.seriesUID);
 		Study estudy = projectOperations.getStudy(studyReference.studyUID);
 		estudy.save();
 		// Get the last image (alphabetically last - looks like this is true all the time???)
@@ -2101,7 +2106,7 @@ public static void streamStudy(HttpServletResponse httpResponse, StudyReference 
 					dicomFileDescription = dsoFile;
 				}
 			}
-			dicomFileDescriptions = new ArrayList<DICOMFileDescription>();
+			dicomFileDescriptions = new HashSet<DICOMFileDescription>();
 			dicomFileDescriptions.add(dicomFileDescription);
 		}
 		//keep a list of imageuids to avoid duplicates
@@ -2110,36 +2115,32 @@ public static void streamStudy(HttpServletResponse httpResponse, StudyReference 
 		{
 			if (Thread.currentThread().isInterrupted())
 				throw new Exception("Download Interrupted");
-			String dicomFilePath = getDICOMFilePath(dicomFileDescription);
 			String modality = dicomFileDescription.modality;
-			File dicomFile = new File(dicomFilePath);
 			//ignore if it is already in the list (ignores the old one as the list is ordered create_time desc)
 			if (imageuids.contains(dicomFileDescription.imageUID)) continue;
 			imageuids.add(dicomFileDescription.imageUID);
 			String name = dicomFileDescription.imageUID + ".dcm";
+			File dicomFile = new File(downloadDir, name);
 			String imageZipPath = seriesZipPath + "/" + name;
-			// If the file does not exist locally (because it is stored on another file system), download it.
-			if (!dicomFile.exists()) {
-				log.info("Downloading file:" + dicomFile.getAbsolutePath());
-				FileOutputStream fos = null;
-				checkDiskSpace(dicomFile);
-				try 
-				{
-					fos = new FileOutputStream(dicomFile);
+			log.debug("Downloading file:" + dicomFile.getAbsolutePath());
+			FileOutputStream fos = null;
+			checkDiskSpace(dicomFile);
+			try 
+			{
+				fos = new FileOutputStream(dicomFile);
 
-					String queryString = "requestType=WADO&studyUID=" + seriesReference.studyUID 
-							+ "&seriesUID=" + seriesReference.seriesUID + "&objectUID=" + dicomFileDescription.imageUID + "&contentType=application/dicom";
-					log.debug("Downloading file, using WADO:" + queryString);
-					performWADOQuery(queryString, fos);
-				}
-				catch (Exception x)
-				{
-					log.warning("Error downloading image using wado");
-				}
-				finally 
-				{
-					if (fos != null) fos.close();
-				}
+				String queryString = "requestType=WADO&studyUID=" + seriesReference.studyUID 
+						+ "&seriesUID=" + seriesReference.seriesUID + "&objectUID=" + dicomFileDescription.imageUID + "&contentType=application/dicom";
+				log.debug("Downloading file, using WADO:" + queryString);
+				performWADOQuery(queryString, fos);
+			}
+			catch (Exception x)
+			{
+				log.warning("Error downloading image using wado");
+			}
+			finally 
+			{
+				if (fos != null) fos.close();
 			}
 			log.debug("Streaming file: " + imageZipPath);
 			try
@@ -2170,6 +2171,7 @@ public static void streamStudy(HttpServletResponse httpResponse, StudyReference 
 				log.warning("Error closing zip file", e);
 				throw e;
 			}
+			dicomFile.delete();
 		}
 
 		//ml include aims copied from series
@@ -2224,11 +2226,15 @@ public static void streamStudy(HttpServletResponse httpResponse, StudyReference 
 		e.printStackTrace();
 		throw e;
 	}
+	EPADFileUtils.deleteDirectoryAndContents(downloadDir);
 }
 
 public static void streamSeries(HttpServletResponse httpResponse, SeriesReference seriesReference, String username, String sessionID, boolean includeAIMs) throws Exception
 {
 	log.info("Streaming series:" + seriesReference.seriesUID);
+	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
+	File downloadDir = new File(downloadDirPath);
+	downloadDir.mkdirs();
 	EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 	EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
 	EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
@@ -2253,7 +2259,7 @@ public static void streamSeries(HttpServletResponse httpResponse, SeriesReferenc
 	if (Thread.currentThread().isInterrupted())
 		throw new Exception("Download Interrupted");
 	log.info("Streaming series:" + series.seriesUID);
-	List<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getOrderedDICOMFilesForSeries(series.seriesUID);
+	Set<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getDICOMFilesForSeries(series.seriesUID);
 	Study study = projectOperations.getStudy(seriesReference.studyUID);
 	study.save();
 	// Get the last image (alphabetically last - looks like this is true all the time???)
@@ -2270,7 +2276,7 @@ public static void streamSeries(HttpServletResponse httpResponse, SeriesReferenc
 				dicomFileDescription = dsoFile;
 			}
 		}
-		dicomFileDescriptions = new ArrayList<DICOMFileDescription>();
+		dicomFileDescriptions = new HashSet<DICOMFileDescription>();
 		dicomFileDescriptions.add(dicomFileDescription);
 	}
 	//keep a list of imageuids to avoid duplicates
@@ -2279,36 +2285,32 @@ public static void streamSeries(HttpServletResponse httpResponse, SeriesReferenc
 	{
 		if (Thread.currentThread().isInterrupted())
 			throw new Exception("Download Interrupted");
-		String dicomFilePath = getDICOMFilePath(dicomFileDescription);
 		String modality = dicomFileDescription.modality;
-		File dicomFile = new File(dicomFilePath);
 		//ignore if it is already in the list (ignores the old one as the list is ordered create_time desc)
 		if (imageuids.contains(dicomFileDescription.imageUID)) continue;
 		imageuids.add(dicomFileDescription.imageUID);
 		String name = dicomFileDescription.imageUID + ".dcm";
+		File dicomFile = new File(downloadDir, name);
 		String imageZipPath = seriesZipPath + "/" + name;
-		// If the file does not exist locally (because it is stored on another file system), download it.
-		if (!dicomFile.exists()) {
-			log.info("Downloading file:" + dicomFile.getAbsolutePath());
-			FileOutputStream fos = null;
-			checkDiskSpace(dicomFile);
-			try 
-			{
-				fos = new FileOutputStream(dicomFile);
+		log.debug("Downloading file:" + dicomFile.getAbsolutePath());
+		FileOutputStream fos = null;
+		checkDiskSpace(dicomFile);
+		try 
+		{
+			fos = new FileOutputStream(dicomFile);
 
-				String queryString = "requestType=WADO&studyUID=" + seriesReference.studyUID 
-						+ "&seriesUID=" + seriesReference.seriesUID + "&objectUID=" + dicomFileDescription.imageUID + "&contentType=application/dicom";
-				log.debug("Downloading file, using WADO:" + queryString);
-				performWADOQuery(queryString, fos);
-			}
-			catch (Exception x)
-			{
-				log.warning("Error downloading image using wado");
-			}
-			finally 
-			{
-				if (fos != null) fos.close();
-			}
+			String queryString = "requestType=WADO&studyUID=" + seriesReference.studyUID 
+					+ "&seriesUID=" + seriesReference.seriesUID + "&objectUID=" + dicomFileDescription.imageUID + "&contentType=application/dicom";
+			log.debug("Downloading file, using WADO:" + queryString);
+			performWADOQuery(queryString, fos);
+		}
+		catch (Exception x)
+		{
+			log.warning("Error downloading image using wado");
+		}
+		finally 
+		{
+			if (fos != null) fos.close();
 		}
 		log.debug("Streaming file: " + imageZipPath);
 		try
@@ -2339,6 +2341,7 @@ public static void streamSeries(HttpServletResponse httpResponse, SeriesReferenc
 			log.warning("Error closing zip file", e);
 			throw e;
 		}
+		dicomFile.delete();
 	}
 
 	//ml include aims copied from series
@@ -2392,6 +2395,7 @@ public static void streamSeries(HttpServletResponse httpResponse, SeriesReferenc
 		e.printStackTrace();
 		throw e;
 	}
+	EPADFileUtils.deleteDirectoryAndContents(downloadDir);
 }
 
 private static String getDICOMFilePath(DICOMFileDescription dicomFileDescription)
