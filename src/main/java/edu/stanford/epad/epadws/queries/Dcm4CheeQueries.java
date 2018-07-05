@@ -283,10 +283,14 @@ public class Dcm4CheeQueries
 								skipThumbnail = true;
 							if (dicomElementString.contains("(FFFE,E0DD)"))
 								skipThumbnail = false;
-							int sequence = dicomElementString.indexOf("SQ #-1");
-							if (sequence != -1)
-								currentSequence = dicomElementString.substring(sequence + 7);
-							if (dicomElementString.contains("Sequence Delimitation Item"))
+							//changed to be able to support Explicit Length sequences 
+							int sequence = dicomElementString.indexOf("SQ #");
+							
+							if (sequence != -1){// find the space, get rest of it
+								int spaceLoc=dicomElementString.indexOf(' ', sequence+3);
+								currentSequence = dicomElementString.substring(spaceLoc+1);
+							}
+							else if (dicomElementString.contains("Sequence Delimitation Item") || !dicomElementString.contains(">"))
 								currentSequence = "";
 							DICOMElement dicomElement = decodeDICOMElementString(dicomElementString);
 							DICOMElement dicomElementNoSkip = decodeDICOMElementString(dicomElementString);
