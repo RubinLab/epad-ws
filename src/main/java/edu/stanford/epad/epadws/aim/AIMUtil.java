@@ -378,6 +378,12 @@ public class AIMUtil
 			log.info("Number of aims found in exist with aimID = " + aimID + " : " + aims.size());
 			edu.stanford.hakan.aim4api.database.exist.ExistManager.removeImageAnnotationCollectionFromServer(
 					eXistServerUrl, aim4Namespace, collectionName, eXistUsername, eXistPassword, aimID);
+			if (EPADConfig.exportURL!=null){
+				if (aims.size()==0)
+					log.warning("No aim file");
+				else  //if there is more than one it will get the first
+					ExportAimOperations.sendDeleteJsonToApi(aimID,aims.get(0));
+			}
 			MongoDBOperations.deleteAnotationInMongo(aimID, projectID);
 
 			return true;
