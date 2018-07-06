@@ -174,6 +174,8 @@ public class UserProjectService {
 
 	/**
 	 * Check if user is collaborator
+	 * returns true if the user is collaborator or studyonly
+	 * method used to filter aims, studyonly is stricter than collaborator
 	 * @param sessionID
 	 * @param username
 	 * @param projectID
