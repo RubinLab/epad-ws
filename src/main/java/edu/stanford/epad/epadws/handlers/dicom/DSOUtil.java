@@ -945,6 +945,41 @@ public class DSOUtil
 		}
 		return generateCalcs(referencedSeriesUID, referencedImageUIDs, dsoFile, tmpFolder);
 	}
+	
+	public static class Spacing{
+		double pixelSpacingX=0.0;
+		double pixelSpacingY=0.0;
+		double pixelSpacingZ=0.0; //difference between image position patient z coordinates.
+		double prevLocZ=0.0; 
+
+		public double getPixelSpacingX() {
+			return pixelSpacingX;
+		}
+		public void setPixelSpacingX(double pixelSpacingX) {
+			this.pixelSpacingX = pixelSpacingX;
+		}
+		public double getPixelSpacingY() {
+			return pixelSpacingY;
+		}
+		public void setPixelSpacingY(double pixelSpacingY) {
+			this.pixelSpacingY = pixelSpacingY;
+		}
+		public double getPixelSpacingZ() {
+			return pixelSpacingZ;
+		}
+		public void setPixelSpacingZ(double pixelSpacingZ) {
+			this.pixelSpacingZ = pixelSpacingZ;
+		}
+		public double getPrevLocZ() {
+			return prevLocZ;
+		}
+		public void setPrevLocZ(double prevLocZ) {
+			this.prevLocZ = prevLocZ;
+		}
+				
+		
+	}
+	
 	public static Double[] generateCalcs(String referencedSeriesUID,String[] referencedImageUIDs,File dsoFile, File tmpFolder){
 		
 		if (!tmpFolder.exists() && !tmpFolder.mkdirs()){
@@ -964,6 +999,12 @@ public class DSOUtil
 			return null;
 		}
 		
+		//calculate the voxel volume
+		double volume=0;
+		
+		Spacing spacing=new Spacing();
+		int voxelCount=0;
+		
 		//open the dso
 		try {
 			SourceImage dso=new SourceImage(dsoFile.getAbsolutePath());
@@ -972,12 +1013,27 @@ public class DSOUtil
 			SourceImage refImage=null;
 			PixelMapDouble pixelMap = new PixelMapDouble();
 			for(int i=0;i<dso.getNumberOfFrames();i++){
+				
 				//get pixel values for this dso frame
 				//mask get raw values is enough
 				double[] mask=getPixelValuesAsArray(dso, i);
 				
 				log.info("getting image "+ referencedImageUIDs[i]+ " for "+ i+ "th frame");
-				refImage=new SourceImage(tmpFolder.getAbsolutePath()+"/"+referencedImageUIDs[i]+".dcm");
+				//read the header and get the voxel volume
+				DicomInputStream dicomInputStream = null;
+				try {
+					dicomInputStream = new DicomInputStream(new FileInputStream(tmpFolder.getAbsolutePath()+"/"+referencedImageUIDs[i]+".dcm"));
+					AttributeList list = new AttributeList();
+					list.read(dicomInputStream);
+//					voxelVolume=calcVoxelVolume(list);
+					
+					spacing=findSpacing(list,spacing);
+					refImage=new SourceImage(list);
+				}catch (Exception e){
+					log.warning("Exception occured trying to read the referenced image as dicominputstream "+ e.getMessage());
+				}
+				
+				
 				//we need to transform the values. using pixelmed
 				double[] image=getTransformedPixelValuesAsArray(refImage,0);
 				if (image.length!=mask.length){
@@ -990,6 +1046,9 @@ public class DSOUtil
 						log.warning("not a binary mask" + mask[j]+ " Aborting");
 						return null;
 					}
+					if (mask[j]==1){
+						voxelCount++;
+					}
 					double val=image[j]*mask[j];
 					if (val!=0)  {
 						// add it to the map or inc its frequency
@@ -999,19 +1058,24 @@ public class DSOUtil
 						} else {
 							pixelMap.put(val, f + 1);
 						}
-//						log.info("j="+j+" val ="+val);
 					}
 					
-				}
-				
+				}		
 			}
 			pixelMap.minMaxRange();
 			pixelMap.calc();
+			log.info("pixelSpacingX="+spacing.getPixelSpacingX() + " pixelSpacingY "+ spacing.getPixelSpacingX()+ " pixelSpacingZ:"+spacing.getPixelSpacingZ());
+			
+			double voxelVolume=spacing.getPixelSpacingX()*spacing.getPixelSpacingY()*spacing.getPixelSpacingZ();
+			volume=voxelVolume*(double)voxelCount; 
+			log.info("voxelvolume="+voxelVolume + " voxelcount "+ voxelCount);
+
 			
 			log.info("min="+pixelMap.getMin() +" max="+pixelMap.getMax()+ " mean=" +pixelMap.getMean()+ " stddev="+ pixelMap.getStdDev());
+			log.info("volume="+volume );
 			//done with the temp folder delete it
 			EPADFileUtils.deleteDirectoryAndContents(tmpFolder);
-			return new Double[]{pixelMap.getMin() ,pixelMap.getMax(),pixelMap.getMean(),pixelMap.getStdDev()};
+			return new Double[]{pixelMap.getMin() ,pixelMap.getMax(),pixelMap.getMean(),pixelMap.getStdDev(),volume};
 		} catch (IOException e) {
 			log.warning("Cannot read file ",e);
 		} catch (DicomException e) {
@@ -1023,11 +1087,106 @@ public class DSOUtil
 		}
 		
 		
+		
+		
 		return null;
 		
 	}
 	
+	public static DSOUtil.Spacing findSpacing(AttributeList list, DSOUtil.Spacing spacing){
+		String pixelSpacing=Attribute.getDelimitedStringValuesOrNull(list,TagFromName.PixelSpacing);
+		log.info("the pixelspacing is "+pixelSpacing);
+		String sliceThickness=Attribute.getSingleStringValueOrNull(list,TagFromName.SliceThickness);
+		log.info("the sliceThickness is "+sliceThickness);
+		String imagePositionPatient=Attribute.getDelimitedStringValuesOrNull(list,TagFromName.ImagePositionPatient);
+		log.info("the imagePositionPatient is "+imagePositionPatient);
+		
+		if ( pixelSpacing!=null && imagePositionPatient!=null){
+			try{
+				String[] pixelSpacingVals=pixelSpacing.split("\\\\");
+				double psX=0.0;
+				double psY=0.0;
+				double psZ=0.0;
+				double locZ=0.0;
+				if (pixelSpacingVals.length==2){
+					psX=Double.parseDouble(pixelSpacingVals[0]);
+					psY=Double.parseDouble(pixelSpacingVals[1]);
+				}else if (pixelSpacingVals.length==3){
+					psX=Double.parseDouble(pixelSpacingVals[0]);
+					psY=Double.parseDouble(pixelSpacingVals[1]);
+					psZ=Double.parseDouble(pixelSpacingVals[2]);
+				}else{
+					log.warning("pixel spacing not seperated properly "+ pixelSpacingVals.length);
+				}
+				
+				String[] imgPosPatVals=imagePositionPatient.split("\\\\");
+				if (imgPosPatVals.length==3){
+					locZ=Double.parseDouble(imgPosPatVals[2]);
+				}else {
+					log.warning("Could not get z value of image position patient");
+				}
+				
+				
+				if (spacing.getPixelSpacingX()==0.0){
+					spacing.setPixelSpacingX(psX);
+				}else if (spacing.getPixelSpacingX()!=psX){
+					log.warning("Error pixel spacing x is different between slices. prev slice:" + spacing.getPixelSpacingX() + " new slice:" + psX);
+				}
+				if (spacing.getPixelSpacingY()==0.0){
+					spacing.setPixelSpacingY(psY);
+				}else if (spacing.getPixelSpacingY()!=psY){
+					log.warning("Error pixel spacing y is different between slices. prev slice:" + spacing.getPixelSpacingY() + " new slice:" + psY);
+				}
+				//if there is pixel spacing z in header
+				if (psZ==0.0 && spacing.getPrevLocZ()!=0.0){
+					psZ=Math.abs(locZ-spacing.getPrevLocZ());
+				}
+				log.info("psz "+psZ+ " locZ="+locZ+ " spacing.getPixelSpacingZ()="+spacing.getPixelSpacingZ()+ " spacing.getPrevLocZ()="+spacing.getPrevLocZ());
+				spacing.setPrevLocZ(locZ);
+				if (spacing.getPixelSpacingZ()==0.0){
+					spacing.setPixelSpacingZ(psZ);
+				}else if (spacing.getPixelSpacingZ()!=psZ){
+					log.warning("Error pixel spacing z is different between slices. prev slice:" + spacing.getPixelSpacingZ() + " new slice:" + psZ);
+				}
+				
+			}catch(Exception e){
+				log.warning("Couldn't get pixel spacing values",e);
+				
+			}
+		}
+		return spacing;
+	}
 	
+	public static double calcVoxelVolume(AttributeList list){
+		double voxelVolume=0;
+		String pixelSpacing=Attribute.getDelimitedStringValuesOrNull(list,TagFromName.PixelSpacing);
+		log.info("the pixelspacing is "+pixelSpacing);
+		String sliceThickness=Attribute.getSingleStringValueOrNull(list,TagFromName.SliceThickness);
+		log.info("the sliceThickness is "+sliceThickness);
+		
+		if (sliceThickness!=null && pixelSpacing!=null){
+			try{
+				String[] pixelSpacingVals=pixelSpacing.split("\\\\");
+				double psX=0;
+				double psY=0;
+				if (pixelSpacingVals.length==2){
+					psX=Double.parseDouble(pixelSpacingVals[0]);
+					psY=Double.parseDouble(pixelSpacingVals[1]);
+				}else{
+					log.warning("pixel spacing not seperated properly "+ pixelSpacingVals.length);
+				}
+				double st=Double.parseDouble(sliceThickness);
+				
+				voxelVolume=psX*psY*st;
+			}catch(Exception e){
+				log.warning("Couldn't calculate the voxelVolume",e);
+				return 0;
+			}
+			
+		}else return 0;
+		
+		return voxelVolume;
+	}
 
 	public static String getPixelValues(SourceImage sImg, int frameNum){
 		return JSON.toString(getPixelValuesAsArray(sImg,frameNum));
