@@ -1616,269 +1616,60 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 
 /***** Stream codes from Dev ***********/
 
-	public static Set<String> streamProject(HttpServletResponse httpResponse, ProjectReference projectReference, String username, String sessionID, 
-			EPADSearchFilter searchFilter, String subjectUIDs, boolean includeAIMs) throws Exception
+public static Set<String> streamProject(HttpServletResponse httpResponse, ProjectReference projectReference, String username, String sessionID, 
+		EPADSearchFilter searchFilter, String subjectUIDs, boolean includeAIMs) throws Exception
+{
+	log.info("Streaming project:" + projectReference.projectID + " includeAIMs:" + includeAIMs);
+	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
+	File downloadDir = new File(downloadDirPath);
+	downloadDir.mkdirs();
+
+	String zipName = "Project-" + projectReference.projectID + ".zip";
+	httpResponse.setContentType("application/zip");
+	httpResponse.setHeader("Content-Disposition", "attachment;filename=\"" + zipName + "\"");		
+	OutputStream out = null;
+	try
 	{
-		log.info("Streaming project:" + projectReference.projectID + " includeAIMs:" + includeAIMs);
-		
-		String zipName = "Project-" + projectReference.projectID + ".zip";
-		httpResponse.setContentType("application/zip");
-		httpResponse.setHeader("Content-Disposition", "attachment;filename=\"" + zipName + "\"");		
-		OutputStream out = null;
-		try
-		{
-				out = httpResponse.getOutputStream();
-		}
-		catch (Exception e)
-		{
-			log.warning("Error getting output stream", e);
-			throw e;
-		}
-		Set<String> subjects = new HashSet<String>();
-		if (subjectUIDs != null) {
-			String[] ids = subjectUIDs.split(",");
-			for (String id: ids)
-				subjects.add(id.trim());
-		}
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
-		EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
-		//TODO ml change the static numbers
-		//subjects
-		Set<String> dlSubjects = new HashSet<String>();
-		EPADSubjectList subjectList = epadOperations.getSubjectDescriptions(projectReference.projectID, username, sessionID, searchFilter, 0, 5000, "", false);
-		log.debug("Streaming project:" + projectReference.projectID + " num of subjects:" + subjectList.ResultSet.totalRecords);
-		ZipOutputStream zipout = new ZipOutputStream(out);
-		zipout.setLevel(1);
-		int n = 1;
-		for (EPADSubject subject: subjectList.ResultSet.Result)
-		{
-			if (!subjects.isEmpty() && !subjects.contains(subject.subjectID)) continue;
-			dlSubjects.add(subject.subjectID);
-			log.debug("Streaming project:" + projectReference.projectID + " subject:" + subject.subjectID);
-			String subjZipPath = "/Subject-" + subject.subjectID;
-			SubjectReference subjectReference = new SubjectReference(projectReference.projectID, subject.subjectID);
-			//studies
-			EPADStudyList studyList = epadOperations.getStudyDescriptions(subjectReference, username, sessionID, searchFilter);
-			for (EPADStudy study: studyList.ResultSet.Result)
-			{
-				log.debug("Downloading project:" + projectReference.projectID + " subject:" + subject.subjectID + " study:" + study.studyUID);
-				String studyZipPath = subjZipPath + "/Study-" + study.studyUID;
-	
-				StudyReference studyReference = new StudyReference(subjectReference.projectID, subjectReference.subjectID, study.studyUID);
-				//series
-				EPADSeriesList seriesList = epadOperations.getSeriesDescriptions(studyReference, username, sessionID, searchFilter, false);
-				for (EPADSeries series: seriesList.ResultSet.Result)
-				{
-					String seriesZipPath = studyZipPath + "/Series-" + series.seriesUID;
-					if (series.isDSO)
-					{
-						List<EPADAIM> aims = databaseOperations.getAIMsByDSOSeries(projectReference.projectID, series.seriesUID);
-						if (aims.size() == 0) continue;
-					}
-					SeriesReference seriesReference = new SeriesReference(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, series.seriesUID);
-					if (Thread.currentThread().isInterrupted())
-						throw new Exception("Download Interrupted");
-					log.info("Streaming study:" + studyReference.studyUID + " series:" + series.seriesUID);
-					List<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getOrderedDICOMFilesForSeries(series.seriesUID);
-					Study estudy = projectOperations.getStudy(studyReference.studyUID);
-					estudy.save();
-					// Get the last image (alphabetically last - looks like this is true all the time???)
-					if (series.isDSO)
-					{
-						DICOMFileDescription dicomFileDescription = dicomFileDescriptions.iterator().next();
-						String createdTime = dicomFileDescription.createdTime;
-						for (DICOMFileDescription dsoFile : dicomFileDescriptions)
-						{
-							// TODO - Should really convert to Date and then compare
-							if (createdTime.compareTo(dsoFile.createdTime) < 0)
-							{
-								createdTime = dsoFile.createdTime;
-								dicomFileDescription = dsoFile;
-							}
-						}
-						dicomFileDescriptions = new ArrayList<DICOMFileDescription>();
-						dicomFileDescriptions.add(dicomFileDescription);
-					}
-					//keep a list of imageuids to avoid duplicates
-					Set<String> imageuids = new HashSet<String>();
-					for (DICOMFileDescription dicomFileDescription: dicomFileDescriptions)
-					{
-						if (Thread.currentThread().isInterrupted())
-							throw new Exception("Download Interrupted");
-						String dicomFilePath = getDICOMFilePath(dicomFileDescription);
-						String modality = dicomFileDescription.modality;
-						File dicomFile = new File(dicomFilePath);
-						//ignore if it is already in the list (ignores the old one as the list is ordered create_time desc)
-						if (imageuids.contains(dicomFileDescription.imageUID)) continue;
-						imageuids.add(dicomFileDescription.imageUID);
-						String name = dicomFileDescription.imageUID + ".dcm";
-						String imageZipPath = seriesZipPath + "/" + name;
-						// If the file does not exist locally (because it is stored on another file system), download it.
-						if (!dicomFile.exists()) {
-							log.info("Downloading file:" + dicomFile.getAbsolutePath());
-							FileOutputStream fos = null;
-							checkDiskSpace(dicomFile);
-							try 
-							{
-								fos = new FileOutputStream(dicomFile);
-	
-								String queryString = "requestType=WADO&studyUID=" + seriesReference.studyUID 
-										+ "&seriesUID=" + seriesReference.seriesUID + "&objectUID=" + dicomFileDescription.imageUID + "&contentType=application/dicom";
-								log.debug("Downloading file, using WADO:" + queryString);
-								performWADOQuery(queryString, fos);
-							}
-							catch (Exception x)
-							{
-								log.warning("Error downloading image using wado");
-							}
-							finally 
-							{
-								if (fos != null) fos.close();
-							}
-						}
-						log.debug("Streaming file: " + imageZipPath);
-						try
-						{
-							zipout.putNextEntry(new ZipEntry(imageZipPath));
-						}
-						catch (Exception e)
-						{
-							log.warning("Error adding to zip file", e);
-							throw e;
-						}
-						BufferedInputStream fr;
-						try
-						{
-							fr = new BufferedInputStream(new FileInputStream(dicomFile));
-		
-							byte buffer[] = new byte[0xffff];
-							int b;
-							while ((b = fr.read(buffer)) != -1)
-								zipout.write(buffer, 0, b);
-		
-							fr.close();
-							zipout.closeEntry();
-		
-						}
-						catch (Exception e)
-						{
-							log.warning("Error closing zip file", e);
-							throw e;
-						}
-					}
-	
-					//ml include aims copied from series
-					if (includeAIMs)
-					{
-						EPADAIMList aimList = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
-						//aimList = AIMUtil.filterPermittedImageAnnotations(aimList, username, sessionID);
-						for (EPADAIM aim: aimList.ResultSet.Result)
-						{
-							String name ="Aim_" + format4Filename(subject.subjectName)+ "_" +aim.aimID + ".xml";
-							String aimZipPath = seriesZipPath + "/" + name;
-							log.debug("Streaming file: " + aimZipPath);
-							try
-							{
-								zipout.putNextEntry(new ZipEntry(aimZipPath));
-							}
-							catch (Exception e)
-							{
-								log.warning("Error adding to zip file", e);
-								throw e;
-							}
-							InputStream fr;
-							try
-							{
-								fr = new ByteArrayInputStream(aim.xml.getBytes(StandardCharsets.UTF_8));;
-			
-								byte buffer[] = new byte[0xffff];
-								int b;
-								while ((b = fr.read(buffer)) != -1)
-									zipout.write(buffer, 0, b);
-			
-								fr.close();
-								zipout.closeEntry();
-			
-							}
-							catch (Exception e)
-							{
-								log.warning("Error closing zip file", e);
-								throw e;
-							}
-						}
-					}
-				}
-			}
-		}
-		
-		try
-		{
-			zipout.finish();
-			out.flush();
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-			throw e;
-		}
-		return dlSubjects;
+		out = httpResponse.getOutputStream();
 	}
-	
-	public static void streamSubject(HttpServletResponse httpResponse, SubjectReference subjectReference, String username, String sessionID, 
-									EPADSearchFilter searchFilter, String studyUIDs, boolean includeAIMs) throws Exception
+	catch (Exception e)
 	{
-		log.info("Streaming projectID:" + subjectReference.projectID + " subject:" + subjectReference.subjectID);
-		Set<String> studies = new HashSet<String>();
-		if (studyUIDs != null) {
-			String[] ids = studyUIDs.split(",");
-			for (String id: ids)
-				studies.add(id.trim());
-		}
-		String zipName = "Patient-" + subjectReference.subjectID + ".zip";
-		httpResponse.setContentType("application/zip");
-		httpResponse.setHeader("Content-Disposition", "attachment;filename=\"" + zipName + "\"");		
-		OutputStream out = null;
-		try
+		log.warning("Error getting output stream", e);
+		throw e;
+	}
+	Set<String> subjects = new HashSet<String>();
+	if (subjectUIDs != null) {
+		String[] ids = subjectUIDs.split(",");
+		for (String id: ids)
+			subjects.add(id.trim());
+	}
+	EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+	EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+	EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+	Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+			.getDcm4CheeDatabaseOperations();
+	//TODO ml change the static numbers
+	//subjects
+	Set<String> dlSubjects = new HashSet<String>();
+	EPADSubjectList subjectList = epadOperations.getSubjectDescriptions(projectReference.projectID, username, sessionID, searchFilter, 0, 5000, "", false);
+	log.debug("Streaming project:" + projectReference.projectID + " num of subjects:" + subjectList.ResultSet.totalRecords);
+	ZipOutputStream zipout = new ZipOutputStream(out);
+	zipout.setLevel(1);
+	int n = 1;
+	for (EPADSubject subject: subjectList.ResultSet.Result)
+	{
+		if (!subjects.isEmpty() && !subjects.contains(subject.subjectID)) continue;
+		dlSubjects.add(subject.subjectID);
+		log.debug("Streaming project:" + projectReference.projectID + " subject:" + subject.subjectID);
+		String subjZipPath = "/Subject-" + subject.subjectID;
+		SubjectReference subjectReference = new SubjectReference(projectReference.projectID, subject.subjectID);
+		//studies
+		EPADStudyList studyList = epadOperations.getStudyDescriptions(subjectReference, username, sessionID, searchFilter);
+		for (EPADStudy study: studyList.ResultSet.Result)
 		{
-				out = httpResponse.getOutputStream();
-		}
-		catch (Exception e)
-		{
-			log.warning("Error getting output stream", e);
-			throw e;
-		}		
-		ZipOutputStream zipout = new ZipOutputStream(out);
-		zipout.setLevel(1);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
-		EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
-		String[] subjectIds = new String[1];
-		subjectIds[0] = subjectReference.subjectID;
-		if (subjectReference.subjectID.contains(","))
-		{
-			subjectIds = subjectReference.subjectID.split(",");
-		}
-		List<EPADStudy> allStudies = new ArrayList<EPADStudy>();
-		for(String subjectID: subjectIds)
-		{
-			if (subjectID.trim().length() == 0) continue;
-			subjectReference = new SubjectReference(subjectReference.projectID, subjectID);
-			EPADStudyList studyList = epadOperations.getStudyDescriptions(subjectReference, username, sessionID, searchFilter);
-			allStudies.addAll(studyList.ResultSet.Result);
-		}
-		log.info("Studies found:" + allStudies.size() + " selected:" + studies);
-		for (EPADStudy study: allStudies)
-		{
-			if (!studies.isEmpty() && !studies.contains(study.studyUID)) continue;
-			String subjZipPath = "";
-			log.debug("Downloading project:" + study.projectID + " subject:" + study.patientID + " study:" + study.studyUID);
+			log.debug("Downloading project:" + projectReference.projectID + " subject:" + subject.subjectID + " study:" + study.studyUID);
 			String studyZipPath = subjZipPath + "/Study-" + study.studyUID;
-	
+
 			StudyReference studyReference = new StudyReference(subjectReference.projectID, subjectReference.subjectID, study.studyUID);
 			//series
 			EPADSeriesList seriesList = epadOperations.getSeriesDescriptions(studyReference, username, sessionID, searchFilter, false);
@@ -1887,14 +1678,14 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 				String seriesZipPath = studyZipPath + "/Series-" + series.seriesUID;
 				if (series.isDSO)
 				{
-					List<EPADAIM> aims = databaseOperations.getAIMsByDSOSeries(study.projectID, series.seriesUID);
+					List<EPADAIM> aims = databaseOperations.getAIMsByDSOSeries(projectReference.projectID, series.seriesUID);
 					if (aims.size() == 0) continue;
 				}
 				SeriesReference seriesReference = new SeriesReference(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, series.seriesUID);
 				if (Thread.currentThread().isInterrupted())
 					throw new Exception("Download Interrupted");
 				log.info("Streaming study:" + studyReference.studyUID + " series:" + series.seriesUID);
-				List<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getOrderedDICOMFilesForSeries(series.seriesUID);
+				Set<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getDICOMFilesForSeries(series.seriesUID);
 				Study estudy = projectOperations.getStudy(studyReference.studyUID);
 				estudy.save();
 				// Get the last image (alphabetically last - looks like this is true all the time???)
@@ -1911,7 +1702,7 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 							dicomFileDescription = dsoFile;
 						}
 					}
-					dicomFileDescriptions = new ArrayList<DICOMFileDescription>();
+					dicomFileDescriptions = new HashSet<DICOMFileDescription>();
 					dicomFileDescriptions.add(dicomFileDescription);
 				}
 				//keep a list of imageuids to avoid duplicates
@@ -1920,207 +1711,14 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 				{
 					if (Thread.currentThread().isInterrupted())
 						throw new Exception("Download Interrupted");
-					String dicomFilePath = getDICOMFilePath(dicomFileDescription);
 					String modality = dicomFileDescription.modality;
-					File dicomFile = new File(dicomFilePath);
 					//ignore if it is already in the list (ignores the old one as the list is ordered create_time desc)
 					if (imageuids.contains(dicomFileDescription.imageUID)) continue;
 					imageuids.add(dicomFileDescription.imageUID);
 					String name = dicomFileDescription.imageUID + ".dcm";
+					File dicomFile = new File(downloadDir, name);
 					String imageZipPath = seriesZipPath + "/" + name;
-					// If the file does not exist locally (because it is stored on another file system), download it.
-					if (!dicomFile.exists()) {
-						log.info("Downloading file:" + dicomFile.getAbsolutePath());
-						FileOutputStream fos = null;
-						checkDiskSpace(dicomFile);
-						try 
-						{
-							fos = new FileOutputStream(dicomFile);
-	
-							String queryString = "requestType=WADO&studyUID=" + seriesReference.studyUID 
-									+ "&seriesUID=" + seriesReference.seriesUID + "&objectUID=" + dicomFileDescription.imageUID + "&contentType=application/dicom";
-							log.debug("Downloading file, using WADO:" + queryString);
-							performWADOQuery(queryString, fos);
-						}
-						catch (Exception x)
-						{
-							log.warning("Error downloading image using wado");
-						}
-						finally 
-						{
-							if (fos != null) fos.close();
-						}
-					}
-					log.debug("Streaming file: " + imageZipPath);
-					try
-					{
-						zipout.putNextEntry(new ZipEntry(imageZipPath));
-					}
-					catch (Exception e)
-					{
-						log.warning("Error adding to zip file", e);
-						throw e;
-					}
-					BufferedInputStream fr;
-					try
-					{
-						fr = new BufferedInputStream(new FileInputStream(dicomFile));
-	
-						byte buffer[] = new byte[0xffff];
-						int b;
-						while ((b = fr.read(buffer)) != -1)
-							zipout.write(buffer, 0, b);
-	
-						fr.close();
-						zipout.closeEntry();
-	
-					}
-					catch (Exception e)
-					{
-						log.warning("Error closing zip file", e);
-						throw e;
-					}
-				}
-	
-				//ml include aims copied from series
-				if (includeAIMs)
-				{
-					EPADAIMList aimList = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
-					//aimList = AIMUtil.filterPermittedImageAnnotations(aimList, username, sessionID);
-					for (EPADAIM aim: aimList.ResultSet.Result)
-					{
-						String name ="Aim_" + format4Filename(study.patientID)+ "_" +aim.aimID + ".xml";
-						String aimZipPath = seriesZipPath + "/" + name;
-						log.debug("Streaming file: " + aimZipPath);
-						try
-						{
-							zipout.putNextEntry(new ZipEntry(aimZipPath));
-						}
-						catch (Exception e)
-						{
-							log.warning("Error adding to zip file", e);
-							throw e;
-						}
-						InputStream fr;
-						try
-						{
-							fr = new ByteArrayInputStream(aim.xml.getBytes(StandardCharsets.UTF_8));;
-		
-							byte buffer[] = new byte[0xffff];
-							int b;
-							while ((b = fr.read(buffer)) != -1)
-								zipout.write(buffer, 0, b);
-		
-							fr.close();
-							zipout.closeEntry();
-		
-						}
-						catch (Exception e)
-						{
-							log.warning("Error closing zip file", e);
-							throw e;
-						}
-					}
-				}
-			}
-		}
-	
-		try
-		{
-			zipout.finish();
-			out.flush();
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-			throw e;
-		}
-	}
-	public static void streamStudy(HttpServletResponse httpResponse, StudyReference studyReference, String username, String sessionID, EPADSearchFilter searchFilter, String seriesUIDs, boolean includeAIMs) throws Exception
-	{
-		log.info("Streaming projectID:" + studyReference.projectID + " subject:" + studyReference.subjectID + " study:" + studyReference.studyUID);
-		String zipName = "Patient-" + studyReference.subjectID + "-Study-" + studyReference.studyUID + ".zip";
-		httpResponse.setContentType("application/zip");
-		httpResponse.setHeader("Content-Disposition", "attachment;filename=\"" + zipName + "\"");		
-		OutputStream out = null;
-		try
-		{
-				out = httpResponse.getOutputStream();
-		}
-		catch (Exception e)
-		{
-			log.warning("Error getting output stream", e);
-			throw e;
-		}		
-		ZipOutputStream zipout = new ZipOutputStream(out);
-		zipout.setLevel(1);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
-		EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
-		
-		Set<String> seriesSet = new HashSet<String>();
-		if (seriesUIDs != null) {
-			String[] ids = seriesUIDs.split(",");
-			for (String id: ids)
-				seriesSet.add(id.trim());
-		}
-		List<String> fileNames = new ArrayList<String>();
-		EPADSeriesList seriesList = epadOperations.getSeriesDescriptions(studyReference, username, sessionID, searchFilter, false);
-		int imageCount = 0;
-		log.debug("Number series in study:" + seriesList.ResultSet.totalRecords);
-		String studyZipPath = "";
-		for (EPADSeries series: seriesList.ResultSet.Result)
-		{
-			if (!seriesSet.isEmpty() && !seriesSet.contains(series.seriesUID)) continue;
-			String seriesZipPath = studyZipPath + "/Series-" + series.seriesUID;
-			if (series.isDSO)
-			{
-				List<EPADAIM> aims = databaseOperations.getAIMsByDSOSeries(studyReference.projectID, series.seriesUID);
-				if (aims.size() == 0) continue;
-			}
-			SeriesReference seriesReference = new SeriesReference(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, series.seriesUID);
-			if (Thread.currentThread().isInterrupted())
-				throw new Exception("Download Interrupted");
-			log.info("Streaming study:" + studyReference.studyUID + " series:" + series.seriesUID);
-			List<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getOrderedDICOMFilesForSeries(series.seriesUID);
-			Study estudy = projectOperations.getStudy(studyReference.studyUID);
-			estudy.save();
-			// Get the last image (alphabetically last - looks like this is true all the time???)
-			if (series.isDSO)
-			{
-				DICOMFileDescription dicomFileDescription = dicomFileDescriptions.iterator().next();
-				String createdTime = dicomFileDescription.createdTime;
-				for (DICOMFileDescription dsoFile : dicomFileDescriptions)
-				{
-					// TODO - Should really convert to Date and then compare
-					if (createdTime.compareTo(dsoFile.createdTime) < 0)
-					{
-						createdTime = dsoFile.createdTime;
-						dicomFileDescription = dsoFile;
-					}
-				}
-				dicomFileDescriptions = new ArrayList<DICOMFileDescription>();
-				dicomFileDescriptions.add(dicomFileDescription);
-			}
-			//keep a list of imageuids to avoid duplicates
-			Set<String> imageuids = new HashSet<String>();
-			for (DICOMFileDescription dicomFileDescription: dicomFileDescriptions)
-			{
-				if (Thread.currentThread().isInterrupted())
-					throw new Exception("Download Interrupted");
-				String dicomFilePath = getDICOMFilePath(dicomFileDescription);
-				String modality = dicomFileDescription.modality;
-				File dicomFile = new File(dicomFilePath);
-				//ignore if it is already in the list (ignores the old one as the list is ordered create_time desc)
-				if (imageuids.contains(dicomFileDescription.imageUID)) continue;
-				imageuids.add(dicomFileDescription.imageUID);
-				String name = dicomFileDescription.imageUID + ".dcm";
-				String imageZipPath = seriesZipPath + "/" + name;
-				// If the file does not exist locally (because it is stored on another file system), download it.
-				if (!dicomFile.exists()) {
-					log.info("Downloading file:" + dicomFile.getAbsolutePath());
+					log.debug("Downloading file:" + dicomFile.getAbsolutePath());
 					FileOutputStream fos = null;
 					checkDiskSpace(dicomFile);
 					try 
@@ -2140,6 +1738,218 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 					{
 						if (fos != null) fos.close();
 					}
+					log.debug("Streaming file: " + imageZipPath);
+					try
+					{
+						zipout.putNextEntry(new ZipEntry(imageZipPath));
+					}
+					catch (Exception e)
+					{
+						log.warning("Error adding to zip file", e);
+						throw e;
+					}
+					BufferedInputStream fr;
+					try
+					{
+						fr = new BufferedInputStream(new FileInputStream(dicomFile));
+
+						byte buffer[] = new byte[0xffff];
+						int b;
+						while ((b = fr.read(buffer)) != -1)
+							zipout.write(buffer, 0, b);
+
+						fr.close();
+						zipout.closeEntry();
+
+					}
+					catch (Exception e)
+					{
+						log.warning("Error closing zip file", e);
+						throw e;
+					}
+					dicomFile.delete();
+				}
+
+				//ml include aims copied from series
+				if (includeAIMs)
+				{
+					EPADAIMList aimList = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
+					//aimList = AIMUtil.filterPermittedImageAnnotations(aimList, username, sessionID);
+					for (EPADAIM aim: aimList.ResultSet.Result)
+					{
+						String name ="Aim_" + format4Filename(subject.subjectName)+ "_" +aim.aimID + ".xml";
+						String aimZipPath = seriesZipPath + "/" + name;
+						log.debug("Streaming file: " + aimZipPath);
+						try
+						{
+							zipout.putNextEntry(new ZipEntry(aimZipPath));
+						}
+						catch (Exception e)
+						{
+							log.warning("Error adding to zip file", e);
+							throw e;
+						}
+						InputStream fr;
+						try
+						{
+							fr = new ByteArrayInputStream(aim.xml.getBytes(StandardCharsets.UTF_8));;
+
+							byte buffer[] = new byte[0xffff];
+							int b;
+							while ((b = fr.read(buffer)) != -1)
+								zipout.write(buffer, 0, b);
+
+							fr.close();
+							zipout.closeEntry();
+
+						}
+						catch (Exception e)
+						{
+							log.warning("Error closing zip file", e);
+							throw e;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	try
+	{
+		zipout.finish();
+		out.flush();
+	}
+	catch (IOException e)
+	{
+		e.printStackTrace();
+		throw e;
+	}
+	EPADFileUtils.deleteDirectoryAndContents(downloadDir);
+	return dlSubjects;
+}
+
+public static void streamSubject(HttpServletResponse httpResponse, SubjectReference subjectReference, String username, String sessionID, 
+		EPADSearchFilter searchFilter, String studyUIDs, boolean includeAIMs) throws Exception
+{
+	log.info("Streaming projectID:" + subjectReference.projectID + " subject:" + subjectReference.subjectID);
+	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
+	File downloadDir = new File(downloadDirPath);
+	downloadDir.mkdirs();
+	Set<String> studies = new HashSet<String>();
+	if (studyUIDs != null) {
+		String[] ids = studyUIDs.split(",");
+		for (String id: ids)
+			studies.add(id.trim());
+	}
+	String zipName = "Patient-" + subjectReference.subjectID + ".zip";
+	httpResponse.setContentType("application/zip");
+	httpResponse.setHeader("Content-Disposition", "attachment;filename=\"" + zipName + "\"");		
+	OutputStream out = null;
+	try
+	{
+		out = httpResponse.getOutputStream();
+	}
+	catch (Exception e)
+	{
+		log.warning("Error getting output stream", e);
+		throw e;
+	}		
+	ZipOutputStream zipout = new ZipOutputStream(out);
+	zipout.setLevel(1);
+	EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+	EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+	EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+	Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+			.getDcm4CheeDatabaseOperations();
+	String[] subjectIds = new String[1];
+	subjectIds[0] = subjectReference.subjectID;
+	if (subjectReference.subjectID.contains(","))
+	{
+		subjectIds = subjectReference.subjectID.split(",");
+	}
+	List<EPADStudy> allStudies = new ArrayList<EPADStudy>();
+	for(String subjectID: subjectIds)
+	{
+		if (subjectID.trim().length() == 0) continue;
+		subjectReference = new SubjectReference(subjectReference.projectID, subjectID);
+		EPADStudyList studyList = epadOperations.getStudyDescriptions(subjectReference, username, sessionID, searchFilter);
+		allStudies.addAll(studyList.ResultSet.Result);
+	}
+	log.info("Studies found:" + allStudies.size() + " selected:" + studies);
+	for (EPADStudy study: allStudies)
+	{
+		if (!studies.isEmpty() && !studies.contains(study.studyUID)) continue;
+		String subjZipPath = "";
+		log.debug("Downloading project:" + study.projectID + " subject:" + study.patientID + " study:" + study.studyUID);
+		String studyZipPath = subjZipPath + "/Study-" + study.studyUID;
+
+		StudyReference studyReference = new StudyReference(subjectReference.projectID, subjectReference.subjectID, study.studyUID);
+		//series
+		EPADSeriesList seriesList = epadOperations.getSeriesDescriptions(studyReference, username, sessionID, searchFilter, false);
+		for (EPADSeries series: seriesList.ResultSet.Result)
+		{
+			String seriesZipPath = studyZipPath + "/Series-" + series.seriesUID;
+			if (series.isDSO)
+			{
+				List<EPADAIM> aims = databaseOperations.getAIMsByDSOSeries(study.projectID, series.seriesUID);
+				if (aims.size() == 0) continue;
+			}
+			SeriesReference seriesReference = new SeriesReference(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, series.seriesUID);
+			if (Thread.currentThread().isInterrupted())
+				throw new Exception("Download Interrupted");
+			log.info("Streaming study:" + studyReference.studyUID + " series:" + series.seriesUID);
+			Set<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getDICOMFilesForSeries(series.seriesUID);
+			Study estudy = projectOperations.getStudy(studyReference.studyUID);
+			estudy.save();
+			// Get the last image (alphabetically last - looks like this is true all the time???)
+			if (series.isDSO)
+			{
+				DICOMFileDescription dicomFileDescription = dicomFileDescriptions.iterator().next();
+				String createdTime = dicomFileDescription.createdTime;
+				for (DICOMFileDescription dsoFile : dicomFileDescriptions)
+				{
+					// TODO - Should really convert to Date and then compare
+					if (createdTime.compareTo(dsoFile.createdTime) < 0)
+					{
+						createdTime = dsoFile.createdTime;
+						dicomFileDescription = dsoFile;
+					}
+				}
+				dicomFileDescriptions = new HashSet<DICOMFileDescription>();
+				dicomFileDescriptions.add(dicomFileDescription);
+			}
+			//keep a list of imageuids to avoid duplicates
+			Set<String> imageuids = new HashSet<String>();
+			for (DICOMFileDescription dicomFileDescription: dicomFileDescriptions)
+			{
+				if (Thread.currentThread().isInterrupted())
+					throw new Exception("Download Interrupted");
+				String modality = dicomFileDescription.modality;
+				//ignore if it is already in the list (ignores the old one as the list is ordered create_time desc)
+				if (imageuids.contains(dicomFileDescription.imageUID)) continue;
+				imageuids.add(dicomFileDescription.imageUID);
+				String name = dicomFileDescription.imageUID + ".dcm";
+				File dicomFile = new File(downloadDir, name);
+				String imageZipPath = seriesZipPath + "/" + name;
+				log.debug("Downloading file:" + dicomFile.getAbsolutePath());
+				FileOutputStream fos = null;
+				checkDiskSpace(dicomFile);
+				try 
+				{
+					fos = new FileOutputStream(dicomFile);
+
+					String queryString = "requestType=WADO&studyUID=" + seriesReference.studyUID 
+							+ "&seriesUID=" + seriesReference.seriesUID + "&objectUID=" + dicomFileDescription.imageUID + "&contentType=application/dicom";
+					log.debug("Downloading file, using WADO:" + queryString);
+					performWADOQuery(queryString, fos);
+				}
+				catch (Exception x)
+				{
+					log.warning("Error downloading image using wado");
+				}
+				finally 
+				{
+					if (fos != null) fos.close();
 				}
 				log.debug("Streaming file: " + imageZipPath);
 				try
@@ -2170,6 +1980,7 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 					log.warning("Error closing zip file", e);
 					throw e;
 				}
+				dicomFile.delete();
 			}
 
 			//ml include aims copied from series
@@ -2179,7 +1990,7 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 				//aimList = AIMUtil.filterPermittedImageAnnotations(aimList, username, sessionID);
 				for (EPADAIM aim: aimList.ResultSet.Result)
 				{
-					String name ="Aim_" + format4Filename(studyReference.subjectID)+ "_" +aim.aimID + ".xml";
+					String name ="Aim_" + format4Filename(study.patientID)+ "_" +aim.aimID + ".xml";
 					String aimZipPath = seriesZipPath + "/" + name;
 					log.debug("Streaming file: " + aimZipPath);
 					try
@@ -2195,15 +2006,15 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 					try
 					{
 						fr = new ByteArrayInputStream(aim.xml.getBytes(StandardCharsets.UTF_8));;
-	
+
 						byte buffer[] = new byte[0xffff];
 						int b;
 						while ((b = fr.read(buffer)) != -1)
 							zipout.write(buffer, 0, b);
-	
+
 						fr.close();
 						zipout.closeEntry();
-	
+
 					}
 					catch (Exception e)
 					{
@@ -2213,49 +2024,74 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 				}
 			}
 		}
-
-		try
-		{
-			zipout.finish();
-			out.flush();
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-			throw e;
-		}
 	}
-	
-	public static void streamSeries(HttpServletResponse httpResponse, SeriesReference seriesReference, String username, String sessionID, boolean includeAIMs) throws Exception
+
+	try
 	{
-		log.info("Streaming series:" + seriesReference.seriesUID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
-		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
-		String zipName = "Series-" + seriesReference.seriesUID + ".zip";
-		httpResponse.setContentType("application/zip");
-		httpResponse.setHeader("Content-Disposition", "attachment;filename=\"" + zipName + "\"");		
-		OutputStream out = null;
-		try
+		zipout.finish();
+		out.flush();
+	}
+	catch (IOException e)
+	{
+		e.printStackTrace();
+		throw e;
+	}
+	EPADFileUtils.deleteDirectoryAndContents(downloadDir);
+}
+public static void streamStudy(HttpServletResponse httpResponse, StudyReference studyReference, String username, String sessionID, EPADSearchFilter searchFilter, String seriesUIDs, boolean includeAIMs) throws Exception
+{
+	log.info("Streaming projectID:" + studyReference.projectID + " subject:" + studyReference.subjectID + " study:" + studyReference.studyUID);
+	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
+	File downloadDir = new File(downloadDirPath);
+	downloadDir.mkdirs();
+	String zipName = "Patient-" + studyReference.subjectID + "-Study-" + studyReference.studyUID + ".zip";
+	httpResponse.setContentType("application/zip");
+	httpResponse.setHeader("Content-Disposition", "attachment;filename=\"" + zipName + "\"");		
+	OutputStream out = null;
+	try
+	{
+		out = httpResponse.getOutputStream();
+	}
+	catch (Exception e)
+	{
+		log.warning("Error getting output stream", e);
+		throw e;
+	}		
+	ZipOutputStream zipout = new ZipOutputStream(out);
+	zipout.setLevel(1);
+	EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+	EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+	EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+	Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+			.getDcm4CheeDatabaseOperations();
+
+	Set<String> seriesSet = new HashSet<String>();
+	if (seriesUIDs != null) {
+		String[] ids = seriesUIDs.split(",");
+		for (String id: ids)
+			seriesSet.add(id.trim());
+	}
+	List<String> fileNames = new ArrayList<String>();
+	EPADSeriesList seriesList = epadOperations.getSeriesDescriptions(studyReference, username, sessionID, searchFilter, false);
+	int imageCount = 0;
+	log.debug("Number series in study:" + seriesList.ResultSet.totalRecords);
+	String studyZipPath = "";
+	for (EPADSeries series: seriesList.ResultSet.Result)
+	{
+		if (!seriesSet.isEmpty() && !seriesSet.contains(series.seriesUID)) continue;
+		String seriesZipPath = studyZipPath + "/Series-" + series.seriesUID;
+		if (series.isDSO)
 		{
-				out = httpResponse.getOutputStream();
+			List<EPADAIM> aims = databaseOperations.getAIMsByDSOSeries(studyReference.projectID, series.seriesUID);
+			if (aims.size() == 0) continue;
 		}
-		catch (Exception e)
-		{
-			log.warning("Error getting output stream", e);
-			throw e;
-		}		
-		ZipOutputStream zipout = new ZipOutputStream(out);
-		zipout.setLevel(1);
-		String seriesZipPath = "/Series-" + series.seriesUID;
+		SeriesReference seriesReference = new SeriesReference(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, series.seriesUID);
 		if (Thread.currentThread().isInterrupted())
 			throw new Exception("Download Interrupted");
-		log.info("Streaming series:" + series.seriesUID);
-		List<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getOrderedDICOMFilesForSeries(series.seriesUID);
-		Study study = projectOperations.getStudy(seriesReference.studyUID);
-		study.save();
+		log.info("Streaming study:" + studyReference.studyUID + " series:" + series.seriesUID);
+		Set<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getDICOMFilesForSeries(series.seriesUID);
+		Study estudy = projectOperations.getStudy(studyReference.studyUID);
+		estudy.save();
 		// Get the last image (alphabetically last - looks like this is true all the time???)
 		if (series.isDSO)
 		{
@@ -2270,7 +2106,7 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 					dicomFileDescription = dsoFile;
 				}
 			}
-			dicomFileDescriptions = new ArrayList<DICOMFileDescription>();
+			dicomFileDescriptions = new HashSet<DICOMFileDescription>();
 			dicomFileDescriptions.add(dicomFileDescription);
 		}
 		//keep a list of imageuids to avoid duplicates
@@ -2279,36 +2115,32 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 		{
 			if (Thread.currentThread().isInterrupted())
 				throw new Exception("Download Interrupted");
-			String dicomFilePath = getDICOMFilePath(dicomFileDescription);
 			String modality = dicomFileDescription.modality;
-			File dicomFile = new File(dicomFilePath);
 			//ignore if it is already in the list (ignores the old one as the list is ordered create_time desc)
 			if (imageuids.contains(dicomFileDescription.imageUID)) continue;
 			imageuids.add(dicomFileDescription.imageUID);
 			String name = dicomFileDescription.imageUID + ".dcm";
+			File dicomFile = new File(downloadDir, name);
 			String imageZipPath = seriesZipPath + "/" + name;
-			// If the file does not exist locally (because it is stored on another file system), download it.
-			if (!dicomFile.exists()) {
-				log.info("Downloading file:" + dicomFile.getAbsolutePath());
-				FileOutputStream fos = null;
-				checkDiskSpace(dicomFile);
-				try 
-				{
-					fos = new FileOutputStream(dicomFile);
-	
-					String queryString = "requestType=WADO&studyUID=" + seriesReference.studyUID 
-							+ "&seriesUID=" + seriesReference.seriesUID + "&objectUID=" + dicomFileDescription.imageUID + "&contentType=application/dicom";
-					log.debug("Downloading file, using WADO:" + queryString);
-					performWADOQuery(queryString, fos);
-				}
-				catch (Exception x)
-				{
-					log.warning("Error downloading image using wado");
-				}
-				finally 
-				{
-					if (fos != null) fos.close();
-				}
+			log.debug("Downloading file:" + dicomFile.getAbsolutePath());
+			FileOutputStream fos = null;
+			checkDiskSpace(dicomFile);
+			try 
+			{
+				fos = new FileOutputStream(dicomFile);
+
+				String queryString = "requestType=WADO&studyUID=" + seriesReference.studyUID 
+						+ "&seriesUID=" + seriesReference.seriesUID + "&objectUID=" + dicomFileDescription.imageUID + "&contentType=application/dicom";
+				log.debug("Downloading file, using WADO:" + queryString);
+				performWADOQuery(queryString, fos);
+			}
+			catch (Exception x)
+			{
+				log.warning("Error downloading image using wado");
+			}
+			finally 
+			{
+				if (fos != null) fos.close();
 			}
 			log.debug("Streaming file: " + imageZipPath);
 			try
@@ -2324,23 +2156,24 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 			try
 			{
 				fr = new BufferedInputStream(new FileInputStream(dicomFile));
-	
+
 				byte buffer[] = new byte[0xffff];
 				int b;
 				while ((b = fr.read(buffer)) != -1)
 					zipout.write(buffer, 0, b);
-	
+
 				fr.close();
 				zipout.closeEntry();
-	
+
 			}
 			catch (Exception e)
 			{
 				log.warning("Error closing zip file", e);
 				throw e;
 			}
+			dicomFile.delete();
 		}
-	
+
 		//ml include aims copied from series
 		if (includeAIMs)
 		{
@@ -2348,7 +2181,7 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 			//aimList = AIMUtil.filterPermittedImageAnnotations(aimList, username, sessionID);
 			for (EPADAIM aim: aimList.ResultSet.Result)
 			{
-				String name ="Aim_" + format4Filename(seriesReference.subjectID)+ "_" +aim.aimID + ".xml";
+				String name ="Aim_" + format4Filename(studyReference.subjectID)+ "_" +aim.aimID + ".xml";
 				String aimZipPath = seriesZipPath + "/" + name;
 				log.debug("Streaming file: " + aimZipPath);
 				try
@@ -2364,15 +2197,15 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 				try
 				{
 					fr = new ByteArrayInputStream(aim.xml.getBytes(StandardCharsets.UTF_8));;
-	
+
 					byte buffer[] = new byte[0xffff];
 					int b;
 					while ((b = fr.read(buffer)) != -1)
 						zipout.write(buffer, 0, b);
-	
+
 					fr.close();
 					zipout.closeEntry();
-	
+
 				}
 				catch (Exception e)
 				{
@@ -2381,55 +2214,226 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 				}
 			}
 		}
-	
+	}
+
+	try
+	{
+		zipout.finish();
+		out.flush();
+	}
+	catch (IOException e)
+	{
+		e.printStackTrace();
+		throw e;
+	}
+	EPADFileUtils.deleteDirectoryAndContents(downloadDir);
+}
+
+public static void streamSeries(HttpServletResponse httpResponse, SeriesReference seriesReference, String username, String sessionID, boolean includeAIMs) throws Exception
+{
+	log.info("Streaming series:" + seriesReference.seriesUID);
+	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
+	File downloadDir = new File(downloadDirPath);
+	downloadDir.mkdirs();
+	EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+	EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
+	EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+	Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+			.getDcm4CheeDatabaseOperations();
+	String zipName = "Series-" + seriesReference.seriesUID + ".zip";
+	httpResponse.setContentType("application/zip");
+	httpResponse.setHeader("Content-Disposition", "attachment;filename=\"" + zipName + "\"");		
+	OutputStream out = null;
+	try
+	{
+		out = httpResponse.getOutputStream();
+	}
+	catch (Exception e)
+	{
+		log.warning("Error getting output stream", e);
+		throw e;
+	}		
+	ZipOutputStream zipout = new ZipOutputStream(out);
+	zipout.setLevel(1);
+	String seriesZipPath = "/Series-" + series.seriesUID;
+	if (Thread.currentThread().isInterrupted())
+		throw new Exception("Download Interrupted");
+	log.info("Streaming series:" + series.seriesUID);
+	Set<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getDICOMFilesForSeries(series.seriesUID);
+	Study study = projectOperations.getStudy(seriesReference.studyUID);
+	study.save();
+	// Get the last image (alphabetically last - looks like this is true all the time???)
+	if (series.isDSO)
+	{
+		DICOMFileDescription dicomFileDescription = dicomFileDescriptions.iterator().next();
+		String createdTime = dicomFileDescription.createdTime;
+		for (DICOMFileDescription dsoFile : dicomFileDescriptions)
+		{
+			// TODO - Should really convert to Date and then compare
+			if (createdTime.compareTo(dsoFile.createdTime) < 0)
+			{
+				createdTime = dsoFile.createdTime;
+				dicomFileDescription = dsoFile;
+			}
+		}
+		dicomFileDescriptions = new HashSet<DICOMFileDescription>();
+		dicomFileDescriptions.add(dicomFileDescription);
+	}
+	//keep a list of imageuids to avoid duplicates
+	Set<String> imageuids = new HashSet<String>();
+	for (DICOMFileDescription dicomFileDescription: dicomFileDescriptions)
+	{
+		if (Thread.currentThread().isInterrupted())
+			throw new Exception("Download Interrupted");
+		String modality = dicomFileDescription.modality;
+		//ignore if it is already in the list (ignores the old one as the list is ordered create_time desc)
+		if (imageuids.contains(dicomFileDescription.imageUID)) continue;
+		imageuids.add(dicomFileDescription.imageUID);
+		String name = dicomFileDescription.imageUID + ".dcm";
+		File dicomFile = new File(downloadDir, name);
+		String imageZipPath = seriesZipPath + "/" + name;
+		log.debug("Downloading file:" + dicomFile.getAbsolutePath());
+		FileOutputStream fos = null;
+		checkDiskSpace(dicomFile);
+		try 
+		{
+			fos = new FileOutputStream(dicomFile);
+
+			String queryString = "requestType=WADO&studyUID=" + seriesReference.studyUID 
+					+ "&seriesUID=" + seriesReference.seriesUID + "&objectUID=" + dicomFileDescription.imageUID + "&contentType=application/dicom";
+			log.debug("Downloading file, using WADO:" + queryString);
+			performWADOQuery(queryString, fos);
+		}
+		catch (Exception x)
+		{
+			log.warning("Error downloading image using wado");
+		}
+		finally 
+		{
+			if (fos != null) fos.close();
+		}
+		log.debug("Streaming file: " + imageZipPath);
 		try
 		{
-			zipout.finish();
-			out.flush();
+			zipout.putNextEntry(new ZipEntry(imageZipPath));
 		}
-		catch (IOException e)
+		catch (Exception e)
 		{
-			e.printStackTrace();
+			log.warning("Error adding to zip file", e);
 			throw e;
+		}
+		BufferedInputStream fr;
+		try
+		{
+			fr = new BufferedInputStream(new FileInputStream(dicomFile));
+
+			byte buffer[] = new byte[0xffff];
+			int b;
+			while ((b = fr.read(buffer)) != -1)
+				zipout.write(buffer, 0, b);
+
+			fr.close();
+			zipout.closeEntry();
+
+		}
+		catch (Exception e)
+		{
+			log.warning("Error closing zip file", e);
+			throw e;
+		}
+		dicomFile.delete();
+	}
+
+	//ml include aims copied from series
+	if (includeAIMs)
+	{
+		EPADAIMList aimList = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
+		//aimList = AIMUtil.filterPermittedImageAnnotations(aimList, username, sessionID);
+		for (EPADAIM aim: aimList.ResultSet.Result)
+		{
+			String name ="Aim_" + format4Filename(seriesReference.subjectID)+ "_" +aim.aimID + ".xml";
+			String aimZipPath = seriesZipPath + "/" + name;
+			log.debug("Streaming file: " + aimZipPath);
+			try
+			{
+				zipout.putNextEntry(new ZipEntry(aimZipPath));
+			}
+			catch (Exception e)
+			{
+				log.warning("Error adding to zip file", e);
+				throw e;
+			}
+			InputStream fr;
+			try
+			{
+				fr = new ByteArrayInputStream(aim.xml.getBytes(StandardCharsets.UTF_8));;
+
+				byte buffer[] = new byte[0xffff];
+				int b;
+				while ((b = fr.read(buffer)) != -1)
+					zipout.write(buffer, 0, b);
+
+				fr.close();
+				zipout.closeEntry();
+
+			}
+			catch (Exception e)
+			{
+				log.warning("Error closing zip file", e);
+				throw e;
+			}
 		}
 	}
 
-	private static String getDICOMFilePath(DICOMFileDescription dicomFileDescription)
+	try
 	{
-		if (EPADConfig.dcm4cheeDirRoot.endsWith("/"))
-			return EPADConfig.dcm4cheeDirRoot + dicomFileDescription.filePath;
-		else
-			return EPADConfig.dcm4cheeDirRoot + "/" + dicomFileDescription.filePath;
-			
+		zipout.finish();
+		out.flush();
 	}
-	
-	public static void checkDiskSpace(File file) throws Exception
+	catch (IOException e)
 	{
-		long space = FileSystemUtils.freeSpaceKb(file.getParent())/1024;
-		if (space < 300)
-		{
-			log.warning("Free space on " +  file.getParent() + " : " + space + " MB");
-			throw new Exception("File System Out of Diskspace");
-		}
+		e.printStackTrace();
+		throw e;
 	}
-	
-	public static int performWADOQuery(String queryString, OutputStream outputStream)
+	EPADFileUtils.deleteDirectoryAndContents(downloadDir);
+}
+
+private static String getDICOMFilePath(DICOMFileDescription dicomFileDescription)
+{
+	if (EPADConfig.dcm4cheeDirRoot.endsWith("/"))
+		return EPADConfig.dcm4cheeDirRoot + dicomFileDescription.filePath;
+	else
+		return EPADConfig.dcm4cheeDirRoot + "/" + dicomFileDescription.filePath;
+
+}
+
+public static void checkDiskSpace(File file) throws Exception
+{
+	long space = FileSystemUtils.freeSpaceKb(file.getParent())/1024;
+	if (space < 300)
 	{
-		String wadoHost = EPADConfig.dcm4CheeServer;
-		int wadoPort = EPADConfig.dcm4cheeServerWadoPort;
-		String wadoBase = EPADConfig.wadoURLExtension;
-		String wadoURL = buildWADOURL(wadoHost, wadoPort, wadoBase, queryString);
-		int statusCode;
-		try {
-			statusCode = HandlerUtil.streamGetResponse(wadoURL, outputStream, log);
-			if (statusCode != HttpServletResponse.SC_OK)
-				log.warning("Unexpected response " + statusCode + " to WADO request " + wadoURL);
-		} catch (HttpException e) {
-			statusCode = HandlerUtil.internalErrorResponse(INTERNAL_EXCEPTION_MESSAGE, log);
-		} catch (IOException e) {
-			statusCode = HandlerUtil.internalErrorResponse(INTERNAL_EXCEPTION_MESSAGE, log);
-		}
-		return statusCode;
+		log.warning("Free space on " +  file.getParent() + " : " + space + " MB");
+		throw new Exception("File System Out of Diskspace");
 	}
+}
+
+public static int performWADOQuery(String queryString, OutputStream outputStream)
+{
+	String wadoHost = EPADConfig.dcm4CheeServer;
+	int wadoPort = EPADConfig.dcm4cheeServerWadoPort;
+	String wadoBase = EPADConfig.wadoURLExtension;
+	String wadoURL = buildWADOURL(wadoHost, wadoPort, wadoBase, queryString);
+	int statusCode;
+	try {
+		statusCode = HandlerUtil.streamGetResponse(wadoURL, outputStream, log);
+		if (statusCode != HttpServletResponse.SC_OK)
+			log.warning("Unexpected response " + statusCode + " to WADO request " + wadoURL);
+	} catch (HttpException e) {
+		statusCode = HandlerUtil.internalErrorResponse(INTERNAL_EXCEPTION_MESSAGE, log);
+	} catch (IOException e) {
+		statusCode = HandlerUtil.internalErrorResponse(INTERNAL_EXCEPTION_MESSAGE, log);
+	}
+	return statusCode;
+}
 
 }
