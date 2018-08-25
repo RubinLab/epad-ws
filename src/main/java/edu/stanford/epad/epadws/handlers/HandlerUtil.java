@@ -142,6 +142,7 @@ import org.json.XML;
 import com.sun.jersey.api.uri.UriTemplate;
 
 import edu.stanford.epad.common.util.EPADConfig;
+import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADMessage;
 import xmlwise.Plist;
@@ -626,7 +627,7 @@ public class HandlerUtil
 				if (fileItem.getSize() != 0)
 				{
 			        try {
-						String tempFileName = "temp" + System.currentTimeMillis() + "-" + fileName;
+			        	String tempFileName = "temp" + System.currentTimeMillis() + "-" + fileName.replaceAll("[^a-zA-Z0-9]", "_");
 						File file = new File(uploadDirPath + "/" + tempFileName);
 						log.debug("FileName: " + file.getAbsolutePath());
 		                // write the file
