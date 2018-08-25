@@ -321,6 +321,7 @@ public class EPADPostHandler
 					if (numberOfFiles == 0)
 						log.warning("No files found in post");
 					boolean convertToDicom = "true".equalsIgnoreCase(httpRequest.getParameter("convertToDICOM"));
+					if (!convertToDicom) convertToDicom= "true".equalsIgnoreCase(httpRequest.getParameter("convertToDicom"));
 					if (!convertToDicom) convertToDicom = "true".equalsIgnoreCase((String) paramData.get("convertToDICOM"));
 					String modality = httpRequest.getParameter("modality");
 					if (modality == null) modality = (String) paramData.get("modality");
