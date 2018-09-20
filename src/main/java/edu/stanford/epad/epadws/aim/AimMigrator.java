@@ -337,44 +337,47 @@ public class AimMigrator {
 		}
 		JSONObject pf=mintJson.optJSONObject("PlanarFigure");
 		if (pf!=null){
-			Double sliceLoc=((JSONObject) ((JSONObject)pf.get("Geometry")).get("Origin")).getDouble("z");
-			Double sliceThickness=((JSONObject) ((JSONObject)pf.get("Geometry")).get("Spacing")).getDouble("z");
-			log.info("slice location is "+ sliceLoc);
-			comment =comment+" / "+sliceLoc + " / " +sliceThickness;
-			if ((imageUID==null || imageUID.equals("") || imageUID.equals("na"))&& !(sourceSeriesUID==null||sourceSeriesUID.equals("na")||sourceSeriesUID.equals(""))) {
-				//get the image uid using the slice location
-				String dcm4cheStudyUID=studyUID;
-				if (dcm4cheStudyUID==null || dcm4cheStudyUID.equals("") || dcm4cheStudyUID.equals("na"))
-					dcm4cheStudyUID="*";
-				Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations= Dcm4CheeDatabase.getInstance()
-						.getDcm4CheeDatabaseOperations();
-				EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-				List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
-						dcm4cheStudyUID, sourceSeriesUID);
-				for(DCM4CHEEImageDescription image:imageDescriptions){
-					DICOMElementList imageDICOMElements = epadOperations.getDICOMElements(image.studyUID,
-							image.seriesUID, image.imageUID);
-					String imagePosition=epadOperations.getDICOMElement(imageDICOMElements,PixelMedUtils.ImagePositionPatientCode);
-					Double imageLoc=-1.0;
-					try{
-						if (imagePosition!=null) {
-							imageLoc=Double.parseDouble(imagePosition.split("\\\\")[2]);
+			JSONObject geo=(JSONObject)pf.opt("Geometry");
+			if (geo!=null){
+				Double sliceLoc=((JSONObject) ((JSONObject)pf.get("Geometry")).get("Origin")).getDouble("z");
+				Double sliceThickness=((JSONObject) ((JSONObject)pf.get("Geometry")).get("Spacing")).getDouble("z");
+				log.info("slice location is "+ sliceLoc);
+				comment =comment+" / "+sliceLoc + " / " +sliceThickness;
+				if ((imageUID==null || imageUID.equals("") || imageUID.equals("na"))&& !(sourceSeriesUID==null||sourceSeriesUID.equals("na")||sourceSeriesUID.equals(""))) {
+					//get the image uid using the slice location
+					String dcm4cheStudyUID=studyUID;
+					if (dcm4cheStudyUID==null || dcm4cheStudyUID.equals("") || dcm4cheStudyUID.equals("na"))
+						dcm4cheStudyUID="*";
+					Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations= Dcm4CheeDatabase.getInstance()
+							.getDcm4CheeDatabaseOperations();
+					EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+					List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
+							dcm4cheStudyUID, sourceSeriesUID);
+					for(DCM4CHEEImageDescription image:imageDescriptions){
+						DICOMElementList imageDICOMElements = epadOperations.getDICOMElements(image.studyUID,
+								image.seriesUID, image.imageUID);
+						String imagePosition=epadOperations.getDICOMElement(imageDICOMElements,PixelMedUtils.ImagePositionPatientCode);
+						Double imageLoc=-1.0;
+						try{
+							if (imagePosition!=null) {
+								imageLoc=Double.parseDouble(imagePosition.split("\\\\")[2]);
+							}
+						}catch(Exception e){
+
+							log.warning("Couldn't get image position "+e.getMessage()) ;
 						}
-					}catch(Exception e){
-	
-						log.warning("Couldn't get image position "+e.getMessage()) ;
-					}
-					if ( imageLoc==-1.0) {
-						imageLoc=((Double)Double.parseDouble(image.sliceLocation));
-						log.info("Couldn't get image position using slice loc" +imageLoc) ;
-					}
-					if (((Double)(imageLoc-(0.5*sliceThickness))).intValue()==sliceLoc.intValue()||imageLoc.intValue()==sliceLoc.intValue()){
-						log.info("found image "+ image.instanceNumber +  " uid "+image.imageUID);
-						imageUID=image.imageUID;
-						break;
+						if ( imageLoc==-1.0) {
+							imageLoc=((Double)Double.parseDouble(image.sliceLocation));
+							log.info("Couldn't get image position using slice loc" +imageLoc) ;
+						}
+						if (((Double)(imageLoc-(0.5*sliceThickness))).intValue()==sliceLoc.intValue()||imageLoc.intValue()==sliceLoc.intValue()){
+							log.info("found image "+ image.instanceNumber +  " uid "+image.imageUID);
+							imageUID=image.imageUID;
+							break;
+						}
 					}
 				}
-	
+
 			}
 		}else {
 			comment=comment+" / no geometric roi";
@@ -396,7 +399,7 @@ public class AimMigrator {
 			template=new CD(t.getTemplateCode(),t.getTemplateName(),t.getCodingSchemeDesignator(),t.getCodingSchemeVersion());
 		}
 		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=Aim4.createImageAnnotationFromProperties(username, template, lesionName, comment, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID, accessionNumber, modality);
-		
+
 		//see if you can find trial info and store as freetext
 		String trial=mintJson.optString("trial");
 		String trialArm=mintJson.optString("trialArm");
@@ -412,43 +415,47 @@ public class AimMigrator {
 			qc.addQuestion(new Question("Trial CaseID", trialCaseID));
 		}
 		ia.setQuestionCollection(qc);
-		
+
 		//create the entities using information from pf
 		if (pf!=null)
 			ia=addMarkupAndCalculationFromPF(ia,pf);
-		
-		String location = ((JSONObject)mintJson.get("lesion")).optString("location");
-		if (location!=null && !location.equals(""))
-			ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Location",location));
-		//ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Status",((JSONObject)mintJson.get("lesion")).getString("status")));
-		CD qualityCode=null;
-		//default yes
-		if (((JSONObject)mintJson.get("lesion")).optString("evaluable","yes").equalsIgnoreCase("no"))
-			qualityCode=new CD("RID39225","Nonevaluable","Radlex",""); // is not evaluable
-		else 
-			qualityCode=new CD("S86","Evaluable","RECIST-AMS",""); //is evaluable
-		
-		String status=((JSONObject)mintJson.get("lesion")).optString("status");
-		String enhancement=((JSONObject)mintJson.get("lesion")).optString("enhancement");
-		ia.addImagingObservationEntity(getImagingObservationEntityFromPF("Lesion Quality",qualityCode,"Timepoint",((JSONObject)mintJson.get("lesion")).getInt("timepoint"), "Type",((JSONObject)mintJson.get("lesion")).getString("type"),"Lesion Status", status, "Lesion Enhancement",enhancement));
-		
+
 		edu.stanford.epad.common.util.Lexicon lexicon=edu.stanford.epad.common.util.Lexicon.getInstance();
 		CD parent = lexicon.getLex("mint");
 		log.info("parent code is "+ parent.getCode());
-		if (parent.getCode().trim().equalsIgnoreCase("99EPADD0")){
-			parent = lexicon.createLex("mint","Mint Calculations",null,"99EPADM1");
-			log.info("new parent code is "+ parent.getCode());
 
+		if ((JSONObject)mintJson.opt("lesion")!=null){
+			String location = ((JSONObject)mintJson.get("lesion")).optString("location");
+			if (location!=null && !location.equals(""))
+				ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Location",location));
+			//ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Status",((JSONObject)mintJson.get("lesion")).getString("status")));
+			CD qualityCode=null;
+			//default yes
+			if (((JSONObject)mintJson.get("lesion")).optString("evaluable","yes").equalsIgnoreCase("no"))
+				qualityCode=new CD("RID39225","Nonevaluable","Radlex",""); // is not evaluable
+			else 
+				qualityCode=new CD("S86","Evaluable","RECIST-AMS",""); //is evaluable
+
+			String status=((JSONObject)mintJson.get("lesion")).optString("status");
+			String enhancement=((JSONObject)mintJson.get("lesion")).optString("enhancement");
+			ia.addImagingObservationEntity(getImagingObservationEntityFromPF("Lesion Quality",qualityCode,"Timepoint",((JSONObject)mintJson.get("lesion")).getInt("timepoint"), "Type",((JSONObject)mintJson.get("lesion")).getString("type"),"Lesion Status", status, "Lesion Enhancement",enhancement));
+
+			if (parent.getCode().trim().equalsIgnoreCase("99EPADD0")){
+				parent = lexicon.createLex("mint","Mint Calculations",null,"99EPADM1");
+				log.info("new parent code is "+ parent.getCode());
+
+			}
 		}
-		
+
 		iac.addImageAnnotation(ia);
-		
-		//add the rest of the calculations
-		ArrayList<String[]> features=getMeasurementsFromPF(mintJson);
-		if (features!=null)
-			iac=PluginAIMUtil.addFeatures(iac, features , 1,parent, true) ; 
-		//TODO change addfeatures so it doesn't mess up modality
-		log.info("setting the modality again as we loose it in addfeatures");
+		if ((JSONObject)mintJson.opt("lesion")!=null){
+			//add the rest of the calculations
+			ArrayList<String[]> features=getMeasurementsFromPF(mintJson);
+			if (features!=null)
+				iac=PluginAIMUtil.addFeatures(iac, features , 1,parent, true) ; 
+			//TODO change addfeatures so it doesn't mess up modality
+			log.info("setting the modality again as we loose it in addfeatures");
+		}
 		Modality mod=Modality.getInstance();
 		CD modCD=null;
 		if (modality!=null && mod.get(modality)!=null )
@@ -460,7 +467,7 @@ public class AimMigrator {
 		((DicomImageReferenceEntity)iac.getImageAnnotation().getImageReferenceEntityCollection().get(0)).getImageStudy().getImageSeries().setModality(modCD);
 		//this should be called after addfeatures as addfeatures tries to init v3.CalculationData and fails as it is not double
 		//ignoring string values for dicomsr support, they have redundant info in mint calculations anyway
-//		addSummaryCalcsFromPF(mintJson, parent, iac.getImageAnnotation());
+		//		addSummaryCalcsFromPF(mintJson, parent, iac.getImageAnnotation());
 		log.info("annotation is: "+iac.toStringXML());
 		return iac.toStringXML();
 
@@ -479,7 +486,7 @@ public class AimMigrator {
 						featureCD = edu.stanford.epad.common.util.Lexicon.getInstance().createLex(((JSONObject)measurements.get(i)).getString("Type"),((JSONObject)measurements.get(i)).getString("Type"),parent,null);
 					}
 					ia.addCalculationEntity(AIMUtil.addCalculation(((JSONObject)measurements.get(i)).getString("CurrentValue"),1,"",featureCD.getDisplayName().getValue(), featureCD.getCode()));
-	
+
 				}
 			}
 		}
@@ -491,7 +498,7 @@ public class AimMigrator {
 		ArrayList<String[]> features=null;
 		if (measurements!=null){
 			features=new ArrayList<>();
-		
+
 			for (int i = 0; i < measurements.length(); i++) {
 				try {
 					double val=Double.parseDouble(((JSONObject)measurements.get(i)).getString("CurrentValue"));
@@ -504,7 +511,7 @@ public class AimMigrator {
 		return features;
 	}
 
-	
+
 
 	/**
 	 * create a ImagingObservationEntity using the timepoint and type (in characteristic label and value) values
@@ -549,8 +556,8 @@ public class AimMigrator {
 		oc.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(typeCharacteristicValue));
 
 		oe.addImagingObservationCharacteristic(oc);
-		
-		
+
+
 		return oe;
 	}
 
@@ -571,7 +578,7 @@ public class AimMigrator {
 	private static ImagingObservationEntity getImagingObservationEntityFromPF(String label, CD value,
 			String tpCharacteristicLabel, Integer tpCharacteristicValue, String typeCharacteristicLabel, String typeCharacteristicValue, String statusCharacteristicLabel, String statusCharacteristicValue,String enhancingCharacteristicLabel, String enhancingCharacteristicValue ) {
 		ImagingObservationEntity oe= getImagingObservationEntityFromPF(label,value,tpCharacteristicLabel,  tpCharacteristicValue,  typeCharacteristicLabel,  typeCharacteristicValue);
-		
+
 		ImagingObservationCharacteristic oc=new ImagingObservationCharacteristic();
 		oc.setLabel(new ST(statusCharacteristicLabel));
 		oc.setAnnotatorConfidence(0.0);
@@ -579,20 +586,20 @@ public class AimMigrator {
 		oc.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(statusCharacteristicValue));
 
 		oe.addImagingObservationCharacteristic(oc);
-		
+
 		if (enhancingCharacteristicValue!=null && !enhancingCharacteristicValue.equals("")) {
 			oc=new ImagingObservationCharacteristic();
 			oc.setLabel(new ST(enhancingCharacteristicLabel));
 			oc.setAnnotatorConfidence(0.0);
 			//do not clean 
 			oc.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(enhancingCharacteristicValue));
-	
+
 			oe.addImagingObservationCharacteristic(oc);
 		}
 		return oe;
 	}
 
-	
+
 	private static String cleanString(String value) {
 		return value.replaceAll("-", " ");
 	}
@@ -620,61 +627,7 @@ public class AimMigrator {
 	 * @return ia
 	 */
 	private static edu.stanford.hakan.aim4api.base.ImageAnnotation addMarkupAndCalculationFromPF(edu.stanford.hakan.aim4api.base.ImageAnnotation ia,JSONObject pf) {
-		//extract the geometry
-		JSONObject transformParam = (JSONObject) ((JSONObject)pf.get("Geometry")).get("transformParam");
-		double[][] transformMatrix=new double[3][3];
-		transformMatrix[0][0]=transformParam.getDouble("param0");
-		transformMatrix[0][1]=transformParam.getDouble("param1");
-		transformMatrix[0][2]=transformParam.getDouble("param2");
-		transformMatrix[1][0]=transformParam.getDouble("param3");
-		transformMatrix[1][1]=transformParam.getDouble("param4");
-		transformMatrix[1][2]=transformParam.getDouble("param5");
-		transformMatrix[2][0]=transformParam.getDouble("param6");
-		transformMatrix[2][1]=transformParam.getDouble("param7");
-		transformMatrix[2][2]=transformParam.getDouble("param8");
-		log.info("Transform matrix");
-		log.info(transformMatrix[0][0]+" "+transformMatrix[0][1]+" "+transformMatrix[0][2]);
-		log.info(transformMatrix[1][0]+" "+transformMatrix[1][1]+" "+transformMatrix[1][2]);
-		log.info(transformMatrix[2][0]+" "+transformMatrix[2][1]+" "+transformMatrix[2][2]);
-
-
-		double[] originVectorTrasform=new double[3];
-		originVectorTrasform[0]=transformParam.getDouble("param9");
-		originVectorTrasform[1]=transformParam.getDouble("param10");
-		originVectorTrasform[2]=transformParam.getDouble("param11");
-		log.info("Transform origin");
-		log.info(originVectorTrasform[0]+" "+originVectorTrasform[1]+" "+originVectorTrasform[2]);
-
-		JSONObject boundsParam = (JSONObject) ((JSONObject)pf.get("Geometry")).get("boundsParam");
-		double[][] boundsMatrix=new double[3][2];
-		boundsMatrix[0][0]=boundsParam.getDouble("bound0");//x
-		boundsMatrix[0][1]=boundsParam.getDouble("bound1");
-		boundsMatrix[1][0]=boundsParam.getDouble("bound2");//y
-		boundsMatrix[1][1]=boundsParam.getDouble("bound3");
-		boundsMatrix[2][0]=boundsParam.getDouble("bound4");//z
-		boundsMatrix[2][1]=boundsParam.getDouble("bound5");
-		log.info("Bounds matrix");
-		log.info(boundsMatrix[0][0]+" "+boundsMatrix[0][1]);
-		log.info(boundsMatrix[1][0]+" "+boundsMatrix[1][1]);
-		log.info(boundsMatrix[2][0]+" "+boundsMatrix[2][1]);
-
-
-		JSONObject spacingParam = (JSONObject) ((JSONObject)pf.get("Geometry")).get("Spacing");
-		double[] spacingVector=new double[3];
-		spacingVector[0]=spacingParam.getDouble("x");
-		spacingVector[1]=spacingParam.getDouble("y");
-		spacingVector[2]=spacingParam.getDouble("z");
-		log.info("Spacing");
-		log.info(spacingVector[0]+" "+spacingVector[1]+" "+spacingVector[2]);
-
-		JSONObject originParam = (JSONObject) ((JSONObject)pf.get("Geometry")).get("Origin");
-		double[] originVector=new double[3];
-		originVector[0]=originParam.getDouble("x");
-		originVector[1]=originParam.getDouble("y");
-		originVector[2]=originParam.getDouble("z");
-		log.info("Origin ");
-		log.info(originVector[0]+" "+originVector[1]+" "+originVector[2]);
-
+		JSONObject geo=(JSONObject)pf.opt("Geometry");
 		JSONArray points = (JSONArray) ((JSONObject)pf.get("ControlPoints")).get("Vertex");
 		double [][] pointsMM = new double[points.length()][3];
 		for (int i = 0; i < points.length(); i++) {
@@ -685,12 +638,75 @@ public class AimMigrator {
 			pointsMM[i][1]=(Double.parseDouble(((JSONObject)points.get(i)).getString("x")));
 			pointsMM[i][2]=(Double.parseDouble(((JSONObject)points.get(i)).getString("y")));
 		}
+		if (geo!=null){
 
-		double [][] pointsPX=transformPoints(pointsMM,transformMatrix,originVectorTrasform,boundsMatrix,spacingVector,originVector);
+			//extract the geometry
+			JSONObject transformParam = (JSONObject) ((JSONObject)pf.get("Geometry")).get("transformParam");
+			double[][] transformMatrix=new double[3][3];
+			transformMatrix[0][0]=transformParam.getDouble("param0");
+			transformMatrix[0][1]=transformParam.getDouble("param1");
+			transformMatrix[0][2]=transformParam.getDouble("param2");
+			transformMatrix[1][0]=transformParam.getDouble("param3");
+			transformMatrix[1][1]=transformParam.getDouble("param4");
+			transformMatrix[1][2]=transformParam.getDouble("param5");
+			transformMatrix[2][0]=transformParam.getDouble("param6");
+			transformMatrix[2][1]=transformParam.getDouble("param7");
+			transformMatrix[2][2]=transformParam.getDouble("param8");
+			log.info("Transform matrix");
+			log.info(transformMatrix[0][0]+" "+transformMatrix[0][1]+" "+transformMatrix[0][2]);
+			log.info(transformMatrix[1][0]+" "+transformMatrix[1][1]+" "+transformMatrix[1][2]);
+			log.info(transformMatrix[2][0]+" "+transformMatrix[2][1]+" "+transformMatrix[2][2]);
 
-		ia=addMarkupFromPointsPX(ia, pointsPX,ShapeType.SPLINE);
+
+			double[] originVectorTrasform=new double[3];
+			originVectorTrasform[0]=transformParam.getDouble("param9");
+			originVectorTrasform[1]=transformParam.getDouble("param10");
+			originVectorTrasform[2]=transformParam.getDouble("param11");
+			log.info("Transform origin");
+			log.info(originVectorTrasform[0]+" "+originVectorTrasform[1]+" "+originVectorTrasform[2]);
+
+			JSONObject boundsParam = (JSONObject) ((JSONObject)pf.get("Geometry")).get("boundsParam");
+			double[][] boundsMatrix=new double[3][2];
+			boundsMatrix[0][0]=boundsParam.getDouble("bound0");//x
+			boundsMatrix[0][1]=boundsParam.getDouble("bound1");
+			boundsMatrix[1][0]=boundsParam.getDouble("bound2");//y
+			boundsMatrix[1][1]=boundsParam.getDouble("bound3");
+			boundsMatrix[2][0]=boundsParam.getDouble("bound4");//z
+			boundsMatrix[2][1]=boundsParam.getDouble("bound5");
+			log.info("Bounds matrix");
+			log.info(boundsMatrix[0][0]+" "+boundsMatrix[0][1]);
+			log.info(boundsMatrix[1][0]+" "+boundsMatrix[1][1]);
+			log.info(boundsMatrix[2][0]+" "+boundsMatrix[2][1]);
+
+
+			JSONObject spacingParam = (JSONObject) ((JSONObject)pf.get("Geometry")).get("Spacing");
+			double[] spacingVector=new double[3];
+			spacingVector[0]=spacingParam.getDouble("x");
+			spacingVector[1]=spacingParam.getDouble("y");
+			spacingVector[2]=spacingParam.getDouble("z");
+			log.info("Spacing");
+			log.info(spacingVector[0]+" "+spacingVector[1]+" "+spacingVector[2]);
+
+			JSONObject originParam = (JSONObject) ((JSONObject)pf.get("Geometry")).get("Origin");
+			double[] originVector=new double[3];
+			originVector[0]=originParam.getDouble("x");
+			originVector[1]=originParam.getDouble("y");
+			originVector[2]=originParam.getDouble("z");
+			log.info("Origin ");
+			log.info(originVector[0]+" "+originVector[1]+" "+originVector[2]);
+
+
+
+			double [][] pointsPX=transformPoints(pointsMM,transformMatrix,originVectorTrasform,boundsMatrix,spacingVector,originVector);
+
+			ia=addMarkupFromPointsPX(ia, pointsPX,ShapeType.SPLINE);
+		}else{
+
+
+			ia=addMarkupFromPointsPX(ia, pointsMM,ShapeType.SPLINE);
+		}
 		//let the json send the one from measurements
-//		ia=addLengthCalculationFromPointsPX(ia, pointsPX, spacingVector);
+		//		ia=addLengthCalculationFromPointsPX(ia, pointsPX, spacingVector);
 		return ia;
 	}
 
@@ -767,7 +783,7 @@ public class AimMigrator {
 
 		return ia;
 	}
-	
+
 
 	/**************** math functions ********************/
 
@@ -1071,7 +1087,7 @@ public class AimMigrator {
 		return getExtent(direction,bounds)*magnitude;
 	}
 
-	
+
 
 
 	/**************************Osirix******************************/
