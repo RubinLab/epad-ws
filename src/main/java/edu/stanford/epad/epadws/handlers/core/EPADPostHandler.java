@@ -525,11 +525,16 @@ public class EPADPostHandler
 				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo)) {
 					ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo);
 					AIMSearchType aimSearchType = AIMUtil.getAIMSearchType(httpRequest);
-					
 					String migrateFrom = httpRequest.getParameter("migrateFrom");
+					log.info("migratefrom "+migrateFrom);
 					if (migrateFrom!=null && migrateFrom.equalsIgnoreCase("mint")) {
 						JSONObject mintJson = HandlerUtil.getPostedJson(httpRequest);
 						AimMigrator.migrateAimFromMintJson(mintJson,projectReference.projectID, username, "RECIST_v2");
+						
+					}else if(migrateFrom!=null && migrateFrom.equalsIgnoreCase("roijson")) {
+						log.info("roijson");
+						JSONObject mintJson = HandlerUtil.getPostedJson(httpRequest);
+						AimMigrator.migrateAimFromMintJson(mintJson,projectReference.projectID, username, "ROI");
 						
 					}else if (migrateFrom!=null && migrateFrom.equalsIgnoreCase("osirix")) {
 						if (uploadedFile!=null){
@@ -577,6 +582,27 @@ public class EPADPostHandler
 					if (migrateFrom!=null && migrateFrom.equalsIgnoreCase("mint")) {
 						JSONObject mintJson = HandlerUtil.getPostedJson(httpRequest);
 						String aimName=AimMigrator.migrateAimFromMintJson(mintJson, username, "RECIST_v2");
+						
+						String scheme = httpRequest.getScheme();             // http
+					    String serverName = httpRequest.getServerName();     // epad-dev4
+					    int serverPort = httpRequest.getServerPort();        // 8080
+					    
+					    // Reconstruct original requesting URL
+					    StringBuilder url = new StringBuilder();
+					    url.append(scheme).append("://").append(serverName);
+
+					    if (serverPort != 80 && serverPort != 443) {
+					        url.append(":").append(serverPort);
+					    }
+
+					    url.append("/epad").append("/resources/download/");
+					    url.append(aimName);
+						responseStream.append(url.toString());
+						
+					}else if(migrateFrom!=null && migrateFrom.equalsIgnoreCase("roijson")) {
+						log.info("roijson");
+						JSONObject mintJson = HandlerUtil.getPostedJson(httpRequest);
+						String aimName=AimMigrator.migrateAimFromMintJson(mintJson, username, "ROI");
 						
 						String scheme = httpRequest.getScheme();             // http
 					    String serverName = httpRequest.getServerName();     // epad-dev4
