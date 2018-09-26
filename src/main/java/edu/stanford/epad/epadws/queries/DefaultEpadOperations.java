@@ -1018,7 +1018,7 @@ public class DefaultEpadOperations implements EpadOperations
 		boolean getMetaDataForAllImages = false;
 		log.debug("pixelSpacing1:" + pixelSpacing1 + " pixelSpacing2:" + pixelSpacing2);
 		//if ultrasound send all the images no need to check the others
-		if ( modality.equalsIgnoreCase("US") || sopClassUID.equals("1.2.840.10008.5.1.4.1.1.6.1")
+		if (modality!=null && modality.equalsIgnoreCase("US") || sopClassUID.equals("1.2.840.10008.5.1.4.1.1.6.1")
 				|| ((pixelSpacing1 != null && !pixelSpacing1.equals(pixelSpacing2)) || (rows1 != null && !rows1.equals(rows2)) || (columns1 != null && !columns1.equals(columns2)) ))
 		{
 			log.info("Series: " +  seriesReference.seriesUID + " returning metadata for all images");
