@@ -666,7 +666,7 @@ public class UserProjectService {
 					if (generateAim || ias.size() == 0 || aims.size() == 0) 
 					{
 						log.info("came from create project entities");
-						AIMUtil.generateAIMFileForDSO(dicomFile, username, projectID,null,true);
+						AIMUtil.generateAIMFileForDSO(dicomFile, username, projectID,null,EPADConfig.saveDSOStats);
 					}
 					else
 					{
