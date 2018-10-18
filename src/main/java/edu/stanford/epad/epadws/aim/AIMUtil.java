@@ -863,10 +863,10 @@ public class AIMUtil
 	
 	public static boolean saveAIMAnnotation(File aimFile, String projectID, int frameNumber, String sessionId, String username, boolean uploaded) throws AimException
 	{
-		return saveAIMAnnotation(aimFile, projectID, frameNumber, sessionId, username, uploaded, false);
+		return saveAIMAnnotation(aimFile, projectID, frameNumber, sessionId, username, uploaded, false, false);
 	}
 
-	public static boolean saveAIMAnnotation(File aimFile, String projectID, int frameNumber, String sessionId, String username, boolean uploaded, boolean isDicomSR) throws AimException
+	public static boolean saveAIMAnnotation(File aimFile, String projectID, int frameNumber, String sessionId, String username, boolean uploaded, boolean isDicomSR, boolean generateCalcs) throws AimException
 	{
 		final Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
@@ -915,7 +915,6 @@ public class AIMUtil
 					}
 					//ml this is a segmentation aim sent from ui. 
 					//delete and add the calculations everytime, ui calculates wrong anyway
-					boolean generateCalcs=true;					
 					if (generateCalcs){
 						//open the referenced images and calculate the aggregations
 						DicomSegmentationEntity dseg=(DicomSegmentationEntity) sec.getSegmentationEntityList().get(0);

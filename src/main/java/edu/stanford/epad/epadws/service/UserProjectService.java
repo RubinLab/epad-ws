@@ -421,7 +421,7 @@ public class UserProjectService {
 								EPADFileUtils.write(tmpAim, xml);
 								log.info("tmp aim path:"+ tmpAim.getAbsolutePath());
 								//ml sessionid param set to null for not triggering the plugin (sessionID is xnatSessionID from upload) 
-								if (AIMUtil.saveAIMAnnotation(tmpAim, projectID, 0, null, username, false,true))
+								if (AIMUtil.saveAIMAnnotation(tmpAim, projectID, 0, null, username, false,true, EPADConfig.saveDSOStats))
 									log.warning("Error processing aim file:" + dicomFile.getName());
 							}
 							
