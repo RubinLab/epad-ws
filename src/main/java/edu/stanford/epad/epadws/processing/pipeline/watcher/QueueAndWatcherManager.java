@@ -217,6 +217,11 @@ public class QueueAndWatcherManager
 		for (DICOMFileDescription dicomFileDescription : dicomFileDescriptions) {
 			String seriesUID = dicomFileDescription.seriesUID;
 			String imageUID = dicomFileDescription.imageUID;
+			if (SingleFrameDICOMPngGeneratorTask.imagesBeingProcessed.contains(imageUID)){
+				log.warning("Skipping "+imageUID+ " as it is already in the queue");
+				continue;
+			}
+				
 			String dicomFilePath = getDICOMFilePath(dicomFileDescription);
 			String modality = dicomFileDescription.modality;
 			File inputDICOMFile = new File(dicomFilePath);
