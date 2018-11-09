@@ -104,13 +104,8 @@
  *******************************************************************************/
 package edu.stanford.epad.epadws.queries;
 
-import ij.ImagePlus;
-import ij.io.Opener;
-import ij.measure.Calibration;
-import ij.process.ImageProcessor;
-import ij.process.ImageStatistics;
-
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -138,8 +133,10 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import com.pixelmed.dicom.DicomException;
 import com.pixelmed.dicom.SOPClass;
 import com.pixelmed.dicom.UIDGenerator;
+import com.pixelmed.display.SourceImage;
 
 import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
 import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
@@ -150,6 +147,7 @@ import edu.stanford.epad.common.pixelmed.SegmentedProperty;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.common.util.PixelMapDouble;
 import edu.stanford.epad.dtos.AnnotationStatus;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
@@ -6108,7 +6106,42 @@ public class DefaultEpadOperations implements EpadOperations
 		defaultWindow.put("XA-CARDIAC (12 BIT)", "4096,2048");
 		defaultWindow.put("XA-CARDIAC (8 BIT)", "255,127");
 	};
-
+	
+	@Override
+	public Double[] calculateMinMax(String filePath){
+			//open the file
+			try {
+				SourceImage image=new SourceImage(filePath);
+				PixelMapDouble pixelMap = new PixelMapDouble();
+				double[] imagePixels=DSOUtil.getTransformedPixelValuesAsArray(image,0);
+				for (int j=0;j<imagePixels.length;j++){
+					// add it to the map or inc its frequency
+					Double f = pixelMap.get(imagePixels[j]);
+					if (f == null) {
+						pixelMap.put(imagePixels[j], 1.0);
+					} else {
+						pixelMap.put(imagePixels[j], f + 1);
+					}
+				}
+				pixelMap.minMaxRange();
+				
+				log.info("min="+pixelMap.getMin() +" max="+pixelMap.getMax());
+				return new Double[]{pixelMap.getMin() ,pixelMap.getMax()};
+			} catch (IOException e) {
+				log.warning("Cannot read file ",e);
+			} catch (DicomException e) {
+				log.warning("Dicom issue ",e);
+			}
+			catch (Exception e) {
+				log.warning("Cannot calculate values ",e);
+				
+			}
+			
+			
+			return null;
+			
+		}
+	
 	private List<DICOMElement> getCalculatedWindowingDICOMElements(String studyUID, String seriesUID, String imageUID, boolean useMax, String modality, String bodyPart)
 	{
 		List<DICOMElement> dicomElements = new ArrayList<>();
@@ -6117,79 +6150,118 @@ public class DefaultEpadOperations implements EpadOperations
 		String dicomImageFilePath = null;
 
 		try {
-			File temporaryDicomFile = File.createTempFile(imageUID, ".dcm");
-			DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, imageUID, temporaryDicomFile);
-
-			dicomImageFilePath = temporaryDicomFile.getAbsolutePath();
-			Opener opener = new Opener();
-			ImagePlus image = null;
-			try {
-				image = opener.openImage(dicomImageFilePath);
-			} catch (Error x) {
-				log.warning("ImageJ error opening image");
-			} catch (Throwable x) {
-				log.warning("ImageJ error opening image");
-			}
-
-
-			if (image != null) {
-				// This method to get Window parameters in overriden below (need to test which one is correct)
-				double min = image.getDisplayRangeMin();
-				double max = image.getDisplayRangeMax();
-				Calibration cal = image.getCalibration();
-				double minValue = cal.getCValue(min);
-				double maxValue = cal.getCValue(max);
-				windowWidth = Math.round(maxValue - minValue);
+			String key = modality + "-" + bodyPart;
+			if (defaultWindow.get(key.toUpperCase()) != null)
+			{
+				String[] win = defaultWindow.get(key.toUpperCase()).split(",");
+				windowCenter = getInt(win[1]);
+				windowWidth = getInt(win[0]);
+				log.info("Modality default, windowWidth:" + windowWidth + " windowCenter:" + windowCenter);
+				
+			}else {
+			
+				File temporaryDicomFile = File.createTempFile(imageUID, ".dcm");
+				DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, imageUID, temporaryDicomFile);
+	
+				dicomImageFilePath = temporaryDicomFile.getAbsolutePath();
+				//get transformation using pixelmed
+				Double minMax[]=calculateMinMax(dicomImageFilePath);
+				windowWidth = Math.round(minMax[1] - minMax[0]);
 				if (windowWidth == 0)
 				{
 					windowWidth = 400;
 				}
-				windowCenter = Math.round(minValue + windowWidth / 2.0);
-				ImageProcessor ip = image.getProcessor();
-				log.info("Image, min:" + minValue + " max:" + maxValue + " width:" + windowWidth + " center:" + windowCenter);
-				if (ip != null)
-					log.info("Processor min:" + ip.getMinThreshold() + " minh:"+ ip.getHistogramMin() + " max:" + ip.getMax() + " calmin:" + cal.getCValue(ip.getMin()) + " calmx:"+ cal.getCValue(ip.getMax()));
-				// New method to get window parameters
-				ImageStatistics is = image.getStatistics();
-				if (is != null)
-				{
-					min = is.min;
-					max = is.max;
-					log.info("Statistics, min:" + min + " max:" + max + " all:" + is);
-					long width = Math.round(max - min);
-					long center = Math.round(min + width/2.0);
-					if (width > 0)
-					{
-						windowWidth = width;
-						windowCenter = center;
-					}
-				}
-				if (cal.isSigned16Bit() && max < 5000) // Signed values can be negative/positive
-					windowCenter = 0;
-				log.info("Calculated, windowWidth:" + windowWidth + " windowCenter:" + windowCenter);
-				if (useMax && windowWidth != 255 && windowCenter !=128) { 	//temporary test
-					windowCenter = 16384;
-					windowWidth = 32768;
-				}
-				String key = modality + "-" + bodyPart;
-				if (defaultWindow.get(key.toUpperCase()) != null)
-				{
-					String[] win = defaultWindow.get(key.toUpperCase()).split(",");
-					windowCenter = getInt(win[1]);
-					windowWidth = getInt(win[0]);
-				}
-
-				log.info("Image " + imageUID + " in series " + seriesUID + " has a calculated window width of " + windowWidth
-						+ " and window center of " + windowCenter + " signed:" + cal.isSigned16Bit());
-				temporaryDicomFile.delete();
-			} else {
-				log.warning("ImageJ failed to load DICOM file for image " + imageUID + " in series " + seriesUID + " path: " + dicomImageFilePath
-						+ " to calculate windowing");
-				if (useMax) {
-					windowCenter = 16384;
-					windowWidth = 32768;
-				}
+				windowCenter = Math.round(minMax[0] + windowWidth / 2.0);
+				
+				log.info("Transformed, windowWidth:" + windowWidth + " windowCenter:" + windowCenter);
 			}
+			//old code using ImageJ. not working with compressed. calculates on raw values
+			//how about use useMax?
+//			Opener opener = new Opener();
+//			ImagePlus image = null;
+//			try {
+//				image = opener.openImage(dicomImageFilePath);
+//				
+//				if (image != null) {
+//					// This method to get Window parameters in overriden below (need to test which one is correct)
+//					double min = image.getDisplayRangeMin();
+//					double max = image.getDisplayRangeMax();
+//					Calibration cal = image.getCalibration();
+//					double minValue = cal.getCValue(min);
+//					double maxValue = cal.getCValue(max);
+//					windowWidth = Math.round(maxValue - minValue);
+//					if (windowWidth == 0)
+//					{
+//						windowWidth = 400;
+//					}
+//					windowCenter = Math.round(minValue + windowWidth / 2.0);
+//					ImageProcessor ip = image.getProcessor();
+//					log.info("Image, min:" + minValue + " max:" + maxValue + " width:" + windowWidth + " center:" + windowCenter);
+//					if (ip != null)
+//						log.info("Processor min:" + ip.getMinThreshold() + " minh:"+ ip.getHistogramMin() + " max:" + ip.getMax() + " calmin:" + cal.getCValue(ip.getMin()) + " calmx:"+ cal.getCValue(ip.getMax()));
+//					// New method to get window parameters
+//					ImageStatistics is = image.getStatistics();
+//					if (is != null)
+//					{
+//						min = is.min;
+//						max = is.max;
+//						log.info("Statistics, min:" + min + " max:" + max + " all:" + is);
+//						long width = Math.round(max - min);
+//						long center = Math.round(min + width/2.0);
+//						if (width > 0)
+//						{
+//							windowWidth = width;
+//							windowCenter = center;
+//						}
+//					}
+//					if (cal.isSigned16Bit() && max < 5000) // Signed values can be negative/positive
+//						windowCenter = 0;
+//					log.info("Calculated, windowWidth:" + windowWidth + " windowCenter:" + windowCenter);
+//					if (useMax && windowWidth != 255 && windowCenter !=128) { 	//temporary test
+//						windowCenter = 16384;
+//						windowWidth = 32768;
+//					}
+//					String key = modality + "-" + bodyPart;
+//					if (defaultWindow.get(key.toUpperCase()) != null)
+//					{
+//						String[] win = defaultWindow.get(key.toUpperCase()).split(",");
+//						windowCenter = getInt(win[1]);
+//						windowWidth = getInt(win[0]);
+//					}
+//
+//					log.info("Image " + imageUID + " in series " + seriesUID + " has a calculated window width of " + windowWidth
+//							+ " and window center of " + windowCenter + " signed:" + cal.isSigned16Bit());
+//					temporaryDicomFile.delete();
+//				} else {
+//					log.warning("ImageJ failed to load DICOM file for image " + imageUID + " in series " + seriesUID + " path: " + dicomImageFilePath
+//							+ " to calculate windowing");
+//					if (useMax) {
+//						windowCenter = 16384;
+//						windowWidth = 32768;
+//					}
+//				}
+//				
+//				//todo multiply with rescale slope and add intercept
+//			} catch (Error x) {
+//				log.warning("ImageJ error opening image", x);
+//				log.warning("ImageJ failed to load DICOM file for image " + imageUID + " in series " + seriesUID + " path: " + dicomImageFilePath
+//						+ " to calculate windowing");
+//				if (useMax) {
+//					windowCenter = 16384;
+//					windowWidth = 32768;
+//				}
+//
+//			} catch (Throwable x) {
+//				log.warning("ImageJ error opening image", x);
+//				log.warning("ImageJ failed to load DICOM file for image " + imageUID + " in series " + seriesUID + " path: " + dicomImageFilePath
+//						+ " to calculate windowing");
+//				if (useMax) {
+//					windowCenter = 16384;
+//					windowWidth = 32768;
+//				}
+//
+//			}	
+			
 		} catch (Exception e) {
 			log.warning("Error getting DICOM file from dcm4chee for image " + imageUID + " in series " + seriesUID, e);
 		}
