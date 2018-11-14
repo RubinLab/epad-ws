@@ -44,6 +44,7 @@ import edu.stanford.epad.epadws.models.Template;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
+import edu.stanford.hakan.aim4api.base.AimException;
 import edu.stanford.hakan.aim4api.base.Algorithm;
 import edu.stanford.hakan.aim4api.base.CD;
 import edu.stanford.hakan.aim4api.base.CalculationData;
@@ -348,6 +349,29 @@ public class Aim2DicomSRConverter {
 		}
 		return "";
 	}
+	
+	public String Aim2DicomSRvXslt(String aimID,String projectID) {
+		//use latest extractannotationfromaim_XSLT_asof_20181101
+		//java -cp ~/epad/libraries/pixelmed/pixelmed-2018.jar com.pixelmed.validate.ExecuteTranslet extractannotationfromaim_XSLT_asof_20181024/extractannotationfromaim.xsl ../aim15.xml aim15_extract.xml
+		//java -cp ~/epad/libraries/pixelmed/pixelmed-2018.jar com.pixelmed.dicom.XMLRepresentationOfStructuredReportObjectFactory toDICOM aim15_extract.xml > aim15_extract.dcm
+		String dicomSrPath="tmp_dicomsr"+System.currentTimeMillis()+".dcm";
+		try {
+			ImageAnnotationCollection iac = PluginAIMUtil.getImageAnnotationCollectionFromServer(aimID, projectID);
+			String aimFilename="";//create a file with iac
+			String extractFilename="tmp_extract"+System.currentTimeMillis()+".xml";
+			com.pixelmed.validate.ExecuteTranslet.main(new String[] {"extractannotationfromaim.xsl",aimFilename,extractFilename});
+			com.pixelmed.dicom.XMLRepresentationOfStructuredReportObjectFactory.main(new String[] {"toDICOM",extractFilename,">",dicomSrPath});
+		
+		} catch (AimException e) {
+			log.warning("Couldn't read aim file", e);
+		}
+		
+		
+		//TODO clear tmps
+		return dicomSrPath;
+		
+	}
+	
 	public String Aim2DicomSR(String aimID,String projectID) {
 		String imagePath=null,segPath=null,outputFileName=null;
 
@@ -757,7 +781,25 @@ public class Aim2DicomSRConverter {
 		return meta;
 	}
 
-
+	public String DicomSR2AimvXslt(String filePath, String projectID) {
+		String xmlData=null;
+		//use latest extractannotationfromaim_XSLT_asof_20181101
+		//java -cp ~/epad/libraries/pixelmed/pixelmed-2018.jar com.pixelmed.dicom.XMLRepresentationOfStructuredReportObjectFactory toXML 1.dcm > 1.xml
+		//java -cp ~/epad/libraries/pixelmed/pixelmed-2018.jar com.pixelmed.validate.ExecuteTranslet ~/epad/xslt_dicomsr/roundtrip_v2/extractannotationfromaim_XSLT_asof_20181024/extractaimfromdicomsr.xsl 1.xml 1aim.xml
+		
+		String aimFilename="tmp_aim"+System.currentTimeMillis()+".xml";
+		String extractFilename="tmp_extract"+System.currentTimeMillis()+".xml";
+		
+		com.pixelmed.dicom.XMLRepresentationOfStructuredReportObjectFactory.main(new String[] {"toXML",filePath,">",extractFilename});
+		com.pixelmed.validate.ExecuteTranslet.main(new String[] {"extractaimfromdicomsr.xsl",extractFilename,aimFilename});
+	
+		//TODO
+//		get xmldata from aim file
+//		crear tmps
+		return xmlData;
+	}
+	
+	
 	/**
 	 * start the dicomsr to aim conversion using a file path
 	 * @param filePath
