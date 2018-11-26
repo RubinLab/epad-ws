@@ -364,6 +364,10 @@ public class Main
 		"plugin-manager.sh", //plugin manager script file
 	};
 	
+	static final String[] epadXsls = {		
+			"extractaimfromdicomsr.xsl",
+			"extractannotationfromaim.xsl"
+		};
 
 	public static void checkResourcesFolders() {
 		File folder = new File(EPADConfig.getEPADWebServerBaseDir() + "bin/");
@@ -413,6 +417,8 @@ public class Main
 		}
 		//copy other scripts
 		copyFiles(System.getProperty("user.home") + "/mac/bin/", EPADConfig.getEPADWebServerBaseDir() + "bin/", "scripts/", epadOtherScripts);
+
+		copyFiles(System.getProperty("user.home") + "/mac/bin/", EPADConfig.getEPADWebServerBaseDir() + "bin/", "xsls/", epadXsls);
 
 	}
 
