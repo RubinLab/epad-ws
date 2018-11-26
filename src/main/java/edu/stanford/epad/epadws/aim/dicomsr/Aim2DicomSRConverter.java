@@ -1,12 +1,15 @@
 package edu.stanford.epad.epadws.aim.dicomsr;
 
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -354,20 +357,40 @@ public class Aim2DicomSRConverter {
 		//use latest extractannotationfromaim_XSLT_asof_20181101
 		//java -cp ~/epad/libraries/pixelmed/pixelmed-2018.jar com.pixelmed.validate.ExecuteTranslet extractannotationfromaim_XSLT_asof_20181024/extractannotationfromaim.xsl ../aim15.xml aim15_extract.xml
 		//java -cp ~/epad/libraries/pixelmed/pixelmed-2018.jar com.pixelmed.dicom.XMLRepresentationOfStructuredReportObjectFactory toDICOM aim15_extract.xml > aim15_extract.dcm
-		String dicomSrPath="tmp_dicomsr"+System.currentTimeMillis()+".dcm";
+		String dicomSrPath="/tmp/tmp_dicomsr"+System.currentTimeMillis()+".dcm";
+		String aimFilename="/tmp/tmp_aim"+System.currentTimeMillis()+".dcm";;//create a file with iac
+		File aimFile=new File(aimFilename);
+		String extractFilename="/tmp/tmp_extract"+System.currentTimeMillis()+".xml";
+		
+		
 		try {
 			ImageAnnotationCollection iac = PluginAIMUtil.getImageAnnotationCollectionFromServer(aimID, projectID);
-			String aimFilename="";//create a file with iac
-			String extractFilename="tmp_extract"+System.currentTimeMillis()+".xml";
-			com.pixelmed.validate.ExecuteTranslet.main(new String[] {"extractannotationfromaim.xsl",aimFilename,extractFilename});
-			com.pixelmed.dicom.XMLRepresentationOfStructuredReportObjectFactory.main(new String[] {"toDICOM",extractFilename,">",dicomSrPath});
-		
+			EPADFileUtils.write(aimFile, iac.getXMLString());
+			
+			PrintStream out = System.out;
+			try
+			{
+				com.pixelmed.validate.ExecuteTranslet.main(new String[] {"extractannotationfromaim.xsl",aimFilename,extractFilename});
+				System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream(dicomSrPath)), true));
+				com.pixelmed.dicom.XMLRepresentationOfStructuredReportObjectFactory.main(new String[] {"toDICOM",extractFilename});
+			
+			} catch (Exception e) {
+				log.warning("Couldn't convert to dicomsr file", e);
+			}
+			finally
+			{
+			    // use a finally block to ensure the old System.out gets restored even if an exception is thrown from Main.main
+			    System.setOut(out);
+			}
 		} catch (AimException e) {
 			log.warning("Couldn't read aim file", e);
+		} catch (Exception e) {
+			log.warning("Couldn't process aim file", e);
+		} finally {
+			aimFile.delete();
+			new File(extractFilename).delete();
 		}
 		
-		
-		//TODO clear tmps
 		return dicomSrPath;
 		
 	}
@@ -786,16 +809,38 @@ public class Aim2DicomSRConverter {
 		//use latest extractannotationfromaim_XSLT_asof_20181101
 		//java -cp ~/epad/libraries/pixelmed/pixelmed-2018.jar com.pixelmed.dicom.XMLRepresentationOfStructuredReportObjectFactory toXML 1.dcm > 1.xml
 		//java -cp ~/epad/libraries/pixelmed/pixelmed-2018.jar com.pixelmed.validate.ExecuteTranslet ~/epad/xslt_dicomsr/roundtrip_v2/extractannotationfromaim_XSLT_asof_20181024/extractaimfromdicomsr.xsl 1.xml 1aim.xml
+		log.info("sr path is "+ filePath);
+		String aimFilename="/tmp/tmp_aim"+System.currentTimeMillis()+".xml";
+		String extractFilename="/tmp/tmp_extract"+System.currentTimeMillis()+".xml";
 		
-		String aimFilename="tmp_aim"+System.currentTimeMillis()+".xml";
-		String extractFilename="tmp_extract"+System.currentTimeMillis()+".xml";
 		
-		com.pixelmed.dicom.XMLRepresentationOfStructuredReportObjectFactory.main(new String[] {"toXML",filePath,">",extractFilename});
-		com.pixelmed.validate.ExecuteTranslet.main(new String[] {"extractaimfromdicomsr.xsl",extractFilename,aimFilename});
-	
-		//TODO
-//		get xmldata from aim file
-//		crear tmps
+		PrintStream out = System.out;
+		try
+		{
+			System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream(extractFilename)), true));
+			com.pixelmed.dicom.XMLRepresentationOfStructuredReportObjectFactory.main(new String[] {"toXML",filePath});
+			System.setOut(out);
+			com.pixelmed.validate.ExecuteTranslet.main(new String[] {"extractaimfromdicomsr.xsl",extractFilename,aimFilename});
+			
+		}catch(Exception e) {
+			log.warning("Error in using pixelmeds main ",e);
+		}
+		finally
+		{
+		    // use a finally block to ensure the old System.out gets restored even if an exception is thrown from Main.main
+		    System.setOut(out);
+		}
+		
+		
+		File aimFile=new File(aimFilename);
+		try {
+			xmlData=EPADFileUtils.readFileAsString(aimFile);
+		} catch (Exception e) {
+			log.warning("Couldn't read the produced aim file", e);
+		} finally {
+			aimFile.delete();
+			new File(extractFilename).delete();
+		}
 		return xmlData;
 	}
 	
