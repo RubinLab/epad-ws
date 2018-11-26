@@ -880,6 +880,7 @@ public class AIMUtil
             
             if (imageAnnotationColl != null) {
             	Aim4 aim = new Aim4(imageAnnotationColl);
+            	
             	//let's check if the subject is in epad and give notification. do not block
             	String patientID = aim.getPatientID();
             	final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
@@ -936,7 +937,29 @@ public class AIMUtil
 						
 					}
 					
+					
 				}
+				if (aim.getCodeValue()==null || aim.getCodeValue().trim().equals("")) {
+            		if (sec!=null) {
+            			//set to segonly
+            			//get the seg template
+            			Template t=projectOperations.getTemplate("SEG");
+            			CD template=null;
+            			if (t!=null){
+            				template=new CD(t.getTemplateCode(),t.getTemplateName(),t.getCodingSchemeDesignator(),t.getCodingSchemeVersion());
+            			}
+            			aim.setTemplate(template);
+            		}else {
+            			//set to roionly
+            			//get the roi template
+            			Template t=projectOperations.getTemplate("ROI");
+            			CD template=null;
+            			if (t!=null){
+            				template=new CD(t.getTemplateCode(),t.getTemplateName(),t.getCodingSchemeDesignator(),t.getCodingSchemeVersion());
+            			}
+            			aim.setTemplate(template);
+            		}
+            	}
 				EPADAIM ea = epadDatabaseOperations.getAIM(imageAnnotationColl.getUniqueIdentifier().getRoot());
 				String originalPatientID = aim.getOriginalPatientID();
 				log.info("pat "+ imageAnnotationColl.getPerson().getId());
