@@ -412,7 +412,7 @@ public class UserProjectService {
 							log.info("DicomSR found in createProjectEntitiesFromDICOMFilesInUploadDirectory. processing");
 							Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
 							
-							String xml=converter.DicomSR2Aim(dicomFile.getAbsolutePath(), projectID);
+							String xml=converter.DicomSR2AimvXslt(dicomFile.getAbsolutePath(), projectID);
 							if (xml==null) {
 								log.info("Could not convert from dicom sr");
 							}else {

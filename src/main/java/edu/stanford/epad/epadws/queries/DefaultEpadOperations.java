@@ -2155,7 +2155,7 @@ public class DefaultEpadOperations implements EpadOperations
 				log.info("DicomSR found in createFile. processing");
 				type=FileType.DICOMSR;
 				Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
-				String xml=converter.DicomSR2Aim(uploadedFile.getAbsolutePath(), projectID);
+				String xml=converter.DicomSR2AimvXslt(uploadedFile.getAbsolutePath(), projectID);
 				if (xml==null) {
 					log.info("Could not convert from dicom sr");
 				}else {

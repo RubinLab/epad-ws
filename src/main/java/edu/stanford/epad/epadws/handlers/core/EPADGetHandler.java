@@ -777,7 +777,7 @@ public class EPADGetHandler
 				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
 					
 					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
-					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,projectReference.projectID);
+					String outputFilePath=converter.Aim2DicomSRvXslt(aimReference.aimID,projectReference.projectID);
 					log.info("output file:"+outputFilePath);
 
 					if (outputFilePath!=null) {
@@ -907,7 +907,7 @@ public class EPADGetHandler
 				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
 					
 					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
-					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,aim.projectID);
+					String outputFilePath=converter.Aim2DicomSRvXslt(aimReference.aimID,aim.projectID);
 					log.info("output file:"+outputFilePath);
 					
 					if (outputFilePath!=null) {
@@ -965,7 +965,7 @@ public class EPADGetHandler
 				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
 					
 					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
-					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,aim.projectID);
+					String outputFilePath=converter.Aim2DicomSRvXslt(aimReference.aimID,aim.projectID);
 					log.info("output file:"+outputFilePath);
 					
 					if (outputFilePath!=null) {
@@ -1035,7 +1035,7 @@ public class EPADGetHandler
 				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
 					
 					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
-					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,aim.projectID);
+					String outputFilePath=converter.Aim2DicomSRvXslt(aimReference.aimID,aim.projectID);
 					log.info("output file:"+outputFilePath);
 					
 					if (outputFilePath!=null) {
@@ -1097,7 +1097,7 @@ public class EPADGetHandler
 				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
 					
 					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
-					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,aim.projectID);
+					String outputFilePath=converter.Aim2DicomSRvXslt(aimReference.aimID,aim.projectID);
 					log.info("output file:"+outputFilePath);
 					
 					if (outputFilePath!=null) {
@@ -1161,7 +1161,7 @@ public class EPADGetHandler
 				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
 					
 					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
-					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,aim.projectID);
+					String outputFilePath=converter.Aim2DicomSRvXslt(aimReference.aimID,aim.projectID);
 					log.info("output file:"+outputFilePath);
 					
 					if (outputFilePath!=null) {
@@ -1257,7 +1257,7 @@ public class EPADGetHandler
 				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
 					
 					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
-					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,aim.projectID);
+					String outputFilePath=converter.Aim2DicomSRvXslt(aimReference.aimID,aim.projectID);
 					log.info("output file:"+outputFilePath);
 					
 					if (outputFilePath!=null) {
@@ -1316,7 +1316,7 @@ public class EPADGetHandler
 				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
 					
 					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
-					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,aim.projectID);
+					String outputFilePath=converter.Aim2DicomSRvXslt(aimReference.aimID,aim.projectID);
 					log.info("output file:"+outputFilePath);
 					
 					if (outputFilePath!=null) {
@@ -1371,7 +1371,7 @@ public class EPADGetHandler
 				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
 					
 					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
-					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,aim.projectID);
+					String outputFilePath=converter.Aim2DicomSRvXslt(aimReference.aimID,aim.projectID);
 					log.info("output file:"+outputFilePath);
 					
 					if (outputFilePath!=null) {
@@ -1427,7 +1427,7 @@ public class EPADGetHandler
 				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
 					
 					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
-					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,aim.projectID);
+					String outputFilePath=converter.Aim2DicomSRvXslt(aimReference.aimID,aim.projectID);
 					log.info("output file:"+outputFilePath);
 					
 					if (outputFilePath!=null) {
@@ -1498,7 +1498,7 @@ public class EPADGetHandler
 				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
 					
 					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
-					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,aim.projectID);
+					String outputFilePath=converter.Aim2DicomSRvXslt(aimReference.aimID,aim.projectID);
 					log.info("output file:"+outputFilePath);
 					
 					if (outputFilePath!=null) {
@@ -1635,7 +1635,7 @@ public class EPADGetHandler
 				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
 					
 					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
-					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,aim.projectID);
+					String outputFilePath=converter.Aim2DicomSRvXslt(aimReference.aimID,aim.projectID);
 					log.info("output file:"+outputFilePath);
 					
 					if (outputFilePath!=null) {
