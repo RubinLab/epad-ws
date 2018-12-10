@@ -186,7 +186,7 @@ public class AimMigrator {
 			if (AnnotationValidator.ValidateXML(tmpAim.getAbsolutePath(), EPADConfig.xsdFilePath)) {
 				log.info("xml produced  is valid");
 				//sending null. plugin wouldn't be triggered
-				if (AIMUtil.saveAIMAnnotation(tmpAim, projectID, 0, null, username, false, false))
+				if (AIMUtil.saveAIMAnnotation(tmpAim, projectID, 0, null, username, false, false, EPADConfig.saveDSOStats))
 					log.warning("Error saving aim file:" + tmpAimName);
 			}
 			else 
