@@ -415,7 +415,7 @@ public class AimMigrator {
 		
 		//create the entities using information from pf
 		if (pf!=null)
-			ia=addMarkupAndCalculationFromPF(ia,pf);
+			ia=addMarkupAndCalculationFromPF(ia,pf,imageUID);
 		
 		String location = ((JSONObject)mintJson.get("lesion")).optString("location");
 		if (location!=null && !location.equals(""))
@@ -619,7 +619,7 @@ public class AimMigrator {
 	 * @param pf
 	 * @return ia
 	 */
-	private static edu.stanford.hakan.aim4api.base.ImageAnnotation addMarkupAndCalculationFromPF(edu.stanford.hakan.aim4api.base.ImageAnnotation ia,JSONObject pf) {
+	private static edu.stanford.hakan.aim4api.base.ImageAnnotation addMarkupAndCalculationFromPF(edu.stanford.hakan.aim4api.base.ImageAnnotation ia,JSONObject pf, String imageUID) {
 		//extract the geometry
 		JSONObject transformParam = (JSONObject) ((JSONObject)pf.get("Geometry")).get("transformParam");
 		double[][] transformMatrix=new double[3][3];
@@ -688,7 +688,7 @@ public class AimMigrator {
 
 		double [][] pointsPX=transformPoints(pointsMM,transformMatrix,originVectorTrasform,boundsMatrix,spacingVector,originVector);
 
-		ia=addMarkupFromPointsPX(ia, pointsPX,ShapeType.SPLINE);
+		ia=addMarkupFromPointsPX(ia, pointsPX,ShapeType.SPLINE, imageUID);
 		//let the json send the one from measurements
 //		ia=addLengthCalculationFromPointsPX(ia, pointsPX, spacingVector);
 		return ia;
@@ -701,7 +701,7 @@ public class AimMigrator {
 	 * @param pf
 	 * @return ia
 	 */
-	private static edu.stanford.hakan.aim4api.base.ImageAnnotation addMarkupFromPointsPX(edu.stanford.hakan.aim4api.base.ImageAnnotation ia,double [][] pointsPX, ShapeType shapeType) {
+	private static edu.stanford.hakan.aim4api.base.ImageAnnotation addMarkupFromPointsPX(edu.stanford.hakan.aim4api.base.ImageAnnotation ia,double [][] pointsPX, ShapeType shapeType, String imageUID) {
 
 		//add the geometric shape entity
 		edu.stanford.hakan.aim4api.base.TwoDimensionGeometricShapeEntity res = null;
@@ -737,6 +737,7 @@ public class AimMigrator {
 		res.setUniqueIdentifier();
 		res.setShapeIdentifier(1);
 		res.setIncludeFlag(true);
+		res.setImageReferenceUid(new II(imageUID));
 		TwoDimensionSpatialCoordinateCollection cc=new TwoDimensionSpatialCoordinateCollection();
 		for (int i = 0; i < pointsPX.length; i++) {
 			TwoDimensionSpatialCoordinate c=new TwoDimensionSpatialCoordinate();
@@ -1271,7 +1272,7 @@ public class AimMigrator {
 
 
 		}
-		ia=addMarkupFromPointsPX(ia, pointsPX,shapeType);
+		ia=addMarkupFromPointsPX(ia, pointsPX,shapeType, imageUID);
 
 		//add the calculations. the calculations in osirix xml are:
 		//AreaCm2, AreaPix2, Center, Dev (std dev), LengthCm, LengthPix, Max, Mean, Min, Total
