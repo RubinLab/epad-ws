@@ -167,6 +167,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 	private final File dicomFile;
 	private final String outFilePath;
 	private final String sourceSeriesUID;
+	private String username;
 
 	static public Set seriesBeingProcessed = Collections.synchronizedSet(new HashSet());
 	
@@ -178,9 +179,10 @@ public class RTDICOMProcessingTask implements GeneratorTask
 		this.dicomFile = dicomFile;
 		this.outFilePath = outFilePath;
 		this.sourceSeriesUID= null;
+		this.username=null;
 	}
 	
-	public RTDICOMProcessingTask(String studyUID, String seriesUID, String imageUID, File dicomFile, String outFilePath, String sourceSeriesUID)
+	public RTDICOMProcessingTask(String studyUID, String seriesUID, String imageUID, File dicomFile, String outFilePath, String sourceSeriesUID, String username)
 	{
 		this.studyUID = studyUID;
 		this.seriesUID = seriesUID;
@@ -188,6 +190,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 		this.dicomFile = dicomFile;
 		this.outFilePath = outFilePath;
 		this.sourceSeriesUID=sourceSeriesUID;
+		this.username=username;
 		
 	}
 	@Override
@@ -201,7 +204,6 @@ public class RTDICOMProcessingTask implements GeneratorTask
 		}
 		log.info("Processing DicomRT for series  " + seriesUID + "; file=" + dicomFile.getAbsolutePath());
 
-		String username = null;
 		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		try {

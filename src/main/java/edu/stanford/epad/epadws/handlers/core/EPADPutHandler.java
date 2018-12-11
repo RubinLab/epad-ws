@@ -321,7 +321,7 @@ public class EPADPutHandler
 						}
 						if (dicomFiles.size()>=1){
 							DICOMFileDescription rtImageDesc=dicomFiles.iterator().next();
-							QueueAndWatcherManager.extractRTDicomInfo(rtImageDesc, referencedSeries);
+							QueueAndWatcherManager.extractRTDicomInfo(username, rtImageDesc, referencedSeries);
 						}
 					}
 					if (defaultTags != null) {

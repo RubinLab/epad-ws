@@ -356,13 +356,13 @@ public class QueueAndWatcherManager
 
 		pngGeneratorTaskQueue.offer(rtTask);
 	}
-	public static void extractRTDicomInfo(DICOMFileDescription dicomFileDescription, String referencedSeriesUID)
+	public static void extractRTDicomInfo(String username,DICOMFileDescription dicomFileDescription, String referencedSeriesUID)
 	{
 		String dicomFilePath = getDICOMFilePath(dicomFileDescription);
 		File dicomFile = new File(dicomFilePath);	
 		log.info("DICOM RT found for series " + dicomFileDescription.seriesUID + " dicomFile:" + dicomFile.getAbsolutePath());
 		RTDICOMProcessingTask rtTask = new RTDICOMProcessingTask(dicomFileDescription.studyUID, dicomFileDescription.seriesUID, dicomFileDescription.imageUID,
-				dicomFile, null, referencedSeriesUID);
+				dicomFile, null, referencedSeriesUID, username);
 
 		pngGeneratorTaskQueue.offer(rtTask);
 	}
