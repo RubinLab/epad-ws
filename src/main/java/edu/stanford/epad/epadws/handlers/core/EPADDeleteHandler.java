@@ -153,7 +153,10 @@ public class EPADDeleteHandler
 		PluginOperations pluginOperations= PluginOperations.getInstance();
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
-		String pathInfo = httpRequest.getPathInfo();
+//		String pathInfo = httpRequest.getPathInfo();
+		String pathInfo = httpRequest.getRequestURI().replace("/epad", "").replace("/v2","");
+		log.info("uri "+httpRequest.getRequestURI()+ " pathinfo "+ pathInfo); 
+		
 		int statusCode;
 
 		//ml system delete
