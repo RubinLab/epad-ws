@@ -221,7 +221,10 @@ public class EPADGetHandler
 		
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		PluginOperations pluginOperations= PluginOperations.getInstance();
-		String pathInfo = httpRequest.getPathInfo();
+//		String pathInfo = httpRequest.getPathInfo();
+		String pathInfo = httpRequest.getRequestURI().replace("/epad", "").replace("/v2","");
+		log.info("uri "+httpRequest.getRequestURI()+ " pathinfo "+ pathInfo); 
+		
 		String host = EPADSessionOperations.getSessionHost(sessionID);
 		int statusCode;
 		try {

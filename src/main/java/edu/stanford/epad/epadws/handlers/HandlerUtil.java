@@ -358,7 +358,12 @@ public class HandlerUtil
 	public static String getTemplateParameter(Map<String, String> templateMap, String parameterName, String defaultValue)
 	{
 		if (templateMap.containsKey(parameterName)) {
-			return templateMap.get(parameterName);
+			try {
+				return URLDecoder.decode(templateMap.get(parameterName), StandardCharsets.UTF_8.toString());
+			} catch (UnsupportedEncodingException e) {
+				log.warning("Decode issue for "+ parameterName+ " "+ templateMap.get(parameterName));
+				return templateMap.get(parameterName);
+			}
 		} else
 			return defaultValue;
 	}
