@@ -179,7 +179,9 @@ public class EPADPutHandler
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
-		String pathInfo = httpRequest.getPathInfo();
+//		String pathInfo = httpRequest.getPathInfo();
+		String pathInfo = httpRequest.getRequestURI().replace("/epad", "").replace("/v2","");
+		log.info("uri "+httpRequest.getRequestURI()+ " pathinfo "+ pathInfo); 
 		int statusCode = HttpServletResponse.SC_OK;
 		String status = null;
 	    String requestContentType = httpRequest.getContentType();

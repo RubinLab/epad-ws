@@ -114,6 +114,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -342,7 +345,12 @@ public class HandlerUtil
 	public static String getTemplateParameter(Map<String, String> templateMap, String parameterName)
 	{
 		if (templateMap.containsKey(parameterName)) {
-			return templateMap.get(parameterName);
+			try {
+				return URLDecoder.decode(templateMap.get(parameterName), StandardCharsets.UTF_8.toString());
+			} catch (UnsupportedEncodingException e) {
+				log.warning("Decode issue for "+ parameterName+ " "+ templateMap.get(parameterName));
+				return templateMap.get(parameterName);
+			}
 		} else
 			throw new IllegalArgumentException("no " + parameterName + " parameter in request");
 	}
