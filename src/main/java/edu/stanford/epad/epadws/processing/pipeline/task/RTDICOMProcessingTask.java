@@ -299,7 +299,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 								Thread.sleep(3000);
 								i++;
 							}
-							if (response!=HttpServletResponse.SC_OK){
+							if (response!=HttpServletResponse.SC_OK && dicomFilePaths.isEmpty()){
 								log.warning("Couldn't download images. Giving up "+ seriesUID);
 								projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Failed Processing: Couldn't download source images. Giving up" , null, new Date());
 								projectOperations.createEventLog(username,null, patientID, studyUID, seriesUID, null, null, null, "Failed Processing DicomRT: Couldn't download source images. Giving up", TaskStatus.TASK_RT_PROCESS, true);
@@ -326,7 +326,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 							Thread.sleep(3000);
 							i++;
 						}
-						if (response!=HttpServletResponse.SC_OK){
+						if (response!=HttpServletResponse.SC_OK && dicomFilePaths.isEmpty()){
 							log.warning("Couldn't download images. Giving up "+ seriesUID);
 							projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Failed Processing: Couldn't download source images from "+sourceSeriesUID+". Giving up" , null, new Date());
 							projectOperations.createEventLog(username,null, patientID, studyUID, seriesUID, null, null, null, "Failed Processing DicomRT: Couldn't download source images. Giving up", TaskStatus.TASK_RT_PROCESS, true);
@@ -377,7 +377,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 //			EPADFileUtils.deleteDirectoryAndContents(outputDir);
 			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Completed Processing", null, new Date());
 			projectOperations.createEventLog(username,null, patientID, studyUID, seriesUID, null, null, null, "Completed Processing DicomRT", TaskStatus.TASK_RT_PROCESS, false);
-			
+			epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.DONE);
 		} catch (Exception e) {
 			log.warning("Error processing DICOM RT file for series " + seriesUID, e);
 			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Failed Processing: " + e.getMessage(), null, new Date());
