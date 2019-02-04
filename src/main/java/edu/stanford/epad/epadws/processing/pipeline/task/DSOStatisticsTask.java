@@ -138,7 +138,7 @@ public class DSOStatisticsTask implements Runnable
 	
 	private final String referencedSeriesUID;
 	private final String[] referencedImageUID;
-	private final String aimUID;
+	private final String aimUID, dsoUID;
 	
 	private static final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();	
 	
@@ -150,13 +150,27 @@ public class DSOStatisticsTask implements Runnable
 		this.referencedImageUID = referencedImageUID;
 		this.aimUID = aimUID;
 		this.dsoFileName = dsoFileName;
+		this.dsoUID = null;
 	}
 
+	public DSOStatisticsTask(String username, String projectID, String aimUID, String dsoUID)
+	{
+		this.username = username;
+		this.projectID = projectID;
+		this.referencedSeriesUID = null;
+		this.referencedImageUID = null;
+		this.aimUID = aimUID;
+		this.dsoFileName = null;
+		this.dsoUID = dsoUID;
+	}
+	
 	@Override
 	public void run()
 	{
 		try {
-			File dsoFile=new File(dsoFileName);
+			File dsoFile=null;
+			if (dsoFileName!=null) 
+				dsoFile=new File(dsoFileName);
 			Aim4 aim=null;
 			DicomSegmentationEntity dc = null;
 			
@@ -169,7 +183,11 @@ public class DSOStatisticsTask implements Runnable
 				return;
 			}
 			//open the referenced images and calculate the aggregations
-			Double[] calcs=DSOUtil.generateCalcs(referencedSeriesUID,referencedImageUID,dsoFile);
+			Double[] calcs=null;
+			if (dsoFile!=null)
+				calcs=DSOUtil.generateCalcs(referencedSeriesUID,referencedImageUID,dsoFile);
+			else if (dsoUID!=null)
+				calcs=DSOUtil.generateCalcs(dsoUID);
 			//add calculations to aim
 			if (calcs!=null){
 				log.info("Retrieved calculations are: min="+calcs[0]+ " max="+calcs[1]+ " mean="+calcs[2]+" stddev="+calcs[3]);
@@ -189,6 +207,8 @@ public class DSOStatisticsTask implements Runnable
 				aim.addCalculationEntityWithRef(Aim4.createStdDevCalculation(calcs[3], null, units),dc);
 				if (calcs.length>4) aim.addCalculationEntityWithRef(Aim4.createVolumeCalculation(calcs[4], null, units),dc);
 				
+				log.info("Saving AIM file with DSOStats. ID " + aim.getUniqueIdentifier() + " projectID:" + projectID +  " username:" + username);
+				AIMUtil.saveImageAnnotationToServer(aim, projectID, 1, null);
 				
 			}
 			
