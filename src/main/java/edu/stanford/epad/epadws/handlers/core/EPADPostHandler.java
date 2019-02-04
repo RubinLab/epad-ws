@@ -163,7 +163,7 @@ public class EPADPostHandler
 	protected static int handlePost(HttpServletRequest httpRequest, PrintWriter responseStream, String username, String sessionID)
 	{
 //		String pathInfo = httpRequest.getPathInfo();
-		String pathInfo = httpRequest.getRequestURI().replace("/epad", "").replace("/v2","");
+		String pathInfo = httpRequest.getRequestURI().replace("/epad/v2","");
 		log.info("uri "+httpRequest.getRequestURI()+ " pathinfo "+ pathInfo); 
 		
 		int statusCode;
