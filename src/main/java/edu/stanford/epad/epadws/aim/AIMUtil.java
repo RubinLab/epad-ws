@@ -448,7 +448,7 @@ public class AIMUtil
 	
 	public static Aim4 generateAIMFileForDSO(File dsoFile, String username, String projectID, String aimName) throws Exception
 	{
-		return generateAIMFileForDSO(dsoFile, username, projectID, aimName, false);
+		return generateAIMFileForDSO(dsoFile, username, projectID, aimName, EPADConfig.saveDSOStats);
 	}
 	public static Aim4 generateAIMFileForDSO(File dsoFile, String username, String projectID, String aimName, boolean generateCalcs) throws Exception
 	{
@@ -616,7 +616,7 @@ public class AIMUtil
 						Project proj = projectOperations.getFirstProjectForStudy(studyUID);
 						if (proj != null && !proj.getProjectId().equals(EPADConfig.xnatUploadProjectID))
 						{
-							generateAIMFileForDSO(dsoFile, "shared", proj.getProjectId());
+							generateAIMFileForDSO(dsoFile, "shared", proj.getProjectId(), null, generateCalcs);
 						}
 					}
 					if (generateCalcs){
@@ -628,29 +628,8 @@ public class AIMUtil
 						} catch (Exception x) {
 							log.warning("Exception running DSOStatistics", x);
 						}
-//						//open the referenced images and calculate the aggregations
-//						Double[] calcs=DSOUtil.generateCalcs(referencedSeriesUID,referencedImageUID,dsoFile);
-//						//add calculations to aim
-//						if (calcs!=null){
-//							log.info("Retrieved calculations are: min="+calcs[0]+ " max="+calcs[1]+ " mean="+calcs[2]+" stddev="+calcs[3]);
-//							String units="pixels";
-//							if (aim.getModality().equals("PT")) {
-//								units="SUV";
-//							}
-//							if (aim.getModality().equals("CT")) {
-//								units="HU";
-//								
-//							}
-//							//start fresh, delete old ones
-//							aim.clearCalculationEntityCollection();
-//							aim.addCalculationEntityWithRef(Aim4.createMinCalculation(calcs[0], null, units),dc);
-//							aim.addCalculationEntityWithRef(Aim4.createMaxCalculation(calcs[1], null, units),dc);
-//							aim.addCalculationEntityWithRef(Aim4.createMeanCalculation(calcs[2], null, units),dc);
-//							aim.addCalculationEntityWithRef(Aim4.createStdDevCalculation(calcs[3], null, units),dc);
-//							if (calcs.length>4) aim.addCalculationEntityWithRef(Aim4.createVolumeCalculation(calcs[4], null, units),dc);
-//							
-//							
-//						}
+					} else {
+						log.info("Not generating DSO statistics as the saveDSOStats parameter not set or is false");
 						
 					}
 				}
@@ -863,7 +842,7 @@ public class AIMUtil
 	
 	public static boolean saveAIMAnnotation(File aimFile, String projectID, int frameNumber, String sessionId, String username, boolean uploaded) throws AimException
 	{
-		return saveAIMAnnotation(aimFile, projectID, frameNumber, sessionId, username, uploaded, false, false);
+		return saveAIMAnnotation(aimFile, projectID, frameNumber, sessionId, username, uploaded, false, EPADConfig.saveDSOStats);
 	}
 
 	public static boolean saveAIMAnnotation(File aimFile, String projectID, int frameNumber, String sessionId, String username, boolean uploaded, boolean isDicomSR, boolean generateCalcs) throws AimException
@@ -912,38 +891,6 @@ public class AIMUtil
 					{
 						epadDatabaseOperations.deleteAIM(username, imageAnnotationColl.getUniqueIdentifier().getRoot());
 						throw new Exception("Invalid AIM, contains empty segmentation data");
-					}
-					//ml this is a segmentation aim sent from ui. 
-					//delete and add the calculations everytime, ui calculates wrong anyway
-					if (generateCalcs){
-						//open the referenced images and calculate the aggregations
-						DicomSegmentationEntity dseg=(DicomSegmentationEntity) sec.getSegmentationEntityList().get(0);
-						DicomImageReferenceEntity dimg= (DicomImageReferenceEntity) imageAnnotationColl.getImageAnnotation().getImageReferenceEntityCollection().get(0);
-						String seriesUID=dimg.getImageStudy().getImageSeries().getInstanceUid().getRoot();
-						String[] referencedImageUID=new String[2];
-						
-						Double[] calcs=DSOUtil.generateCalcs(dseg.getSopInstanceUid().getRoot());
-						//add calculations to aim
-						if (calcs!=null){
-							log.info("Retrieved calculations are: min="+calcs[0]+ " max="+calcs[1]+ " mean="+calcs[2]+" stddev="+calcs[3]);
-							String units="pixels";
-							if (aim.getModality().equals("PT")) {
-								units="SUV";
-							}
-							if (aim.getModality().equals("CT")) {
-								units="HU";
-								
-							}
-							//start fresh, delete old ones
-							aim.clearCalculationEntityCollection();
-							aim.addCalculationEntityWithRef(Aim4.createMinCalculation(calcs[0], null, units),dseg);
-							aim.addCalculationEntityWithRef(Aim4.createMaxCalculation(calcs[1], null, units),dseg);
-							aim.addCalculationEntityWithRef(Aim4.createMeanCalculation(calcs[2], null, units),dseg);
-							aim.addCalculationEntityWithRef(Aim4.createStdDevCalculation(calcs[3], null, units),dseg);
-							if (calcs.length>4) aim.addCalculationEntityWithRef(Aim4.createVolumeCalculation(calcs[4], null, units),dseg);
-							
-						}
-						
 					}
 					
 				}
@@ -1175,11 +1122,46 @@ public class AIMUtil
 											log.info("Updating dsoSeriesUID in aim database:" + e.dsoSeriesUID + " aimID:" + eaim.aimID);
 											epadDatabaseOperations.addDSOAIM(username, imageReference, e.dsoSeriesUID, eaim.aimID);												
 											if (eaim.dsoFrameNo == 0)
-												epadDatabaseOperations.updateAIMDSOFrameNo(eaim.aimID, e.dsoFrameNo);												
+												epadDatabaseOperations.updateAIMDSOFrameNo(eaim.aimID, e.dsoFrameNo);	
+											
+											//add calculations to the aim sent by the ui
+											if (generateCalcs) {
+												try {
+													log.info("Starting DSO statistics task (from removing auto generated aim)");
+													DSOStatisticsTask stats = new DSOStatisticsTask(username, projectID, eaim.aimID,dse.getSopInstanceUid().getRoot());
+													new Thread(stats).start();
+													
+												} catch (Exception x) {
+													log.warning("Exception running DSOStatistics", x);
+												}
+											}
+											
 //											break;
 										}
 									}
-								}								
+								}else {
+									//move generate calcs here to trigger it after saving is done
+									//ml this is a segmentation aim sent from ui. 
+									//delete and add the calculations everytime, ui calculates wrong anyway
+									if (generateCalcs){
+										
+										//open the referenced images and calculate the aggregations
+										DicomSegmentationEntity dseg=(DicomSegmentationEntity) sec.getSegmentationEntityList().get(0);
+										
+										try {
+											log.info("Starting DSO statistics task");
+											DSOStatisticsTask stats = new DSOStatisticsTask(username, projectID, aim.getUniqueIdentifier().getRoot(), dseg.getSopInstanceUid().getRoot());
+											new Thread(stats).start();
+											
+										} catch (Exception x) {
+											log.warning("Exception running DSOStatistics", x);
+										}
+										
+									}else {
+										log.info("Not generating DSO statistics as the saveDSOStats parameter not set or is false");
+										
+									}
+								}
 							}
 						}
 						
