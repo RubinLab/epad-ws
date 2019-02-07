@@ -317,10 +317,10 @@ public class PluginStoreOperations {//cav
 										templateInfo=po.getTemplateCodeAndMeaning(baseFilePath+xmlTags.getString("pluginTemplateXml"));
 										if (po.getTemplateWithCode(templateInfo[0])==null){
 											temp = baseFilePath+xmlTags.getString("pluginTemplateXml");
-											pluginName = null;
+											pluginName = xmlTags.getString("pluginName");
 										}else{ 
 											temp = baseFilePath+xmlTags.getString("pluginTemplateXml");
-											pluginName = null;
+											pluginName = xmlTags.getString("pluginName");;
 										}
 									} catch (Exception e) {
 										// TODO: handle exception
