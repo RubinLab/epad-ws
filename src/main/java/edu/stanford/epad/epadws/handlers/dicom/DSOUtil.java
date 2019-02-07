@@ -630,7 +630,7 @@ public class DSOUtil
 			if (ea == null)
 			{
 				//do not generate calcs it is going to be deleted anyway as ui send the updated aim file. what if not?
-				Aim4 aim = AIMUtil.generateAIMFileForDSO(temporaryDSOFile, username, projectID,null,false);
+				Aim4 aim = AIMUtil.generateAIMFileForDSO(temporaryDSOFile, username, projectID);
 				log.info("DSO AimID:" + aim.getUniqueIdentifier().getRoot());
 				ea = epadDatabaseOperations.getAIM(aim.getUniqueIdentifier().getRoot());
 				ea.dsoFrameNo = dsoEditRequest.editedFrameNumbers.get(0);

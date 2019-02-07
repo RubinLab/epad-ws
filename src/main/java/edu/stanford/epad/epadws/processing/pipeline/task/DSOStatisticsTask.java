@@ -113,6 +113,8 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
+import edu.stanford.epad.epadws.epaddb.EpadDatabase;
+import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
@@ -207,8 +209,11 @@ public class DSOStatisticsTask implements Runnable
 				aim.addCalculationEntityWithRef(Aim4.createStdDevCalculation(calcs[3], null, units),dc);
 				if (calcs.length>4) aim.addCalculationEntityWithRef(Aim4.createVolumeCalculation(calcs[4], null, units),dc);
 				
-				log.info("Saving AIM file with DSOStats. ID " + aim.getUniqueIdentifier() + " projectID:" + projectID +  " username:" + username);
+				log.info("Saving AIM file with DSOStats. ID " + aim.getUniqueIdentifier().getRoot() + " projectID:" + projectID +  " username:" + username);
 				AIMUtil.saveImageAnnotationToServer(aim, projectID, 1, null);
+				EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+				epadDatabaseOperations.updateAIMXml(aim.getUniqueIdentifier().getRoot(), aim.getXMLString());
+				
 				
 			}
 			

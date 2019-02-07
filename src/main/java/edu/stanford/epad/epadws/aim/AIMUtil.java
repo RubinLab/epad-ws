@@ -892,26 +892,6 @@ public class AIMUtil
 						epadDatabaseOperations.deleteAIM(username, imageAnnotationColl.getUniqueIdentifier().getRoot());
 						throw new Exception("Invalid AIM, contains empty segmentation data");
 					}
-					//ml this is a segmentation aim sent from ui. 
-					//delete and add the calculations everytime, ui calculates wrong anyway
-					if (generateCalcs){
-						
-						//open the referenced images and calculate the aggregations
-						DicomSegmentationEntity dseg=(DicomSegmentationEntity) sec.getSegmentationEntityList().get(0);
-						
-						try {
-							log.info("Starting DSO statistics task");
-							DSOStatisticsTask stats = new DSOStatisticsTask(username, projectID, aim.getUniqueIdentifier().getRoot(), dseg.getSopInstanceUid().getRoot());
-							new Thread(stats).start();
-							
-						} catch (Exception x) {
-							log.warning("Exception running DSOStatistics", x);
-						}
-						
-					}else {
-						log.info("Not generating DSO statistics as the saveDSOStats parameter not set or is false");
-						
-					}
 					
 				}
 				EPADAIM ea = epadDatabaseOperations.getAIM(imageAnnotationColl.getUniqueIdentifier().getRoot());
@@ -1159,7 +1139,29 @@ public class AIMUtil
 //											break;
 										}
 									}
-								}								
+								}else {
+									//move generate calcs here to trigger it after saving is done
+									//ml this is a segmentation aim sent from ui. 
+									//delete and add the calculations everytime, ui calculates wrong anyway
+									if (generateCalcs){
+										
+										//open the referenced images and calculate the aggregations
+										DicomSegmentationEntity dseg=(DicomSegmentationEntity) sec.getSegmentationEntityList().get(0);
+										
+										try {
+											log.info("Starting DSO statistics task");
+											DSOStatisticsTask stats = new DSOStatisticsTask(username, projectID, aim.getUniqueIdentifier().getRoot(), dseg.getSopInstanceUid().getRoot());
+											new Thread(stats).start();
+											
+										} catch (Exception x) {
+											log.warning("Exception running DSOStatistics", x);
+										}
+										
+									}else {
+										log.info("Not generating DSO statistics as the saveDSOStats parameter not set or is false");
+										
+									}
+								}
 							}
 						}
 						
