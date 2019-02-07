@@ -863,13 +863,14 @@ public class PluginOperations {
 			}
 			/************************** controls ***********************/
 			//check the jar.. we do this twice.. second time do not check
-			if (jarFile!=null) {
-				File jar=new File(jarFile);
-				File dest=new File(EPADConfig.getEPADWebServerBaseDir()+"lib/plugins/"+jar.getName());
-				if (dest.exists() && !overwrite)
-					return "The jar file already exists.Try running with -o option if you wantto overwrite the file";
-				
-			}
+			//removing this check so it doesn't bother qifp
+//			if (jarFile!=null) {
+//				File jar=new File(jarFile);
+//				File dest=new File(EPADConfig.getEPADWebServerBaseDir()+"lib/plugins/"+jar.getName());
+//				if (dest.exists() && !overwrite)
+//					return "The jar file already exists.Try running with -o option if you wantto overwrite the file";
+//				
+//			}
 			
 			if (className!=null) {
 				PluginHandlerMap pluginHandlerMap = PluginHandlerMap.getInstance();
@@ -886,7 +887,8 @@ public class PluginOperations {
 				if (name==null) {
 					name=pluginName;
 				}
-				else if (!pluginName.equals(name) && !overwrite) { //check the class's getName. is it same with input name
+				//!name.toLowerCase().startsWith(pluginName.toLowerCase()+"/") is for qifp
+				else if (!pluginName.equalsIgnoreCase(name) && !name.toLowerCase().startsWith(pluginName.toLowerCase()+"/") && !overwrite) { //check the class's getName. is it same with input name
 					return "The class specifies the plugin name as "+pluginName+" in the getName() method. You have entered "+ name + " as the name. It should be the same";
 				}
 			}

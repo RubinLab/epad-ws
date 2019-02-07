@@ -173,9 +173,18 @@ public class PluginStartTask implements Runnable
 		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 		projectOperations.createEventLog(username, projectID, null, null, null, null, annotationID, "Start PlugIn", pluginName);
         HttpClient client = new HttpClient(); // TODO Get rid of localhost
-        String url = EPADConfig.getParamValue("serverProxy", "http://localhost:8080") 
-        		+ EPADConfig.getParamValue("webserviceBase", "/epad") + "/plugin/" + pluginName + "/?" //aimFile=" + annotationID 
-        		+ "&frameNumber=" + frameNumber + "&projectID=" + projectID;
+        String[] pluginNameParts=null;
+        String url = null;
+        if (pluginName.startsWith("qifp")) {
+        	pluginNameParts=pluginName.split("/");
+        	url = EPADConfig.getParamValue("serverProxy", "http://localhost:8080") 
+        		+ EPADConfig.getParamValue("webserviceBase", "/epad") + "/plugin/" + pluginNameParts[0] + "/?" //aimFile=" + annotationID 
+        		+ "&frameNumber=" + frameNumber + "&projectID=" + projectID + "&workFlowID="+pluginNameParts[1];
+        }else {
+        	url = EPADConfig.getParamValue("serverProxy", "http://localhost:8080") 
+            		+ EPADConfig.getParamValue("webserviceBase", "/epad") + "/plugin/" + pluginName + "/?" //aimFile=" + annotationID 
+            		+ "&frameNumber=" + frameNumber + "&projectID=" + projectID;
+        }
         if (annotationID!=null) 
         	url+="&aimFile=" + annotationID;
 //        else
