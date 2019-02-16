@@ -144,6 +144,26 @@ public class User extends AbstractDAO {
 	public static final String CreatePACPermission = "CreatePAC";
 	public static final String CreateAutoPACQueryPermission = "CreateAutoPACQuery";
 	
+	public User() {
+		
+	}
+	
+	public User(String configStr) {
+		String[] configParts=configStr.split("|");
+		if (configParts.length==8) {	
+			this.setUsername(configParts[0]);
+			this.setFirstName(configParts[1]);
+			this.setLastName(configParts[2]);
+			this.setEmail(configParts[3]);
+			this.setPassword(configParts[4]);
+			this.setPermissions(configParts[5]);
+			if (configParts[6].equalsIgnoreCase("false"))
+				this.setEnabled(false);
+			this.setColorpreference(configParts[7]);
+		}
+		
+	}
+	
 	@Override
 	public long getId() {
 		return id;
@@ -347,6 +367,10 @@ public class User extends AbstractDAO {
 	@Override
 	public String[][] returnDBCOLUMNS() {
 		return DBCOLUMNS;
+	}
+	
+	public String toConfigStr() {
+		return this.getUsername()+"|"+this.getFirstName()+"|"+this.getLastName()+"|"+this.getEmail()+"|"+this.getPassword()+"|"+this.getPermissions()+"|"+this.isEnabled()+"|"+this.getColorpreference();
 	}
 
 }

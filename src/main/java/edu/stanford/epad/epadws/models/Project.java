@@ -120,6 +120,18 @@ public class Project extends AbstractDAO {
 	Date createdTime;
 	Date updateTime;
 
+	public Project(String configStr)
+	{
+		String[] configParts=configStr.split("\\|");
+		if (configParts.length==5) {	
+			this.setName(configParts[0]);
+			this.setProjectId(configParts[1]);
+			this.setType(configParts[2]);
+			this.setDescription(configParts[3]);
+			this.setDefaultTemplate(configParts[4]);
+		}
+	}
+	
 	public Project(long id)
 	{
 		this.id = id;
@@ -222,6 +234,10 @@ public class Project extends AbstractDAO {
 	@Override
 	public String[][] returnDBCOLUMNS() {
 		return DBCOLUMNS;
+	}
+	
+	public String toConfigStr() {
+		return this.getName()+"|"+this.getProjectId()+"|"+this.getType()+"|"+this.getDescription()+"|"+this.getDefaultTemplate();
 	}
 
 }

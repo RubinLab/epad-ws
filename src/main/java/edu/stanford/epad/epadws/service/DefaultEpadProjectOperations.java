@@ -104,7 +104,11 @@
  *******************************************************************************/
 package edu.stanford.epad.epadws.service;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -118,7 +122,10 @@ import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.mindrot.jbcrypt.BCrypt;
 
+import com.google.gson.Gson;
+
 import edu.stanford.epad.common.util.EPADConfig;
+import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.AnnotationStatus;
 import edu.stanford.epad.dtos.EPADStudy;
@@ -3078,4 +3085,97 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return imageUIDs;
 	}
 	
+	@Override
+	public String getProjectConfig(String username, String projectID) {
+		StringBuilder config=new StringBuilder();
+		//check if the user is owner of the project
+		try {
+			if (!isOwner(username, projectID)) {
+				log.info("User "+ username + " is not the owner of project "+ projectID+ ". Ownership required for config download!");
+				return null;
+			}
+		
+			//get project info
+			Project p=getProject(projectID);
+			if (p==null) {
+				log.info("Project "+ projectID+ " not found!");
+				return null;
+			}
+			
+			config.append("project:{"+p.toConfigStr()+"}\n");
+			
+			config.append("-----\n");
+			
+			//get project users and roles
+			List<User> users=new ArrayList<>();
+			List<ProjectToUser> ptous = new ProjectToUser().getObjects("project_id = " + p.getId() );
+			for (ProjectToUser ptou:ptous)
+			{
+				User user=(User)(new User().getObject("id="+ptou.getUserId()));
+				config.append("user:{"+user.toConfigStr()+"||"+ptou.toConfigStr()+"}\n");
+			}
+			return config.toString();
+		
+		} catch (Exception e) {
+			log.warning("Couldn't prepare config file", e);
+		}
+		return null;
+	}
+	
+	@Override
+	public boolean createProjectFromConfig(String username, File configFile) {
+		boolean success = false;
+		
+		//check if the user is admin, or have project and user create rights
+		User loggedInUser;
+		try {
+			loggedInUser = getUser(username);
+			if (!(loggedInUser.isAdmin() || (loggedInUser.hasPermission("CreateProject") && loggedInUser.hasPermission("CreateUser")))) {
+				log.warning("The user needs to be either admin or has both CreateProject and CreateUser privilidges to upload a project with configuration");
+				return false;
+			}
+		} catch (Exception e) {
+			log.warning("Couldn't get user "+username, e);
+			return false;
+		}
+		
+		
+		BufferedReader reader = null;
+		InputStream is = null;
+		try {
+			try {
+				is = new FileInputStream(configFile);
+				reader = new BufferedReader(new InputStreamReader(is, "UTF8"));
+				StringBuilder sb = new StringBuilder();
+				String line = null;
+				while ((line = reader.readLine()) != null) {
+					if (line.startsWith("project:")) {	
+						log.info("project "+line.replace("project:{", "").replace("}",""));
+						Project p = new Project(line.replace("project:{", "").replace("}",""));
+						//TODO check if exits, set creator
+						p.save();
+					}
+					else if (line.startsWith("user:")) {
+						log.info("user "+line.replace("user:{", "").replace("}",""));
+						
+						String[] userParts=line.replace("user:{", "").replace("}","").split("\\|");
+						log.info("user parts user: "+ userParts[0] + " project_user:"+userParts[1]);
+					}
+				}
+				return true;
+			} catch (Exception x) {
+				log.warning("file reading exception", x);
+				return false;
+			} finally {
+				if (reader != null)
+					reader.close();
+				else if (is != null)
+					is.close();
+			}
+		} catch (Exception x) {
+			log.warning("file closing exception", x);
+			return false;
+		}
+	
+	}
 }

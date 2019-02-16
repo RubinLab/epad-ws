@@ -119,6 +119,24 @@ public class ProjectToUser extends AbstractDAO {
 	Date createdTime;
 	Date updateTime;
 
+	public ProjectToUser() {
+		
+	}
+	
+	public ProjectToUser(String configStr) {
+		String[] configParts=configStr.split("|");
+		if (configParts.length==4) {
+			try {
+				this.setProjectId(Long.parseLong(configParts[0]));
+				this.setUserId(Long.parseLong(configParts[1]));
+				this.setRole(configParts[2]);
+				this.setDefaultTemplate(configParts[3]);
+			}catch(NumberFormatException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	@Override
 	public long getId() {
 		return id;
@@ -204,6 +222,10 @@ public class ProjectToUser extends AbstractDAO {
 	@Override
 	public String[][] returnDBCOLUMNS() {
 		return DBCOLUMNS;
+	}
+	
+	public String toConfigStr() {
+		return this.getProjectId()+"|"+this.getUserId()+"|"+this.getRole()+"|"+this.getDefaultTemplate();
 	}
 
 }

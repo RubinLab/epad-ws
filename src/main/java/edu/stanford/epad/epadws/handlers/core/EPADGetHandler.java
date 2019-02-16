@@ -260,7 +260,7 @@ public class EPADGetHandler
 				//ml added for project download
 				boolean includeAims = "true".equalsIgnoreCase(httpRequest.getParameter("includeAims"));
 				if (returnStream(httpRequest)) {
-					DownloadUtil.streamProject(httpResponse, projectReference, username, sessionID, searchFilter, subjectUIDs, includeAims);
+					DownloadUtil.streamProject(httpResponse, projectReference, username, sessionID, searchFilter, subjectUIDs, includeAims, true);
 //					DownloadUtil.downloadProject(true, httpResponse, projectReference, username, sessionID, searchFilter, subjectUIDs, includeAims);
 				}else if (returnConnected(httpRequest)) { //ml connected data for deletion
 					//need to get all subjects within and return their connected projects

@@ -2174,8 +2174,13 @@ public class DefaultEpadOperations implements EpadOperations
 			
 			EpadFile file=null;
 			if (type == null || !type.equals(FileType.TEMPLATE)) {
-				projectOperations.createEventLog(username, projectID, subjectID, studyID, seriesID, null, null, uploadedFile.getName(), "UPLOAD FILE", description, false);
-				file=projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type);
+				//TODO check from sth else, extension is not good enough
+				if (uploadedFile.getName().toLowerCase().endsWith(".cfg")) {
+					projectOperations.createProjectFromConfig(username, uploadedFile);
+				}else {
+					projectOperations.createEventLog(username, projectID, subjectID, studyID, seriesID, null, null, uploadedFile.getName(), "UPLOAD FILE", description, false);
+					file=projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type);
+				}
 			}
 					//if it is a template put the file information and create the template entry in db
 			if (type != null && fileType!=null && fileType.equals(FileType.TEMPLATE.getName())) {

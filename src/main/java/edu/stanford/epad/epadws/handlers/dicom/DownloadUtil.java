@@ -1617,7 +1617,7 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 /***** Stream codes from Dev ***********/
 
 public static Set<String> streamProject(HttpServletResponse httpResponse, ProjectReference projectReference, String username, String sessionID, 
-		EPADSearchFilter searchFilter, String subjectUIDs, boolean includeAIMs) throws Exception
+		EPADSearchFilter searchFilter, String subjectUIDs, boolean includeAIMs, boolean includeConfig) throws Exception
 {
 	log.info("Streaming project:" + projectReference.projectID + " includeAIMs:" + includeAIMs);
 	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
@@ -1810,7 +1810,40 @@ public static Set<String> streamProject(HttpServletResponse httpResponse, Projec
 						}
 					}
 				}
+				
 			}
+		}
+	}
+	if (includeConfig) {
+		String configText=projectOperations.getProjectConfig(username, projectReference.projectID);
+		String configPath="config.cfg";
+		try
+		{
+			zipout.putNextEntry(new ZipEntry(configPath));
+		}
+		catch (Exception e)
+		{
+			log.warning("Error adding to zip file", e);
+			throw e;
+		}
+		InputStream fr;
+		try
+		{
+			fr = new ByteArrayInputStream(configText.getBytes(StandardCharsets.UTF_8));;
+
+			byte buffer[] = new byte[0xffff];
+			int b;
+			while ((b = fr.read(buffer)) != -1)
+				zipout.write(buffer, 0, b);
+
+			fr.close();
+			zipout.closeEntry();
+
+		}
+		catch (Exception e)
+		{
+			log.warning("Error closing zip file", e);
+			throw e;
 		}
 	}
 

@@ -1224,5 +1224,21 @@ public interface EpadProjectOperations {
 	 */
 	List<String> getFlaggedImageUIDs(String username, String projectID, String subjectID, String studyID);
 	
+	/**
+	 * generates a config string to be downloaded
+	 * @param username
+	 * @param projectID
+	 * @return
+	 */
+	String getProjectConfig(String username, String projectID);
+	
+	/**
+	 * gets a configuration file and creates a project with users
+	 * @param username
+	 * @param configFile
+	 * @return
+	 */
+	boolean createProjectFromConfig(String username, File configFile);
+	
 	
 }
