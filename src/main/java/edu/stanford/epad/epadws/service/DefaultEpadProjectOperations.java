@@ -3152,8 +3152,20 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 					if (line.startsWith("project:")) {	
 						log.info("project "+line.replace("project:{", "").replace("}",""));
 						Project p = new Project(line.replace("project:{", "").replace("}",""));
-						//TODO check if exits, set creator
+						//check if project with same name or id exists. adds _2 to the end if it does
+						Project pDbId=(Project)new Project().getObject("projectid="+p.getProjectId());
+						if (pDbId!=null) {
+							p.setProjectId(p.getProjectId()+"_2");
+							log.warning("Project Id already in database. giving new project id "+p.getProjectId());
+						}
+						Project pDbName=(Project)new Project().getObject("name="+p.getName());
+						if (pDbName!=null) {
+							p.setName(p.getName()+"_2");
+							log.warning("Project name already in database. giving new project name "+p.getName());
+						}
+						p.setCreator(username);
 						p.save();
+						
 					}
 					else if (line.startsWith("user:")) {
 						log.info("user "+line.replace("user:{", "").replace("}",""));
