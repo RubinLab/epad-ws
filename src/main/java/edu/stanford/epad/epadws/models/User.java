@@ -149,17 +149,17 @@ public class User extends AbstractDAO {
 	}
 	
 	public User(String configStr) {
-		String[] configParts=configStr.split("|");
+		String[] configParts=configStr.split("\\|");
 		if (configParts.length==8) {	
-			this.setUsername(configParts[0]);
-			this.setFirstName(configParts[1]);
-			this.setLastName(configParts[2]);
-			this.setEmail(configParts[3]);
-			this.setPassword(configParts[4]);
-			this.setPermissions(configParts[5]);
+			if (!configParts[0].equalsIgnoreCase("null")) this.setUsername(configParts[0]);
+			if (!configParts[1].equalsIgnoreCase("null")) this.setFirstName(configParts[1]);
+			if (!configParts[2].equalsIgnoreCase("null")) this.setLastName(configParts[2]);
+			if (!configParts[3].equalsIgnoreCase("null")) this.setEmail(configParts[3]);
+			if (!configParts[4].equalsIgnoreCase("null")) this.setPassword(configParts[4]);
+			if (!configParts[5].equalsIgnoreCase("null")) this.setPermissions(configParts[5]);
 			if (configParts[6].equalsIgnoreCase("false"))
 				this.setEnabled(false);
-			this.setColorpreference(configParts[7]);
+			if (!configParts[7].equalsIgnoreCase("null")) this.setColorpreference(configParts[7]);
 		}
 		
 	}

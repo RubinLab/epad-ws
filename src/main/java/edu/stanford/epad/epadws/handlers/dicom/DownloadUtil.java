@@ -168,6 +168,7 @@ import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.security.EPADSessionOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
+import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.hakan.aim4api.base.AimException;
 import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
 import edu.stanford.hakan.aim4api.project.epad.Aim;
@@ -1816,10 +1817,9 @@ public static Set<String> streamProject(HttpServletResponse httpResponse, Projec
 	}
 	if (includeConfig) {
 		String configText=projectOperations.getProjectConfig(username, projectReference.projectID);
-		String configPath="config.cfg";
 		try
 		{
-			zipout.putNextEntry(new ZipEntry(configPath));
+			zipout.putNextEntry(new ZipEntry(UserProjectService.CONFIG_FILE_NAME));
 		}
 		catch (Exception e)
 		{

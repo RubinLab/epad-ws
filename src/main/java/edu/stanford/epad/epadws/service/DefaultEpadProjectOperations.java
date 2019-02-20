@@ -3112,7 +3112,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			for (ProjectToUser ptou:ptous)
 			{
 				User user=(User)(new User().getObject("id="+ptou.getUserId()));
-				config.append("user:{"+user.toConfigStr()+"||"+ptou.toConfigStr()+"}\n");
+				config.append("user:{"+user.toConfigStr()+"|&|&"+ptou.toConfigStr()+"}\n");
 			}
 			return config.toString();
 		
@@ -3123,20 +3123,19 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	}
 	
 	@Override
-	public boolean createProjectFromConfig(String username, File configFile) {
+	public Project createProjectFromConfig(String username, File configFile) {
 		boolean success = false;
-		
 		//check if the user is admin, or have project and user create rights
 		User loggedInUser;
 		try {
 			loggedInUser = getUser(username);
 			if (!(loggedInUser.isAdmin() || (loggedInUser.hasPermission("CreateProject") && loggedInUser.hasPermission("CreateUser")))) {
 				log.warning("The user needs to be either admin or has both CreateProject and CreateUser privilidges to upload a project with configuration");
-				return false;
+				return null;
 			}
 		} catch (Exception e) {
 			log.warning("Couldn't get user "+username, e);
-			return false;
+			return null;
 		}
 		
 		
@@ -3148,17 +3147,18 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 				reader = new BufferedReader(new InputStreamReader(is, "UTF8"));
 				StringBuilder sb = new StringBuilder();
 				String line = null;
+				Project p = null;
 				while ((line = reader.readLine()) != null) {
 					if (line.startsWith("project:")) {	
 						log.info("project "+line.replace("project:{", "").replace("}",""));
-						Project p = new Project(line.replace("project:{", "").replace("}",""));
+						p=new Project(line.replace("project:{", "").replace("}",""));
 						//check if project with same name or id exists. adds _2 to the end if it does
-						Project pDbId=(Project)new Project().getObject("projectid="+p.getProjectId());
+						Project pDbId=(Project)new Project().getObject("projectid='"+p.getProjectId()+"'");
 						if (pDbId!=null) {
 							p.setProjectId(p.getProjectId()+"_2");
 							log.warning("Project Id already in database. giving new project id "+p.getProjectId());
 						}
-						Project pDbName=(Project)new Project().getObject("name="+p.getName());
+						Project pDbName=(Project)new Project().getObject("name='"+p.getName()+"'");
 						if (pDbName!=null) {
 							p.setName(p.getName()+"_2");
 							log.warning("Project name already in database. giving new project name "+p.getName());
@@ -3168,16 +3168,39 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 						
 					}
 					else if (line.startsWith("user:")) {
+						if (p==null) {
+							log.warning("project should be specified before the users. Ignoring user line "+line);
+							continue;
+						}
 						log.info("user "+line.replace("user:{", "").replace("}",""));
-						
-						String[] userParts=line.replace("user:{", "").replace("}","").split("\\|");
+						String[] userParts=line.replace("user:{", "").replace("}","").split("\\|&\\|&");
 						log.info("user parts user: "+ userParts[0] + " project_user:"+userParts[1]);
+						User u=new User(userParts[0]);
+						ProjectToUser pu=new ProjectToUser(userParts[1]);
+						
+						ProjectToUser newPu= new ProjectToUser();
+						newPu.setProjectId(p.getId());
+						newPu.setRole(pu.getRole());
+						newPu.setDefaultTemplate(pu.getDefaultTemplate());
+						newPu.setCreator(username);
+						
+						//check if the user exists in the db
+						User uDb=(User)new User().getObject("username='"+u.getUsername()+"'");
+						if (uDb!=null) {
+							log.info("User "+ username + " already exists in the db. Adding to project");
+							newPu.setUserId(uDb.getId());
+						}else { //user doesn't exist create the user and get the id
+							u.setCreator(username);
+							u.save();
+							newPu.setUserId(u.getId());
+						}
+						newPu.save();
 					}
 				}
-				return true;
+				return p;
 			} catch (Exception x) {
 				log.warning("file reading exception", x);
-				return false;
+				return null;
 			} finally {
 				if (reader != null)
 					reader.close();
@@ -3186,7 +3209,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			}
 		} catch (Exception x) {
 			log.warning("file closing exception", x);
-			return false;
+			return null;
 		}
 	
 	}

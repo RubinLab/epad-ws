@@ -124,11 +124,11 @@ public class Project extends AbstractDAO {
 	{
 		String[] configParts=configStr.split("\\|");
 		if (configParts.length==5) {	
-			this.setName(configParts[0]);
-			this.setProjectId(configParts[1]);
-			this.setType(configParts[2]);
-			this.setDescription(configParts[3]);
-			this.setDefaultTemplate(configParts[4]);
+			if (!configParts[0].equalsIgnoreCase("null")) this.setName(configParts[0]);
+			if (!configParts[1].equalsIgnoreCase("null")) this.setProjectId(configParts[1]);
+			if (!configParts[2].equalsIgnoreCase("null")) this.setType(configParts[2]);
+			if (!configParts[3].equalsIgnoreCase("null")) this.setDescription(configParts[3]);
+			if (!configParts[4].equalsIgnoreCase("null")) this.setDefaultTemplate(configParts[4]);
 		}
 	}
 	

@@ -170,6 +170,7 @@ public class UserProjectService {
 	private static final EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();	
 
 	public static final String XNAT_UPLOAD_PROPERTIES_FILE_NAME = "xnat_upload.properties";
+	public static final String CONFIG_FILE_NAME = "project.cfg";
 	public static HashSet<String> duplicatePatientIds= new HashSet<>();
 
 	/**
@@ -303,6 +304,9 @@ public class UserProjectService {
 		int numberOfDICOMFiles = 0;
 		String propertiesFilePath = dicomUploadDirectory.getAbsolutePath() + File.separator
 				+ XNAT_UPLOAD_PROPERTIES_FILE_NAME;
+		String configFilePath = dicomUploadDirectory.getAbsolutePath() + File.separator
+				+ CONFIG_FILE_NAME;
+
 		File xnatUploadPropertiesFile = new File(propertiesFilePath);
 		try {
 			Thread.sleep(5000); // Give it a couple of seconds for the property file to appear
@@ -335,6 +339,21 @@ public class UserProjectService {
 					//ml prevent null username 
 					if (xnatUserName == null)
 						xnatUserName = EPADConfig.xnatUploadProjectUser;
+			
+					
+					//if there is a config file, process it and create project first
+		            //then add the files to that project
+					File configFile = new File(configFilePath);
+		            if (configFile!=null) {
+		            	log.info("config file processing user user project service");
+		            	Project p = projectOperations.createProjectFromConfig(xnatUserName, configFile);
+		            	if (p!=null) { //new project successfully created
+		            		log.info("project label was "+ xnatProjectLabel);
+		            		xnatProjectLabel=p.getProjectId();
+		            		log.info("Config file created new project and changed the projectid to "+ xnatProjectLabel);
+		            	}
+		            }
+					
 					
 					numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName, patientID, studyUID, seriesUID, !zip);
 					if (numberOfDICOMFiles != 0)
@@ -436,6 +455,7 @@ public class UserProjectService {
 					if (dicomFile.getName().endsWith(".xml"))
 					{
 						try {
+							log.info("found xml in upload folder for project "+projectID);
 							//ml sessionid param set to null for not triggering the plugin (sessionID is xnatSessionID from upload) 
 							if (AIMUtil.saveAIMAnnotation(dicomFile, projectID, 0, null, username, true))
 								log.warning("Error processing aim file:" + dicomFile.getName());

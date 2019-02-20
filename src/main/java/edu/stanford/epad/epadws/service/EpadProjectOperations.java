@@ -1236,9 +1236,9 @@ public interface EpadProjectOperations {
 	 * gets a configuration file and creates a project with users
 	 * @param username
 	 * @param configFile
-	 * @return
+	 * @return the created project
 	 */
-	boolean createProjectFromConfig(String username, File configFile);
+	Project createProjectFromConfig(String username, File configFile);
 	
 	
 }

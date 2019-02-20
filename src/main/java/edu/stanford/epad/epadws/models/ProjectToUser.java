@@ -124,13 +124,13 @@ public class ProjectToUser extends AbstractDAO {
 	}
 	
 	public ProjectToUser(String configStr) {
-		String[] configParts=configStr.split("|");
+		String[] configParts=configStr.split("\\|");
 		if (configParts.length==4) {
 			try {
-				this.setProjectId(Long.parseLong(configParts[0]));
-				this.setUserId(Long.parseLong(configParts[1]));
-				this.setRole(configParts[2]);
-				this.setDefaultTemplate(configParts[3]);
+				if (!configParts[0].equalsIgnoreCase("null")) this.setProjectId(Long.parseLong(configParts[0]));
+				if (!configParts[1].equalsIgnoreCase("null")) this.setUserId(Long.parseLong(configParts[1]));
+				if (!configParts[2].equalsIgnoreCase("null")) this.setRole(configParts[2]);
+				if (!configParts[3].equalsIgnoreCase("null")) this.setDefaultTemplate(configParts[3]);
 			}catch(NumberFormatException e) {
 				e.printStackTrace();
 			}

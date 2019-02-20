@@ -2050,10 +2050,27 @@ public class DefaultEpadOperations implements EpadOperations
             File[] files1 = zipDirectory.listFiles();
             boolean hasDICOMs = false;
             List<File> files = new ArrayList<File>();
+            File configFile = null;
             for (File f: files1)
             {
-                  files.add(f);
+            	if (f.getName().equalsIgnoreCase(UserProjectService.CONFIG_FILE_NAME)) {
+            		log.info("Found config file in zip");
+            		configFile=f;
+            	}else {
+            		files.add(f);
+            	}
             }
+            //if there is a config file, process it and create project first
+            //then add the files to that project
+            if (configFile!=null) {
+            	log.info("config file processing");
+            	Project p = projectOperations.createProjectFromConfig(username, configFile);
+            	if (p!=null) { //new project successfully created
+            		projectID=p.getProjectId();
+            		log.info("Config file created new project and changed the projectid to "+ projectID);
+            	}
+            }
+            
             for (int i = 0; i < files.size(); i++)
             {
                   File file = files.get(i);
@@ -2175,8 +2192,11 @@ public class DefaultEpadOperations implements EpadOperations
 			EpadFile file=null;
 			if (type == null || !type.equals(FileType.TEMPLATE)) {
 				//TODO check from sth else, extension is not good enough
-				if (uploadedFile.getName().toLowerCase().endsWith(".cfg")) {
-					projectOperations.createProjectFromConfig(username, uploadedFile);
+				if (uploadedFile.getName().equalsIgnoreCase(UserProjectService.CONFIG_FILE_NAME)) {
+					Project p=projectOperations.createProjectFromConfig(username, uploadedFile);
+					if (p!=null) {
+						log.info("New project from config file created successfully. projectid="+p.getProjectId());
+					}
 				}else {
 					projectOperations.createEventLog(username, projectID, subjectID, studyID, seriesID, null, null, uploadedFile.getName(), "UPLOAD FILE", description, false);
 					file=projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type);
