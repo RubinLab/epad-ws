@@ -1030,8 +1030,12 @@ public class AIMUtil
 					{
 						epadDatabaseOperations.updateAIM(ea.aimID, projectID, username);
 					}
-					else
-						projectID = ea.projectID;
+					else {
+						//if the aim is already in the system it gets the project id, doesn't save to the new project
+						//instead add to shared? 
+						//TODO what if aim is not the same
+//						projectID = ea.projectID;
+					}
 				}
 				String dsoSeriesUID = "";
 				if (seriesIds.size() > 1)

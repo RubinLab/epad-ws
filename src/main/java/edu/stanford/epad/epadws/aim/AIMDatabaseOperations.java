@@ -730,6 +730,13 @@ public class AIMDatabaseOperations {
     	            //log.info("AIMs update:" + sql);
     	            this.statement.executeUpdate(sql);   				
      			}
+    			if (projectID!=null && !aim.projectID.equalsIgnoreCase(projectID)) {
+    				String sharedproj=aim.projectID+","+projectID+",";
+    				//add the aim to the new project as shared
+    				this.statement = mySqlConnection.createStatement();
+    	    	    String sql = "UPDATE " + ANNOTATIONS_TABLE + " set SHAREDPROJECTS = '" + sharedproj + "' where AnnotationUID = '" + annotationUID + "'";
+    	            this.statement.executeUpdate(sql);   
+    			}
 			EPADAIM epadaim=new EPADAIM(aim.aimID, aim.userName, aim.projectID, aim.subjectID, aim.subjectID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber, dsoSeriesUID, isDicomSR);
 			epadaim.name=aimName;
 			return epadaim;
