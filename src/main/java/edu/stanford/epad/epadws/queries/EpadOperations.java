@@ -1366,6 +1366,7 @@ public interface EpadOperations
 	 * @return
 	 */
 	Set<DICOMFileDescription> getUnprocessedDICOMFilesInSeries(String seriesUID);
+	Set<DICOMFileDescription> getUnprocessedDICOMFilesInSeries(String seriesUID, boolean processDicomRT);
 
 	/**
 	 * @param seriesUID

@@ -222,7 +222,7 @@ public class ImageCheckHandler extends AbstractHandler
 		// which indicates that the image's existence was detected. We then detect that the PNG file itself exists.
 		for (String seriesUID : seriesUIDs) {
 			final Set<DICOMFileDescription> unprocessedDICOMFileDescriptionsInSeries = epadQueries
-					.getUnprocessedDICOMFilesInSeries(seriesUID);
+					.getUnprocessedDICOMFilesInSeries(seriesUID, false);
 			final int numberOfUnprocessedImages = unprocessedDICOMFileDescriptionsInSeries.size();
 			if (numberOfUnprocessedImages != 0) {
 				String modality = unprocessedDICOMFileDescriptionsInSeries.iterator().next().modality;

@@ -1433,8 +1433,7 @@ public class DefaultEpadOperations implements EpadOperations
 				String insertDate = dcm4cheeImageDescription.createdTime;
 				String imageDate = dcm4cheeImageDescription.contentTime;
 				String sliceLocation = dcm4cheeImageDescription.sliceLocation;
-				String lossyImage = getWADOPath(imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID);
-
+				
 				for (int i = 0; i < pngs.size(); i++)
 				{
 					
@@ -1442,6 +1441,8 @@ public class DefaultEpadOperations implements EpadOperations
 					if (pixelData) {
 						pixelValue=pixelValues.get(pngs.get(i));
 					}
+					String lossyImage = getWADOPath(imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, i);
+
 					if (i == 0 || all) {
 						EPADFrame frame = new EPADFrame(imageReference.projectID, imageReference.subjectID,
 								imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
@@ -1809,6 +1810,11 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public Set<DICOMFileDescription> getUnprocessedDICOMFilesInSeries(String seriesUID)
 	{
+		return getUnprocessedDICOMFilesInSeries(seriesUID, true);
+	}
+	@Override
+	public Set<DICOMFileDescription> getUnprocessedDICOMFilesInSeries(String seriesUID, boolean processDicomRT)
+	{
 		Set<DICOMFileDescription> dicomFilesWithoutPNGs = new HashSet<DICOMFileDescription>();
 
 		try {
@@ -1822,6 +1828,7 @@ public class DefaultEpadOperations implements EpadOperations
 			for (DICOMFileDescription dicomFileDescription : dicomFileDescriptions) {
 				String modality = dicomFileDescription.modality;
 				if ("RTPLAN".equals(modality) || "PR".equals(modality) || "SR".equals(modality)) continue; // no images to generate
+				if (!processDicomRT && "RTSTRUCT".equals(modality)) continue; // do not try to trigger dicomrt for verification
 				if (!imageUIDs.contains(dicomFileDescription.imageUID))
 				{
 					log.info("ImageUID without png: " + dicomFileDescription.imageUID);
@@ -5611,6 +5618,11 @@ public class DefaultEpadOperations implements EpadOperations
 	private String getWADOPath(String studyUID, String seriesUID, String imageUID)
 	{
 		return "?requestType=WADO&studyUID=" + studyUID + "&seriesUID=" + seriesUID + "&objectUID=" + imageUID;
+	}
+	
+	private String getWADOPath(String studyUID, String seriesUID, String imageUID, int frameNumber)
+	{
+		return "?requestType=WADO&studyUID=" + studyUID + "&seriesUID=" + seriesUID + "&objectUID=" + imageUID + "&frameNumber=" + frameNumber;
 	}
 
 	private EPADImage createEPADImage(SeriesReference seriesReference, DCM4CHEEImageDescription dcm4cheeImageDescription,

@@ -113,6 +113,7 @@ import java.util.concurrent.TimeUnit;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.processing.pipeline.task.DicomHeadersTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.GeneratorTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.RTDICOMProcessingTask;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
@@ -127,6 +128,7 @@ public class PngGeneratorProcess implements Runnable
 	private final BlockingQueue<GeneratorTask> pngTaskQueue;
 	private final ExecutorService pngExecs;
 	private final ExecutorService tagExec;
+	private final ExecutorService rtDicomExec;
 	private final EPADLogger logger = EPADLogger.getInstance();
 	private final ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 
@@ -135,6 +137,7 @@ public class PngGeneratorProcess implements Runnable
 		this.pngTaskQueue = taskQueue;
 		pngExecs = Executors.newFixedThreadPool(20);
 		tagExec = Executors.newFixedThreadPool(20);
+		rtDicomExec = Executors.newFixedThreadPool(2);
 		logger.info("Starting the PNG generator process");
 	}
 
@@ -146,7 +149,14 @@ public class PngGeneratorProcess implements Runnable
 				GeneratorTask task = pngTaskQueue.poll(500, TimeUnit.MILLISECONDS);
 				if (task == null)
 					continue;
-				pngExecs.execute(task);
+				if (task instanceof RTDICOMProcessingTask)
+				{
+					rtDicomExec.execute(task);
+				}
+				else
+				{
+					pngExecs.execute(task);
+				}
 				readDicomHeadersTask(task);
 			} catch (Exception e) {
 				logger.warning("PngGeneratorProcess error", e);
