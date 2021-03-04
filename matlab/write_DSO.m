@@ -33,6 +33,7 @@ function write_seg_status = write_DSO(seriesDir, Seg_name, Seg_mask, outputDir, 
 %             used to generate the DSO file as returned by "dicomwrite".
 %
 % Author: Emel Alkim (Stanford University)
+% Updated 2021-MAR-3
 
 %check the parameters
 switch nargin
@@ -161,15 +162,19 @@ else % try getting from perframe
         end
     end
 end
-info_mask.SharedFunctionalGroupsSequence.Item_1.SegmentIdentificationSequence.Item_1.ReferencedSegmentNumber=1;
 if insCount>1
+    % add all slices to referenced slices!
+    for i=1:size(maxes,3)
+        slice_info=slices(i);
+        ib1=i-1+1;
+        item_name=['Item_' num2str(ib1)];
+        info_mask.ReferencedSeriesSequence.Item_1.ReferencedInstanceSequence.(item_name).ReferencedSOPClassUID=slice_info.SOPClassUID;
+        info_mask.ReferencedSeriesSequence.Item_1.ReferencedInstanceSequence.(item_name).ReferencedSOPInstanceUID=slice_info.SOPInstanceUID;
+    end    
     for i=startIndex:endIndex
         slice_info=slices(i);
         ib1=i-startIndex+1;
         item_name=['Item_' num2str(ib1)];
-        info_mask.ReferencedSeriesSequence.Item_1.ReferencedInstanceSequence.(item_name).ReferencedSOPClassUID=slice_info.SOPClassUID;
-        info_mask.ReferencedSeriesSequence.Item_1.ReferencedInstanceSequence.(item_name).ReferencedSOPInstanceUID=slice_info.SOPInstanceUID;
-        
         
         info_mask.PerFrameFunctionalGroupsSequence.(item_name).DerivationImageSequence.Item_1.SourceImageSequence.Item_1.ReferencedSOPClassUID=slice_info.SOPClassUID;
         info_mask.PerFrameFunctionalGroupsSequence.(item_name).DerivationImageSequence.Item_1.SourceImageSequence.Item_1.ReferencedSOPInstanceUID=slice_info.SOPInstanceUID;
@@ -197,6 +202,8 @@ if insCount>1
             end
             
         end
+        info_mask.PerFrameFunctionalGroupsSequence.(item_name).SegmentIdentificationSequence.Item_1.ReferencedSegmentNumber=1; %added 08/27/20
+        
     end
 else %just one instance should be multiframe
     info=refSlice;%first image
@@ -240,15 +247,36 @@ info_mask.ReferencedSeriesSequence.Item_1.SeriesInstanceUID=info.SeriesInstanceU
 info_mask.ReferringPhysicianName='';
 info_mask.PatientName=info.PatientName;
 info_mask.PatientID=info.PatientID;
-info_mask.PatientBirthDate= info.PatientBirthDate;
-info_mask.PatientSex= info.PatientSex;
+if isfield(info,'PatientBirthDate')==true
+    info_mask.PatientBirthDate= info.PatientBirthDate;
+else
+    info_mask.PatientBirthDate= '';
+    
+end
+if isfield(info,'PatientSex')==true
+    info_mask.PatientSex= info.PatientSex;
+else
+    %info_mask.PatientSex= 'female'; changed by JCD 9-Dec-2020
+    info_mask.PatientSex='F';
+    
+end
 if isfield(info,'PatientAge')==true
     info_mask.PatientAge= info.PatientAge;
+else
+    info_mask.PatientAge= '';
+    
 end
 if isfield(info,'PatientWeight')==true
     info_mask.PatientWeight= info.PatientWeight;
+else
+    info_mask.PatientWeight= '';
+    
 end
-info_mask.StudyID=info.StudyID;
+if isfield(info,'StudyID')==true
+    info_mask.StudyID=info.StudyID;
+else
+    info_mask.StudyID='';
+end
 
 info_mask.MediaStorageSOPClassUID='1.2.840.10008.5.1.4.1.1.66.4'; % SEG image storage
 instanceuid=dicomuid;
@@ -262,7 +290,11 @@ info_mask.ImageType='DERIVED\PRIMARY';
 info_mask.SOPClassUID='1.2.840.10008.5.1.4.1.1.66.4';  % SEG Image Storage
 info_mask.SOPInstanceUID= instanceuid;
 
+if isfield(info,'info.AccessionNumber')==true
 info_mask.AccessionNumber=info.AccessionNumber;
+else
+    info_mask.AccessionNumber='';
+end
 info_mask.Modality='SEG';
 info_mask.Manufacturer='Stanford University';
 
@@ -278,28 +310,36 @@ info_mask.SeriesDate=datestr(now,'yyyymmdd');
 info_mask.AcquisitionDate=datestr(now,'yyyymmdd');
 currentTime=datestr(now,'HHMMSS.FFF');
 info_mask.ContentTime=currentTime;
+if isfield(info,'info.StudyTime')==true
 info_mask.StudyTime=info.StudyTime;
+else
+info_mask.StudyTime='';
+end
 info_mask.SeriesTime=currentTime;
 info_mask.AcquisitionTime=currentTime;
 info_mask.InstanceNumber= 1;
 info_mask.FrameOfReferenceUID= info.FrameOfReferenceUID;
 info_mask.PositionReferenceIndicator= '';
 
-info_mask.DimensionOrganizationSequence.Item_1.DimensionOrganizationUID= dicomuid;
+dimorgid = dicomuid;
+info_mask.DimensionOrganizationSequence.Item_1.DimensionOrganizationUID= dimorgid;
+info_mask.DimensionIndexSequence.Item_1.DimensionOrganizationUID=dimorgid;
 info_mask.DimensionIndexSequence.Item_1.DimensionIndexPointer=uint16([32 36950]);%Not writing pointers for now
 info_mask.DimensionIndexSequence.Item_1.FunctionalGroupPointer=uint16([32 37137]);%Not writing pointers for now
 info_mask.DimensionIndexSequence.Item_1.DimensionDescriptionLabel='Stack ID';
+info_mask.DimensionIndexSequence.Item_2.DimensionOrganizationUID=dimorgid;
 info_mask.DimensionIndexSequence.Item_2.DimensionIndexPointer=uint16([32 36951]);%Not writing pointers for now
 info_mask.DimensionIndexSequence.Item_2.FunctionalGroupPointer=uint16([32 37137]);%Not writing pointers for now
 info_mask.DimensionIndexSequence.Item_2.DimensionDescriptionLabel='In-Stack Position Number';
+info_mask.DimensionIndexSequence.Item_3.DimensionOrganizationUID=dimorgid;
 info_mask.DimensionIndexSequence.Item_3.DimensionIndexPointer=uint16([98 11]);%Not writing pointers for now
 info_mask.DimensionIndexSequence.Item_3.FunctionalGroupPointer=uint16([98 10]);%Not writing pointers for now
 info_mask.DimensionIndexSequence.Item_3.DimensionDescriptionLabel='Referenced Segment Number';
 info_mask.SamplesPerPixel= 1;
 info_mask.PhotometricInterpretation= 'MONOCHROME2';
-info_mask.NumberOfFrames= size(Seg_mask,1);
-info_mask.Rows= size(Seg_mask,2);
-info_mask.Columns= size(Seg_mask,3);
+info_mask.NumberOfFrames= size(Seg_mask,3);
+info_mask.Rows= size(Seg_mask,1);
+info_mask.Columns= size(Seg_mask,2);
 if isFractional==false
     info_mask.BitsAllocated= 1;
     info_mask.BitsStored= 1;
