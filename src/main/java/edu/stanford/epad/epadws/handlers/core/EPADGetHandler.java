@@ -259,8 +259,9 @@ public class EPADGetHandler
 					annotationCount = false;
 				//ml added for project download
 				boolean includeAims = "true".equalsIgnoreCase(httpRequest.getParameter("includeAims"));
+				boolean includeFiles = "true".equalsIgnoreCase(httpRequest.getParameter("includeFiles"));
 				if (returnStream(httpRequest)) {
-					DownloadUtil.streamProject(httpResponse, projectReference, username, sessionID, searchFilter, subjectUIDs, includeAims);
+					DownloadUtil.streamProject(httpResponse, projectReference, username, sessionID, searchFilter, subjectUIDs, includeAims, includeFiles);
 //					DownloadUtil.downloadProject(true, httpResponse, projectReference, username, sessionID, searchFilter, subjectUIDs, includeAims);
 				}else if (returnConnected(httpRequest)) { //ml connected data for deletion
 					//need to get all subjects within and return their connected projects
@@ -353,6 +354,7 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
 				boolean includeAims = "true".equalsIgnoreCase(httpRequest.getParameter("includeAims"));
+				boolean includeFiles = "true".equalsIgnoreCase(httpRequest.getParameter("includeFiles"));
 				boolean includeAnnotationStatus = "true".equalsIgnoreCase(httpRequest.getParameter("includeAnnotationStatus"));
 				//ml multiple subjects
 				if (subjectReference.subjectID.contains(",") && returnStream(httpRequest) ) {
@@ -371,7 +373,7 @@ public class EPADGetHandler
 				}else if (returnFile(httpRequest)) {
 					DownloadUtil.downloadSubject(false, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, includeAims);
 				} else if (returnStream(httpRequest)) {
-					DownloadUtil.streamSubject(httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, includeAims);
+					DownloadUtil.streamSubject(httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, includeAims, includeFiles);
 //					DownloadUtil.downloadSubject(true, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, includeAims);
 				} else {
 					EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID, includeAnnotationStatus);
@@ -399,6 +401,7 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
 				boolean includeAims = "true".equalsIgnoreCase(httpRequest.getParameter("includeAims"));
+				boolean includeFiles = "true".equalsIgnoreCase(httpRequest.getParameter("includeFiles"));
 				boolean includeAnnotationStatus = "true".equalsIgnoreCase(httpRequest.getParameter("includeAnnotationStatus"));
 				if (returnConnected(httpRequest)) { //ml connected data for deletion
 					log.info("get projects for study " + studyReference.studyUID );
@@ -418,7 +421,7 @@ public class EPADGetHandler
 					if (studyReference.studyUID.contains(","))
 						DownloadUtil.downloadStudies(true, httpResponse, studyReference.studyUID, username, sessionID, includeAims, studyReference.projectID);
 					else
-						DownloadUtil.streamStudy(httpResponse, studyReference, username, sessionID, searchFilter, studyUIDs, includeAims);
+						DownloadUtil.streamStudy(httpResponse, studyReference, username, sessionID, searchFilter, studyUIDs, includeAims, includeFiles);
 
 //						DownloadUtil.downloadStudy(true, httpResponse, studyReference, username, sessionID, searchFilter, seriesUIDs, includeAims);
 				} else {
@@ -460,6 +463,7 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
 				boolean includeAims = "true".equalsIgnoreCase(httpRequest.getParameter("includeAims"));
+				boolean includeFiles = "true".equalsIgnoreCase(httpRequest.getParameter("includeFiles"));
 				boolean includeAnnotationStatus = "true".equalsIgnoreCase(httpRequest.getParameter("includeAnnotationStatus"));
 				if (returnConnected(httpRequest)) { //ml connected data for deletion
 					log.info("get projects for study " + seriesReference.studyUID );
@@ -479,7 +483,7 @@ public class EPADGetHandler
 					if (seriesReference.seriesUID.contains(","))
 						DownloadUtil.downloadSeries(true, httpResponse, seriesReference.seriesUID, username, sessionID, includeAims);
 					else
-						DownloadUtil.streamSeries(httpResponse, seriesReference, username, sessionID, includeAims);
+						DownloadUtil.streamSeries(httpResponse, seriesReference, username, sessionID, includeAims, includeFiles);
 //						DownloadUtil.downloadSeries(true, httpResponse, seriesReference, username, sessionID, includeAims);
 				} else {
 					EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID, includeAnnotationStatus);
@@ -1834,8 +1838,9 @@ public class EPADGetHandler
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_FILE_LIST, pathInfo)) {
+				boolean allLevels = "false".equalsIgnoreCase(httpRequest.getParameter("topLevel"));
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_FILE_LIST, pathInfo);
-				EPADFileList files = epadOperations.getFileDescriptions(projectReference, username, sessionID, searchFilter, true);
+				EPADFileList files = epadOperations.getFileDescriptions(projectReference, username, sessionID, searchFilter, allLevels);
 				responseStream.append(files.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 						

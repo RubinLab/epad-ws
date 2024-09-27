@@ -138,6 +138,7 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.EPADFile;
+import edu.stanford.epad.dtos.EPADFileList;
 import edu.stanford.epad.dtos.EPADImage;
 import edu.stanford.epad.dtos.EPADImageList;
 import edu.stanford.epad.dtos.EPADSeries;
@@ -1617,7 +1618,7 @@ static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 /***** Stream codes from Dev ***********/
 
 public static Set<String> streamProject(HttpServletResponse httpResponse, ProjectReference projectReference, String username, String sessionID, 
-		EPADSearchFilter searchFilter, String subjectUIDs, boolean includeAIMs) throws Exception
+		EPADSearchFilter searchFilter, String subjectUIDs, boolean includeAIMs, boolean includeFiles) throws Exception
 {
 	log.info("Streaming project:" + projectReference.projectID + " includeAIMs:" + includeAIMs);
 	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
@@ -1810,6 +1811,45 @@ public static Set<String> streamProject(HttpServletResponse httpResponse, Projec
 						}
 					}
 				}
+				if (includeFiles)
+				{
+					List<EpadFile> files = projectOperations.getSeriesFiles(seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID);
+					for (EpadFile file: files) {
+						String name = file.getName();
+						File epadFile = new File(EPADConfig.getEPADWebServerResourcesDir() +  getEpadFilePath(file));
+						if (!epadFile.exists()) continue;
+						String fileZipPath = seriesZipPath + "/" + name;
+						log.debug("Streaming file: " + fileZipPath);
+						try
+						{
+							zipout.putNextEntry(new ZipEntry(fileZipPath));
+						}
+						catch (Exception e)
+						{
+							log.warning("Error adding to zip file", e);
+							throw e;
+						}
+						BufferedInputStream fr;
+						try
+						{
+							fr = new BufferedInputStream(new FileInputStream(epadFile));
+
+							byte buffer[] = new byte[0xffff];
+							int b;
+							while ((b = fr.read(buffer)) != -1)
+								zipout.write(buffer, 0, b);
+
+							fr.close();
+							zipout.closeEntry();
+
+						}
+						catch (Exception e)
+						{
+							log.warning("Error closing zip file", e);
+							throw e;
+						}
+					}
+				}
 			}
 		}
 	}
@@ -1829,7 +1869,7 @@ public static Set<String> streamProject(HttpServletResponse httpResponse, Projec
 }
 
 public static void streamSubject(HttpServletResponse httpResponse, SubjectReference subjectReference, String username, String sessionID, 
-		EPADSearchFilter searchFilter, String studyUIDs, boolean includeAIMs) throws Exception
+		EPADSearchFilter searchFilter, String studyUIDs, boolean includeAIMs, boolean includeFiles) throws Exception
 {
 	log.info("Streaming projectID:" + subjectReference.projectID + " subject:" + subjectReference.subjectID);
 	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
@@ -2023,6 +2063,45 @@ public static void streamSubject(HttpServletResponse httpResponse, SubjectRefere
 					}
 				}
 			}
+			if (includeFiles)
+			{
+				List<EpadFile> files = projectOperations.getSeriesFiles(seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID);
+				for (EpadFile file: files) {
+					String name = file.getName();
+					File epadFile = new File(EPADConfig.getEPADWebServerResourcesDir() +  getEpadFilePath(file));
+					if (!epadFile.exists()) continue;
+					String fileZipPath = seriesZipPath + "/" + name;
+					log.debug("Streaming file: " + fileZipPath);
+					try
+					{
+						zipout.putNextEntry(new ZipEntry(fileZipPath));
+					}
+					catch (Exception e)
+					{
+						log.warning("Error adding to zip file", e);
+						throw e;
+					}
+					BufferedInputStream fr;
+					try
+					{
+						fr = new BufferedInputStream(new FileInputStream(epadFile));
+
+						byte buffer[] = new byte[0xffff];
+						int b;
+						while ((b = fr.read(buffer)) != -1)
+							zipout.write(buffer, 0, b);
+
+						fr.close();
+						zipout.closeEntry();
+
+					}
+					catch (Exception e)
+					{
+						log.warning("Error closing zip file", e);
+						throw e;
+					}
+				}
+			}
 		}
 	}
 
@@ -2038,7 +2117,7 @@ public static void streamSubject(HttpServletResponse httpResponse, SubjectRefere
 	}
 	EPADFileUtils.deleteDirectoryAndContents(downloadDir);
 }
-public static void streamStudy(HttpServletResponse httpResponse, StudyReference studyReference, String username, String sessionID, EPADSearchFilter searchFilter, String seriesUIDs, boolean includeAIMs) throws Exception
+public static void streamStudy(HttpServletResponse httpResponse, StudyReference studyReference, String username, String sessionID, EPADSearchFilter searchFilter, String seriesUIDs, boolean includeAIMs, boolean includeFiles) throws Exception
 {
 	log.info("Streaming projectID:" + studyReference.projectID + " subject:" + studyReference.subjectID + " study:" + studyReference.studyUID);
 	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
@@ -2214,6 +2293,45 @@ public static void streamStudy(HttpServletResponse httpResponse, StudyReference 
 				}
 			}
 		}
+		if (includeFiles)
+		{
+			List<EpadFile> files = projectOperations.getSeriesFiles(seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID);
+			for (EpadFile file: files) {
+				String name = file.getName();
+				File epadFile = new File(EPADConfig.getEPADWebServerResourcesDir() +  getEpadFilePath(file));
+				if (!epadFile.exists()) continue;
+				String fileZipPath = seriesZipPath + "/" + name;
+				log.debug("Streaming file: " + fileZipPath);
+				try
+				{
+					zipout.putNextEntry(new ZipEntry(fileZipPath));
+				}
+				catch (Exception e)
+				{
+					log.warning("Error adding to zip file", e);
+					throw e;
+				}
+				BufferedInputStream fr;
+				try
+				{
+					fr = new BufferedInputStream(new FileInputStream(epadFile));
+
+					byte buffer[] = new byte[0xffff];
+					int b;
+					while ((b = fr.read(buffer)) != -1)
+						zipout.write(buffer, 0, b);
+
+					fr.close();
+					zipout.closeEntry();
+
+				}
+				catch (Exception e)
+				{
+					log.warning("Error closing zip file", e);
+					throw e;
+				}
+			}
+		}
 	}
 
 	try
@@ -2229,7 +2347,7 @@ public static void streamStudy(HttpServletResponse httpResponse, StudyReference 
 	EPADFileUtils.deleteDirectoryAndContents(downloadDir);
 }
 
-public static void streamSeries(HttpServletResponse httpResponse, SeriesReference seriesReference, String username, String sessionID, boolean includeAIMs) throws Exception
+public static void streamSeries(HttpServletResponse httpResponse, SeriesReference seriesReference, String username, String sessionID, boolean includeAIMs, boolean includeFiles) throws Exception
 {
 	log.info("Streaming series:" + seriesReference.seriesUID);
 	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
@@ -2384,6 +2502,46 @@ public static void streamSeries(HttpServletResponse httpResponse, SeriesReferenc
 			}
 		}
 	}
+	if (includeFiles)
+	{
+		List<EpadFile> files = projectOperations.getSeriesFiles(seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID);
+		for (EpadFile file: files) {
+			String name = file.getName();
+			File epadFile = new File(EPADConfig.getEPADWebServerResourcesDir() +  getEpadFilePath(file));
+			if (!epadFile.exists()) continue;
+			String fileZipPath = seriesZipPath + "/" + name;
+			log.debug("Streaming file: " + fileZipPath);
+			try
+			{
+				zipout.putNextEntry(new ZipEntry(fileZipPath));
+			}
+			catch (Exception e)
+			{
+				log.warning("Error adding to zip file", e);
+				throw e;
+			}
+			BufferedInputStream fr;
+			try
+			{
+				fr = new BufferedInputStream(new FileInputStream(epadFile));
+
+				byte buffer[] = new byte[0xffff];
+				int b;
+				while ((b = fr.read(buffer)) != -1)
+					zipout.write(buffer, 0, b);
+
+				fr.close();
+				zipout.closeEntry();
+
+			}
+			catch (Exception e)
+			{
+				log.warning("Error closing zip file", e);
+				throw e;
+			}
+		}
+	}
+
 
 	try
 	{
